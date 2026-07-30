@@ -32,8 +32,29 @@ service cloud.firestore {
     // OJO al orden en las reglas: siempre `esMiembro(...) || esOperador()`.
     // Las llamadas get/exists de las reglas se cobran como lecturas, y el `||`
     // hace cortocircuito — así el comerciante nunca paga la lectura extra.
+    function datosOperador() {
+      return get(/databases/$(database)/documents/operadores/$(request.auth.uid)).data;
+    }
+
     function esOperador() {
-      return exists(/databases/$(database)/documents/operadores/$(request.auth.uid));
+      return exists(/databases/$(database)/documents/operadores/$(request.auth.uid))
+        && datosOperador().get('activo', true) == true;
+    }
+
+    // Nivel "dueño de PagoYa" (no confundir con el dueño de un comercio). Es
+    // el único que administra el equipo. Se exige el campo explícito: si a un
+    // documento le falta `nivel`, es un operador raso.
+    function esDuenoPagoYa() {
+      return esOperador() && datosOperador().get('nivel', 'operador') == 'dueno';
+    }
+
+    function operadorValido() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['nombre', 'nivel', 'activo'])
+        && d.keys().hasOnly(['nombre', 'nivel', 'activo', 'creadoEn'])
+        && d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 60
+        && d.nivel in ['dueno', 'operador']
+        && d.activo is bool;
     }
 
     function cambiaSolo(campos) {
@@ -107,12 +128,33 @@ service cloud.firestore {
                      + string(math.round(d.monto * 100));
     }
 
-    // Operadores del negocio. Se crean A MANO desde la consola de Firebase
-    // (ver backend/README.md). Ningún cliente escribe aquí, nunca.
+    // Equipo interno de PagoYa. Es la puerta de la escalación de privilegios,
+    // así que tiene dos candados:
+    //
+    //   1. Solo un `nivel: dueno` puede tocar esta colección. Un operador raso
+    //      no puede ascenderse ni dar de alta a nadie.
+    //   2. NADIE se edita ni se borra a sí mismo — ni el dueño. Así el único
+    //      dueño no puede degradarse por error y dejar el negocio sin quien
+    //      administre el equipo. Para eso siempre queda la consola de Firebase.
+    //
+    // El primer dueño se crea a mano en la consola (ver backend/README.md).
     match /operadores/{uid} {
       allow get: if autenticado() && (request.auth.uid == uid || esOperador());
       allow list: if autenticado() && esOperador();
-      allow write: if false;
+
+      allow create: if autenticado()
+        && esDuenoPagoYa()
+        && request.auth.uid != uid
+        && operadorValido();
+
+      allow update: if autenticado()
+        && esDuenoPagoYa()
+        && request.auth.uid != uid
+        && operadorValido();
+
+      allow delete: if autenticado()
+        && esDuenoPagoYa()
+        && request.auth.uid != uid;
     }
 
     // Perfil propio: a qué comercio pertenezco

@@ -26,18 +26,22 @@ export type Sesion = {
   estado: EstadoSesion;
   usuario: User | null;
   nombreOperador: string;
+  /** Solo un dueño administra el equipo (ver PANEL.md). */
+  soyDueno: boolean;
 };
 
 export function useSesion(): Sesion {
   const [estado, setEstado] = useState<EstadoSesion>("cargando");
   const [usuario, setUsuario] = useState<User | null>(null);
   const [nombreOperador, setNombreOperador] = useState("");
+  const [soyDueno, setSoyDueno] = useState(false);
 
   useEffect(() => {
     return onAuthStateChanged(auth, async (u) => {
       setUsuario(u);
       if (!u) {
         setNombreOperador("");
+        setSoyDueno(false);
         setEstado("fuera");
         return;
       }
@@ -45,19 +49,25 @@ export function useSesion(): Sesion {
         // Las reglas permiten leer el documento propio de operadores. Si no
         // existe, la lectura devuelve vacío (no error) y no hay acceso.
         const snap = await getDoc(doc(db, "operadores", u.uid));
-        if (snap.exists()) {
-          setNombreOperador((snap.data().nombre as string) ?? "");
+        const datos = snap.data();
+        // Un operador dado de baja (activo:false) no entra, igual que en las
+        // reglas: aquí solo se evita la pantalla en blanco.
+        if (snap.exists() && (datos?.activo ?? true) === true) {
+          setNombreOperador((datos?.nombre as string) ?? "");
+          setSoyDueno(datos?.nivel === "dueno");
           setEstado("operador");
         } else {
+          setSoyDueno(false);
           setEstado("sin-acceso");
         }
       } catch {
+        setSoyDueno(false);
         setEstado("sin-acceso");
       }
     });
   }, []);
 
-  return { estado, usuario, nombreOperador };
+  return { estado, usuario, nombreOperador, soyDueno };
 }
 
 export async function entrarConGoogle(): Promise<void> {

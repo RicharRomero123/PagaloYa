@@ -12,6 +12,7 @@ import {
 } from "@/lib/comercios";
 import { fechaCorta, haceOEn } from "@/lib/formato";
 import { salir } from "@/lib/sesion";
+import { Equipo } from "./Equipo";
 import { FichaComercio } from "./FichaComercio";
 
 const COLOR_ESTADO: Record<EstadoMembresia, string> = {
@@ -32,10 +33,13 @@ const ORDEN_FILTROS: (EstadoMembresia | "todos")[] = [
 export function ListaComercios({
   nombreOperador,
   operadorUid,
+  soyDueno,
 }: {
   nombreOperador: string;
   operadorUid: string;
+  soyDueno: boolean;
 }) {
+  const [verEquipo, setVerEquipo] = useState(false);
   const [comercios, setComercios] = useState<Comercio[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
@@ -105,13 +109,22 @@ export function ListaComercios({
             Panel de operador{nombreOperador ? ` · ${nombreOperador}` : ""}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void salir()}
-          className="text-sm text-texto-medio underline underline-offset-4"
-        >
-          Salir
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setVerEquipo(true)}
+            className="text-sm font-bold text-azul underline underline-offset-4"
+          >
+            Equipo
+          </button>
+          <button
+            type="button"
+            onClick={() => void salir()}
+            className="text-sm text-texto-medio underline underline-offset-4"
+          >
+            Salir
+          </button>
+        </div>
       </header>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -172,6 +185,14 @@ export function ListaComercios({
           operadorUid={operadorUid}
           alCerrar={() => setAbiertoId(null)}
           alActualizar={(s) => actualizarSuscripcion(abierto.id, s)}
+        />
+      )}
+
+      {verEquipo && (
+        <Equipo
+          miUid={operadorUid}
+          soyDueno={soyDueno}
+          alCerrar={() => setVerEquipo(false)}
         />
       )}
 

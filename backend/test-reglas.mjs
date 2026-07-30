@@ -27,16 +27,23 @@ async function prueba(nombre, promesa) {
 const DUENO = "uid-dueno";
 const TRABAJADOR = "uid-trabajador";
 const INTRUSO = "uid-intruso";
-const OPERADOR = "uid-operador";
+const OPERADOR = "uid-operador";      // nivel dueño: administra el equipo
+const EMPLEADO = "uid-empleado";      // nivel operador: no toca el equipo
 const dbDueno = env.authenticatedContext(DUENO).firestore();
 const dbTrabajador = env.authenticatedContext(TRABAJADOR).firestore();
 const dbIntruso = env.authenticatedContext(INTRUSO).firestore();
 const dbOperador = env.authenticatedContext(OPERADOR).firestore();
+const dbEmpleado = env.authenticatedContext(EMPLEADO).firestore();
 
-// Los operadores se crean a mano desde la consola de Firebase: ningún cliente
-// puede escribir en esa colección, así que aquí se siembra saltando las reglas.
+// El PRIMER dueño se crea a mano en la consola de Firebase; de ahí en adelante
+// los da de alta él desde el panel. Aquí se siembra saltando las reglas.
 await env.withSecurityRulesDisabled(async (ctx) => {
-  await setDoc(doc(ctx.firestore(), "operadores", OPERADOR), { nombre: "Yo" });
+  await setDoc(doc(ctx.firestore(), "operadores", OPERADOR), {
+    nombre: "Yo", nivel: "dueno", activo: true,
+  });
+  await setDoc(doc(ctx.firestore(), "operadores", EMPLEADO), {
+    nombre: "Maria", nivel: "operador", activo: true,
+  });
 });
 
 const comercioId = "comercio-test-1";
@@ -326,11 +333,55 @@ await prueba("plan inventado rechazado", assertFails(
     },
   })
 ));
-await prueba("nadie se asciende a operador", assertFails(
-  setDoc(doc(dbIntruso, "operadores", INTRUSO), { nombre: "Hacker" })
+console.log("\n— EQUIPO: administrar operadores desde el panel —");
+const NUEVO = "uid-nuevo-empleado";
+await prueba("el dueño da de alta a un empleado", assertSucceeds(
+  setDoc(doc(dbOperador, "operadores", NUEVO), {
+    nombre: "Carlos", nivel: "operador", activo: true, creadoEn: serverTimestamp(),
+  })
 ));
-await prueba("el dueño NO se asciende a operador", assertFails(
-  setDoc(doc(dbDueno, "operadores", DUENO), { nombre: "Yo mismo" })
+await prueba("el dueño lo desactiva (sin borrar el historial)", assertSucceeds(
+  updateDoc(doc(dbOperador, "operadores", NUEVO), { activo: false })
+));
+await prueba("el dueño lo elimina", assertSucceeds(
+  deleteDoc(doc(dbOperador, "operadores", NUEVO))
+));
+await prueba("un operador puede ver el equipo", assertSucceeds(
+  getDocs(collection(dbEmpleado, "operadores"))
+));
+
+console.log("\n— EQUIPO: escalación de privilegios bloqueada —");
+await prueba("un empleado NO da de alta a nadie", assertFails(
+  setDoc(doc(dbEmpleado, "operadores", "uid-complice"), {
+    nombre: "Complice", nivel: "operador", activo: true,
+  })
+));
+await prueba("un empleado NO se asciende a dueño", assertFails(
+  updateDoc(doc(dbEmpleado, "operadores", EMPLEADO), { nivel: "dueno" })
+));
+await prueba("un empleado NO se reactiva solo", assertFails(
+  updateDoc(doc(dbEmpleado, "operadores", EMPLEADO), { activo: true })
+));
+await prueba("el dueño NO se edita a sí mismo (evita quedar sin dueño)", assertFails(
+  updateDoc(doc(dbOperador, "operadores", OPERADOR), { nivel: "operador" })
+));
+await prueba("el dueño NO se borra a sí mismo", assertFails(
+  deleteDoc(doc(dbOperador, "operadores", OPERADOR))
+));
+await prueba("nivel inventado rechazado", assertFails(
+  setDoc(doc(dbOperador, "operadores", "uid-x"), {
+    nombre: "X", nivel: "superadmin", activo: true,
+  })
+));
+await prueba("nadie se asciende a operador", assertFails(
+  setDoc(doc(dbIntruso, "operadores", INTRUSO), {
+    nombre: "Hacker", nivel: "dueno", activo: true,
+  })
+));
+await prueba("el dueño de un comercio NO se hace operador", assertFails(
+  setDoc(doc(dbDueno, "operadores", DUENO), {
+    nombre: "Yo mismo", nivel: "dueno", activo: true,
+  })
 ));
 await prueba("intruso NO lista comercios", assertFails(
   getDocs(collection(dbIntruso, "comercios"))

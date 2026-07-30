@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { salir } from "@/lib/sesion";
 import type { User } from "firebase/auth";
 
@@ -9,6 +10,8 @@ import type { User } from "firebase/auth";
  * y se le ofrece la salida, sin filtrar nada del negocio.
  */
 export function SinAcceso({ usuario }: { usuario: User | null }) {
+  const [copiado, setCopiado] = useState(false);
+
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm text-center">
@@ -25,8 +28,25 @@ export function SinAcceso({ usuario }: { usuario: User | null }) {
           <div className="mt-6 rounded-xl bg-white p-4 text-left text-sm">
             <p className="text-texto-tenue">Entraste como</p>
             <p className="font-bold">{usuario.email ?? usuario.uid}</p>
-            <p className="mt-3 text-texto-tenue">Tu UID</p>
-            <code className="block break-all text-xs">{usuario.uid}</code>
+
+            <p className="mt-4 text-texto-tenue">
+              Si eres del equipo, pásale este código a quien te dio el acceso:
+            </p>
+            <code className="mt-1 block break-all rounded-lg bg-humo p-2 font-mono text-xs">
+              {usuario.uid}
+            </code>
+            <button
+              type="button"
+              onClick={() => {
+                void navigator.clipboard.writeText(usuario.uid).then(() => {
+                  setCopiado(true);
+                  window.setTimeout(() => setCopiado(false), 2000);
+                });
+              }}
+              className="mt-2 text-xs font-bold text-naranja underline underline-offset-4"
+            >
+              {copiado ? "¡Copiado!" : "Copiar código"}
+            </button>
           </div>
         )}
 

@@ -95,17 +95,38 @@ no podrá guardar nada.
 
 ## PASO PENDIENTE MANUAL 2: crearte como operador
 
-Los documentos de `operadores/` **no los puede escribir ningún cliente** — esa es
-justamente la garantía de que nadie se auto-asciende. Se crean a mano:
+El **primer** dueño se crea a mano. De ahí en adelante, él da de alta al resto
+desde el panel (Equipo).
 
 1. Consola Firebase → **Authentication → Users** → copia tu **UID**.
+   (Si aún no apareces, entra una vez al panel: la pantalla "sin acceso" te
+   muestra el UID con un botón para copiarlo.)
 2. Firestore Database → **Iniciar colección** → id `operadores`.
-3. Id del documento = tu UID. Un campo: `nombre` (texto).
+3. Id del documento = **tu UID exacto**, no "ID automático", no tu correo.
 
-Sin esto, el panel te va a rechazar aunque inicies sesión bien.
+Con estos tres campos:
 
-Para dar de baja a alguien del equipo, borra su documento: el acceso se corta al
-instante, sin tocar reglas ni republicar nada.
+| Campo | Tipo | Valor |
+|---|---|---|
+| `nombre` | string | tu nombre |
+| `nivel` | string | `dueno` |
+| `activo` | boolean | `true` |
+
+⚠️ **`nivel` tiene que decir `dueno`.** Sin ese campo entras al panel pero no
+puedes administrar el equipo: las reglas tratan como operador raso a cualquier
+documento sin `nivel`.
+
+### Cómo se administra el equipo después
+
+- Solo un `nivel: dueno` puede crear, editar o eliminar operadores.
+- **Nadie se edita ni se borra a sí mismo**, ni siquiera un dueño. Es para que
+  el último dueño no se degrade por error y deje el negocio sin quien administre
+  el acceso. Si pasa, se arregla desde esta consola.
+- Baja suave con `activo: false`: pierde el acceso al instante pero su nombre
+  sigue apareciendo en los cobros que registró.
+- Para dar de alta a alguien necesitas su UID. Que entre al panel y te lo dicte
+  desde la pantalla "sin acceso" — buscar usuarios por correo exigiría el Admin
+  SDK en un servidor, o sea plan Blaze.
 
 ## PASO PENDIENTE MANUAL 3: activar App Check
 

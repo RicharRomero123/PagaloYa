@@ -7,7 +7,7 @@ import { hayConfiguracion } from "@/lib/firebase";
 import { useSesion } from "@/lib/sesion";
 
 export default function Pagina() {
-  const { estado, usuario, nombreOperador } = useSesion();
+  const { estado, usuario, nombreOperador, soyDueno } = useSesion();
 
   if (!hayConfiguracion) return <FaltaConfiguracion />;
 
@@ -27,6 +27,7 @@ export default function Pagina() {
         <ListaComercios
           nombreOperador={nombreOperador}
           operadorUid={usuario?.uid ?? ""}
+          soyDueno={soyDueno}
         />
       );
   }

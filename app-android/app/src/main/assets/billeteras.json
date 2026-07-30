@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "_nota": "Mismo esquema que usará Firebase Remote Config. Grupo 1 = nombre del pagador, grupo 2 = monto. Los textos reales de cada billetera se afinan con el modo aprendizaje.",
+  "billeteras": [
+    {
+      "id": "yape",
+      "nombre": "Yape",
+      "paquetes": ["com.bcp.innovacxion.yapeapp"],
+      "patrones": [
+        "(?i)(.+?)\\s+te\\s+yape[oó]\\s+S\\/\\.?\\s*([0-9]+(?:[.,][0-9]{1,2})?)",
+        "(?i)recibiste\\s+un\\s+pago\\s+de\\s+(.+?)\\s+por\\s+S\\/\\.?\\s*([0-9]+(?:[.,][0-9]{1,2})?)",
+        "(?i)(.+?)\\s+te\\s+envi[oó]\\s+un\\s+pago\\s+por\\s+S\\/\\.?\\s*([0-9]+(?:[.,][0-9]{1,2})?)",
+        "(?i)¡?te\\s+yapearon!?\\s*(.+?)\\s+te\\s+envi[oó]\\s+S\\/\\.?\\s*([0-9]+(?:[.,][0-9]{1,2})?)"
+      ],
+      "vozPlantilla": "¡Pago Ya! {nombre} te yapeó {monto}"
+    },
+    {
+      "id": "plin-interbank",
+      "nombre": "Plin",
+      "paquetes": ["pe.com.interbank.mobilebanking"],
+      "patrones": [
+        "(?i)(.+?)\\s+te\\s+pline[oó]\\s+S\\/\\.?\\s*([0-9]+(?:[.,][0-9]{1,2})?)",
+        "(?i)recibiste\\s+un\\s+plin\\s+de\\s+(.+?)\\s+por\\s+S\\/\\.?\\s*([0-9]+(?:[.,][0-9]{1,2})?)"
+      ],
+      "vozPlantilla": "¡Pago Ya! Pago Plin de {monto} de {nombre}"
+    }
+  ]
+}

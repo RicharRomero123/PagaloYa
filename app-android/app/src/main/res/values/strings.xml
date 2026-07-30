@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PagoYa</string>
+    <string name="eslogan">Tu caja habla. Tus pagos suenan.</string>
+    <string name="notif_servicio_titulo">PagoYa está escuchando tus pagos 🔊</string>
+    <string name="notif_servicio_texto">Si no suena, no te pagaron.</string>
+    <string name="canal_servicio">Servicio PagoYa</string>
+</resources>

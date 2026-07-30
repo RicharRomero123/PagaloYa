@@ -48,7 +48,7 @@ class EscuchaNotificaciones : NotificationListenerService() {
         val pago = BilleteraParser.parsear(paquete, textoCompleto, timestamp)
         if (pago != null) {
             RegistroPagos.agregar(applicationContext, pago)
-            Anunciador.anunciar(applicationContext, BilleteraParser.fraseDeVoz(pago))
+            Anunciador.anunciarPago(applicationContext, pago)
             // Y a la nube: para que suene en los teléfonos de los trabajadores
             ComercioRepo.subirPago(pago)
         } else {

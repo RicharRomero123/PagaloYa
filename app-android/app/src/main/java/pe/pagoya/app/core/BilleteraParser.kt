@@ -18,8 +18,14 @@ object BilleteraParser {
         val nombre: String,
         val paquetes: List<String>,
         val patrones: List<Pattern>,
+        /** Con el nombre del pagador. Solo se usa si el comercio lo activó. */
         val vozPlantilla: String,
+        /** Sin nombre: la de por defecto. Ver PreferenciasVoz.decirNombre. */
+        val vozPlantillaSinNombre: String,
     )
+
+    /** Respaldo si una billetera nueva no trae plantilla sin nombre. */
+    private const val SIN_NOMBRE_DEFECTO = "¡Pago Ya! Entraron {monto}"
 
     private var billeteras: List<Billetera> = emptyList()
 
@@ -45,6 +51,8 @@ object BilleteraParser {
                     }
                 },
                 vozPlantilla = o.getString("vozPlantilla"),
+                vozPlantillaSinNombre = o.optString("vozPlantillaSinNombre")
+                    .ifBlank { SIN_NOMBRE_DEFECTO },
             )
         }
     }
@@ -76,13 +84,27 @@ object BilleteraParser {
         return null
     }
 
-    /** Frase que dirá el parlante: "¡Pago Ya! Juan te yapeó 25 soles con 50" */
-    fun fraseDeVoz(pago: Pago): String {
-        val plantilla = billeteras.find { it.id == pago.billeteraId }?.vozPlantilla
-            ?: "¡Pago Ya! {nombre} te pagó {monto}"
+    /**
+     * Frase que dirá el parlante.
+     *  - sin nombre (por defecto): "¡Pago Ya! Te yapearon 25 soles con 50"
+     *  - con nombre (si el comercio lo activó): "…Juan te yapeó 25 soles con 50"
+     *
+     * Las plantillas viven en Remote Config, así que en el camino sin nombre se
+     * borra cualquier `{nombre}` que se haya colado: una plantilla mal escrita
+     * en la consola no puede terminar gritando el dato personal de un cliente.
+     */
+    fun fraseDeVoz(pago: Pago, conNombre: Boolean): String {
+        val billetera = billeteras.find { it.id == pago.billeteraId }
+        val plantilla = if (conNombre) {
+            billetera?.vozPlantilla ?: "¡Pago Ya! {nombre} te pagó {monto}"
+        } else {
+            billetera?.vozPlantillaSinNombre ?: SIN_NOMBRE_DEFECTO
+        }
         return plantilla
-            .replace("{nombre}", pago.pagador)
+            .replace("{nombre}", if (conNombre) pago.pagador else "")
             .replace("{monto}", montoHablado(pago.monto))
+            .replace(Regex("\\s{2,}"), " ")
+            .trim()
     }
 
     /** 25.0 → "25 soles" · 25.5 → "25 soles con 50" · 1.0 → "1 sol" */

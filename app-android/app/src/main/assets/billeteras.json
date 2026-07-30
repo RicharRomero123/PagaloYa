@@ -1,6 +1,7 @@
 {
-  "version": 1,
-  "_nota": "Mismo esquema que usará Firebase Remote Config. Grupo 1 = nombre del pagador, grupo 2 = monto. Los textos reales de cada billetera se afinan con el modo aprendizaje.",
+  "version": 2,
+  "_nota": "Mismo esquema que usa Firebase Remote Config (parámetro billeteras_json). Grupo 1 = nombre del pagador, grupo 2 = monto. Los textos reales de cada billetera se afinan con el modo aprendizaje.",
+  "_nota_voz": "vozPlantillaSinNombre es la que se usa POR DEFECTO: no dice el nombre del pagador (dato personal gritado en público, Ley 29733). vozPlantilla solo se usa si el comercio activa 'Decir el nombre' en Más > La voz de tu caja.",
   "billeteras": [
     {
       "id": "yape",
@@ -12,6 +13,7 @@
         "(?i)(.+?)\\s+te\\s+envi[oó]\\s+un\\s+pago\\s+por\\s+S\\/\\.?\\s*([0-9]+(?:[.,][0-9]{1,2})?)",
         "(?i)¡?te\\s+yapearon!?\\s*(.+?)\\s+te\\s+envi[oó]\\s+S\\/\\.?\\s*([0-9]+(?:[.,][0-9]{1,2})?)"
       ],
+      "vozPlantillaSinNombre": "¡Pago Ya! Te yapearon {monto}",
       "vozPlantilla": "¡Pago Ya! {nombre} te yapeó {monto}"
     },
     {
@@ -22,6 +24,7 @@
         "(?i)(.+?)\\s+te\\s+pline[oó]\\s+S\\/\\.?\\s*([0-9]+(?:[.,][0-9]{1,2})?)",
         "(?i)recibiste\\s+un\\s+plin\\s+de\\s+(.+?)\\s+por\\s+S\\/\\.?\\s*([0-9]+(?:[.,][0-9]{1,2})?)"
       ],
+      "vozPlantillaSinNombre": "¡Pago Ya! Pago Plin de {monto}",
       "vozPlantilla": "¡Pago Ya! Pago Plin de {monto} de {nombre}"
     }
   ]

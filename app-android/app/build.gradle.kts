@@ -46,8 +46,13 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    // Nunito por Google Fonts (BRAND.md: redondeada y gruesa). Si el teléfono
+    // no la puede descargar, Compose cae solo a la fuente del sistema.
+    implementation("androidx.compose.ui:ui-text-google-fonts")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // Firebase
@@ -56,6 +61,12 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-config")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+
+    // Anti-fake de raíz: App Check certifica que quien escribe en Firestore es
+    // el APK real de PagoYa. En debug se usa el proveedor de depuración
+    // (ver src/debug y src/release de nube/AppCheckPagoYa.kt).
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
+    debugImplementation("com.google.firebase:firebase-appcheck-debug")
 
     // Login con Google (Credential Manager)
     implementation("androidx.credentials:credentials:1.3.0")

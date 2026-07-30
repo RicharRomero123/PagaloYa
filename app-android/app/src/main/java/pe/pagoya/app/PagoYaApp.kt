@@ -6,11 +6,15 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.BilleteraParser
 import pe.pagoya.app.core.RegistroPagos
+import pe.pagoya.app.nube.AppCheckPagoYa
 
 class PagoYaApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // 0. App Check antes de cualquier uso de Firestore: certifica que quien
+        //    escribe pagos es el APK real de PagoYa y no un clon modificado.
+        runCatching { AppCheckPagoYa.instalar() }
         // 1. Patrones locales (assets) — siempre disponibles aunque no haya internet
         BilleteraParser.cargar(this)
         RegistroPagos.cargar(this)

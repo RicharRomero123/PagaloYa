@@ -1,8 +1,11 @@
 rules_version = '2';
 
 // Reglas de seguridad PagoYa
-// Principio: cada usuario solo ve SU comercio. Los pagos solo los crean
-// miembros del comercio (y en el futuro, solo vía App Check + Functions).
+// Principio: cada usuario solo ve SU comercio, y un pago solo puede nacer de un
+// teléfono habilitado para capturar. El servidor no confía en el cliente:
+//  - la hora del pago la pone el servidor (recibidoEn), no el teléfono
+//  - el id del documento debe cuadrar con el contenido (nada de spamear copias)
+//  - los pagos son inmutables
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -14,18 +17,68 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/comercios/$(comercioId)/miembros/$(request.auth.uid));
     }
 
+    function miembro(comercioId) {
+      return get(/databases/$(database)/documents/comercios/$(comercioId)/miembros/$(request.auth.uid)).data;
+    }
+
+    function esDueno(comercioId) {
+      return get(/databases/$(database)/documents/comercios/$(comercioId)).data.duenoUid == request.auth.uid;
+    }
+
+    // ¿Este teléfono puede crear pagos? Solo el que tiene el Yape del negocio.
+    // Compatibilidad: los miembros creados antes de que existiera el campo se
+    // resuelven por rol (el dueño captura, el trabajador solo escucha).
+    function puedeCapturar(comercioId) {
+      return esMiembro(comercioId)
+        && miembro(comercioId).get('puedeCapturar', miembro(comercioId).rol == 'dueno') == true;
+    }
+
+    // Un pago solo es válido si:
+    //  - trae exactamente los campos esperados
+    //  - lo firma quien lo escribe
+    //  - el monto es plausible
+    //  - la hora la pone el SERVIDOR (recibidoEn == request.time); el timestamp
+    //    del teléfono queda como dato informativo, acotado para que nadie
+    //    fabrique ventas en el futuro ni las entierre en el pasado
+    //  - el id del documento cuadra con el contenido → la misma notificación
+    //    siempre produce el mismo id (idempotente) y no se puede duplicar
+    function pagoValido(pagoId) {
+      let d = request.resource.data;
+      let campos = ['billeteraId', 'billeteraNombre', 'pagador', 'monto',
+                    'timestamp', 'origenUid', 'recibidoEn'];
+      return d.keys().hasAll(campos)
+        && d.keys().hasOnly(campos)
+        && d.origenUid == request.auth.uid
+        && d.billeteraId is string && d.billeteraId.size() <= 40
+        && d.billeteraNombre is string && d.billeteraNombre.size() <= 40
+        && d.pagador is string && d.pagador.size() <= 40
+        && d.monto is number && d.monto > 0 && d.monto <= 20000
+        && d.timestamp is int
+        && d.timestamp <= request.time.toMillis() + 300000        // nada del futuro (+5 min de holgura)
+        && d.timestamp >= request.time.toMillis() - 604800000     // ni más viejo que 7 días
+        && d.recibidoEn == request.time
+        && pagoId == request.auth.uid + '-' + string(d.timestamp) + '-'
+                     + string(math.round(d.monto * 100));
+    }
+
     // Perfil propio: a qué comercio pertenezco
     match /usuarios/{uid} {
-      allow read, write: if autenticado() && request.auth.uid == uid;
+      allow read: if autenticado() && request.auth.uid == uid;
+      allow write: if autenticado() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['comercioId']);
     }
 
     // Códigos de vinculación: solo lectura puntual (get) con el código exacto.
-    // Nunca listables (list) para que nadie pesque códigos ajenos.
+    // Nunca listables (list) para que nadie pesque códigos ajenos, y solo el
+    // dueño puede crear un código que apunte a su comercio.
     match /codigos/{codigo} {
       allow get: if autenticado();
       allow list: if false;
       allow create: if autenticado()
-        && request.resource.data.keys().hasOnly(['comercioId']);
+        && request.resource.data.keys().hasOnly(['comercioId'])
+        && get(/databases/$(database)/documents/comercios/$(request.resource.data.comercioId))
+             .data.duenoUid == request.auth.uid;
+      allow update, delete: if false;
     }
 
     match /comercios/{comercioId} {
@@ -33,7 +86,11 @@ service cloud.firestore {
       allow list: if false;
       allow create: if autenticado()
         && request.resource.data.duenoUid == request.auth.uid;
-      allow update, delete: if autenticado()
+      // El dueño puede renombrar su comercio, pero no regalarlo ni heredarlo
+      allow update: if autenticado()
+        && resource.data.duenoUid == request.auth.uid
+        && request.resource.data.duenoUid == resource.data.duenoUid;
+      allow delete: if autenticado()
         && resource.data.duenoUid == request.auth.uid;
 
       match /miembros/{uid} {
@@ -41,25 +98,36 @@ service cloud.firestore {
         // Uno solo puede inscribirse a sí mismo. Como "dueno" solo si el
         // comercio (tras esta misma operación) lo tiene como duenoUid —
         // getAfter permite validar el lote comercio+miembro que crea la app.
+        // Un trabajador NUNCA puede auto-habilitarse la captura de pagos.
         allow create: if autenticado()
           && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['rol', 'nombre', 'puedeCapturar'])
+          && request.resource.data.nombre is string
           && (
-            request.resource.data.rol == 'trabajador'
+            (request.resource.data.rol == 'trabajador'
+              && request.resource.data.get('puedeCapturar', false) == false)
             || (request.resource.data.rol == 'dueno'
                 && getAfter(/databases/$(database)/documents/comercios/$(comercioId)).data.duenoUid == request.auth.uid)
           );
+        // Solo el dueño habilita/deshabilita la captura de un miembro
+        // (caso real: un segundo teléfono con otro Yape del negocio).
+        allow update: if autenticado()
+          && esDueno(comercioId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puedeCapturar'])
+          && request.resource.data.puedeCapturar is bool;
         // Salir del comercio (uno mismo) o el dueño saca a alguien
         allow delete: if autenticado()
-          && (request.auth.uid == uid
-              || get(/databases/$(database)/documents/comercios/$(comercioId)).data.duenoUid == request.auth.uid);
+          && (request.auth.uid == uid || esDueno(comercioId));
       }
 
       match /pagos/{pagoId} {
         allow read: if autenticado() && esMiembro(comercioId);
-        // Solo miembros crean pagos, y el origen debe ser el propio uid
+        // Regla de oro anti-fake: solo un teléfono habilitado para capturar
+        // crea pagos, y el contenido tiene que ser coherente y sellado por el
+        // servidor. Un trabajador con el APK modificado no puede inventar nada.
         allow create: if autenticado()
-          && esMiembro(comercioId)
-          && request.resource.data.origenUid == request.auth.uid;
+          && puedeCapturar(comercioId)
+          && pagoValido(pagoId);
         // Los pagos no se editan ni se borran: son el registro anti-fake
         allow update, delete: if false;
       }

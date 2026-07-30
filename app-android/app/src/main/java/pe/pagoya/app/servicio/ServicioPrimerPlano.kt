@@ -21,7 +21,6 @@ import pe.pagoya.app.core.Guardian
 import pe.pagoya.app.MainActivity
 import pe.pagoya.app.R
 import pe.pagoya.app.core.Anunciador
-import pe.pagoya.app.core.BilleteraParser
 import pe.pagoya.app.core.RegistroPagos
 import pe.pagoya.app.nube.ComercioRepo
 import pe.pagoya.app.nube.Sesion
@@ -70,7 +69,7 @@ class ServicioPrimerPlano : Service() {
                 ComercioRepo.cargar() ?: return@launch
                 oidoNube = ComercioRepo.escucharPagos { pago ->
                     RegistroPagos.agregar(applicationContext, pago)
-                    Anunciador.anunciar(applicationContext, BilleteraParser.fraseDeVoz(pago))
+                    Anunciador.anunciarPago(applicationContext, pago)
                 }
             }
         }

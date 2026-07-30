@@ -30,10 +30,20 @@ con confianza, sin tecnicismos.
 
 ## Voz del parlante (la marca sonora)
 
-- Anuncio: **"¡PagoYa! Juan te yapeó 25 soles."** / "¡PagoYa! Pago Plin de 20 soles."
+- Anuncio: **"¡PagoYaaa! Te yapearon 25 soles."**
+- **El nombre del pagador NO se dice** por defecto: gritar el nombre de un
+  cliente en un mercado lo expone delante de desconocidos (Ley 29733). El
+  comerciante puede activarlo si quiere; viene apagado. El nombre siempre se ve
+  en pantalla.
 - Voz femenina peruana, alegre, clara, volumen fuerte (ambiente de mercado).
-- El "¡PagoYa!" inicial es el sello sonoro: que todo el mercado lo reconozca — cada
-  anuncio es publicidad para los puestos vecinos.
+- El **"¡PagoYaaa!"** inicial es el sello sonoro y es el activo de marca más
+  valioso del producto: cada anuncio de cada puesto es publicidad gratis para
+  los vecinos. Va grabado, nunca sintetizado.
+- ⚠️ No puede parecerse al "¡Yapeee!" en melodía, cadencia ni timbre. Tiene que
+  ser una identidad propia, distinta a propósito.
+- Se puede registrar en Indecopi como **marca sonora**, junto al trámite de las
+  clases 9 y 36.
+- Especificación técnica y cómo producirlo: `app-android/VOZ.md`.
 
 ## Identidad visual
 

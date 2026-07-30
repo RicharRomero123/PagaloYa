@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Fondo crema desde el primer frame para que no haya flash blanco al abrir.
+         Iconos oscuros en la barra de estado porque el fondo es claro. -->
     <style name="Theme.PagoYa" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:statusBarColor">@color/azul_noche</item>
+        <item name="android:statusBarColor">@color/crema</item>
+        <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowBackground">@color/crema</item>
     </style>
 </resources>

@@ -17,6 +17,50 @@ cómo llegar a calidad de soundbox.
 4. Probar sin Yape: en **Más → Probar la voz**.
 5. Probar con Yape real: yapearte desde otra cuenta 0.10 céntimos y escuchar.
 
+## Compilar
+
+Requiere **JDK 17** (el que trae Android Studio sirve). Desde `app-android/`:
+
+```powershell
+.\gradlew.bat assembleDebug     # app\build\outputs\apk\debug\app-debug.apk
+adb install -r app\build\outputs\apk\debug\app-debug.apk
+```
+
+Para probar en tu teléfono usa siempre **debug**: trae el proveedor de
+depuración de App Check y no necesita firma.
+
+### APK de release (firmado)
+
+1. Crear el almacén de claves una sola vez, dentro de `app-android/`:
+
+```powershell
+keytool -genkeypair -v -keystore pagoya-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias pagoya
+```
+
+2. Crear `app-android/keystore.properties` (ya está en .gitignore):
+
+```properties
+storeFile=pagoya-release.jks
+storePassword=TU_CLAVE
+keyAlias=pagoya
+keyPassword=TU_CLAVE
+```
+
+3. Construir:
+
+```powershell
+.\gradlew.bat assembleRelease   # app\build\outputs\apk\release\app-release.apk
+.\gradlew.bat bundleRelease     # .aab para Play Store
+```
+
+Sin `keystore.properties` el release se firma con la clave de depuración: se
+instala igual en un teléfono de prueba, pero **Play lo rechaza**. Para publicar
+hace falta el keystore propio.
+
+⚠️ **Guarda el `.jks` y sus claves en un lugar seguro.** Si los pierdes, no
+puedes volver a publicar actualizaciones de PagoYa en Play con la misma
+identidad de app. Nunca los subas al repositorio.
+
 ## Afinar los patrones con notificaciones reales
 
 Los textos exactos de las notificaciones de Yape varían por versión. Si un yapeo

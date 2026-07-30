@@ -1,9 +1,22 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.gms.google-services")
 }
+
+/**
+ * Datos de firma del APK de release. Viven en `app-android/keystore.properties`,
+ * que NO va al repositorio (ver .gitignore). Si el archivo no existe, el proyecto
+ * compila igual y `assembleRelease` genera un APK sin firmar.
+ */
+val propsFirma = Properties().apply {
+    val archivo = rootProject.file("keystore.properties")
+    if (archivo.exists()) archivo.inputStream().use { load(it) }
+}
+val hayFirma = propsFirma.getProperty("storeFile") != null
 
 android {
     namespace = "pe.pagoya.app"
@@ -18,8 +31,27 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        if (hayFirma) {
+            create("release") {
+                storeFile = rootProject.file(propsFirma.getProperty("storeFile"))
+                storePassword = propsFirma.getProperty("storePassword")
+                keyAlias = propsFirma.getProperty("keyAlias")
+                keyPassword = propsFirma.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // Sin keystore.properties se firma con la clave de depuración, para
+            // poder instalar el release en un teléfono de prueba sin trámite.
+            // No es un riesgo para producción: Play rechaza cualquier subida
+            // firmada con la clave de debug.
+            signingConfig = if (hayFirma) signingConfigs.getByName("release")
+            else signingConfigs.getByName("debug")
+            // R8 apagado a propósito por ahora: Firebase y el parser usan
+            // reflexión y ofuscar sin probarlo a fondo rompe cosas en silencio.
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -50,9 +82,6 @@ dependencies {
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    // Nunito por Google Fonts (BRAND.md: redondeada y gruesa). Si el teléfono
-    // no la puede descargar, Compose cae solo a la fuente del sistema.
-    implementation("androidx.compose.ui:ui-text-google-fonts")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // Firebase

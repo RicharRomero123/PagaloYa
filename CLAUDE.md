@@ -8,6 +8,7 @@ a distancia. Anti "Yape falso": si no suena, no te pagaron.
 - `PLAN.md` — negocio, competencia, precios, presupuesto, riesgos
 - `BRAND.md` — nombre, tono criollo, colores, voz del parlante, planes
 - `ROADMAP.md` — fases, mapa del sistema, checklist de tareas
+- `REDES.md` — plan de redes, contenido, prompts de flyers, crecimiento orgánico
 
 ## Estructura
 - `app-android/` — app Kotlin nativa (captura + escucha) → agente `app-android`

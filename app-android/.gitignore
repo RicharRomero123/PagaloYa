@@ -9,3 +9,9 @@ captures/
 .cxx/
 *.apk
 *.aab
+
+# Firma del APK: NUNCA al repositorio. Si pierdes el .jks no puedes volver a
+# publicar actualizaciones de la app en Play con la misma identidad.
+keystore.properties
+*.jks
+*.keystore

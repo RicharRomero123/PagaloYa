@@ -4,35 +4,32 @@ import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.Font
-import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.unit.sp
-import pe.pagoya.app.R
 
 /**
- * Tipografía PagoYa: redondeada y gruesa (BRAND.md), pensada para leerse de
- * lejos en un puesto de mercado y en pantallas baratas.
+ * Tipografía PagoYa: pensada para leerse de lejos en un puesto de mercado y en
+ * pantallas baratas. Lo que hace el trabajo pesado es la ESCALA (montos
+ * enormes, nada por debajo de 12 sp) y los pesos gruesos.
  *
- * Nunito se descarga por Google Fonts; si el teléfono no puede (sin Play
- * Services, sin datos), Compose cae solo a la fuente del sistema y la app se ve
- * bien igual. Para dejarla fija en el APK: poner Nunito en res/font/ y cambiar
- * FuentePagoYa por FontFamily(Font(R.font.nunito_bold, FontWeight.Bold), ...).
+ * Hoy usa la fuente del sistema. BRAND.md pide una redondeada y gruesa (Nunito
+ * o Baloo); para ponerla, la ruta segura es empaquetarla en el APK:
+ *
+ *   1. Descargar Nunito de fonts.google.com
+ *   2. Copiar a app/src/main/res/font/ con nombres válidos:
+ *        nunito_regular.ttf · nunito_bold.ttf · nunito_black.ttf
+ *   3. Reemplazar la línea de abajo por:
+ *
+ *        val FuentePagoYa = FontFamily(
+ *            Font(R.font.nunito_regular, FontWeight.Normal),
+ *            Font(R.font.nunito_bold, FontWeight.Bold),
+ *            Font(R.font.nunito_black, FontWeight.Black),
+ *        )
+ *
+ * (Se descartó la descarga por Google Fonts: con android.nonTransitiveRClass=true
+ * el array de certificados de la librería no resuelve desde el R de la app, y
+ * además dependería de Play Services y de tener datos la primera vez.)
  */
-private val proveedorGoogleFonts = GoogleFont.Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs,
-)
-
-private val nunito = GoogleFont("Nunito")
-
-val FuentePagoYa = FontFamily(
-    Font(googleFont = nunito, fontProvider = proveedorGoogleFonts, weight = FontWeight.Normal),
-    Font(googleFont = nunito, fontProvider = proveedorGoogleFonts, weight = FontWeight.Medium),
-    Font(googleFont = nunito, fontProvider = proveedorGoogleFonts, weight = FontWeight.SemiBold),
-    Font(googleFont = nunito, fontProvider = proveedorGoogleFonts, weight = FontWeight.Bold),
-    Font(googleFont = nunito, fontProvider = proveedorGoogleFonts, weight = FontWeight.Black),
-)
+val FuentePagoYa = FontFamily.Default
 
 val TipografiaPagoYa = Typography(
     // El monto del día: lo más grande de la app, se lee desde la vereda

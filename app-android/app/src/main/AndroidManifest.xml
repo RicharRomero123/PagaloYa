@@ -9,6 +9,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
+    <!-- Visibilidad de las billeteras vigiladas (Android 11+) para el Guardián -->
+    <queries>
+        <package android:name="com.bcp.innovacxion.yapeapp" />
+        <package android:name="pe.com.interbank.mobilebanking" />
+    </queries>
+
     <application
         android:name=".PagoYaApp"
         android:allowBackup="true"

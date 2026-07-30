@@ -14,7 +14,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import pe.pagoya.app.core.Guardian
 import pe.pagoya.app.MainActivity
 import pe.pagoya.app.R
 import pe.pagoya.app.core.Anunciador
@@ -32,8 +35,11 @@ class ServicioPrimerPlano : Service() {
     private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var oidoNube: ListenerRegistration? = null
 
+    private var guardianActivo = false
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         conectarOidoNube()
+        vigilarYape()
         crearCanal()
         val abrirApp = PendingIntent.getActivity(
             this, 0,
@@ -66,6 +72,18 @@ class ServicioPrimerPlano : Service() {
                     RegistroPagos.agregar(applicationContext, pago)
                     Anunciador.anunciar(applicationContext, BilleteraParser.fraseDeVoz(pago))
                 }
+            }
+        }
+    }
+
+    /** Guardián de Yape: cada 30 min verifica que Yape no esté detenida. */
+    private fun vigilarYape() {
+        if (guardianActivo) return
+        guardianActivo = true
+        alcance.launch {
+            while (isActive) {
+                Guardian.alertaSiDetenida(applicationContext)
+                delay(30 * 60 * 1000L)
             }
         }
     }

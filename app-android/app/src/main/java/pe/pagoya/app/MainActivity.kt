@@ -54,6 +54,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.LaunchedEffect
 import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.BilleteraParser
+import pe.pagoya.app.core.Guardian
 import pe.pagoya.app.core.RegistroPagos
 import pe.pagoya.app.nube.ComercioRepo
 import pe.pagoya.app.nube.Sesion
@@ -124,6 +125,7 @@ fun PantallaPrincipal(alSalir: () -> Unit) {
     var accesoNotificaciones by remember { mutableStateOf(tieneAccesoNotificaciones(contexto)) }
     var bateriaSinRestriccion by remember { mutableStateOf(bateriaLibre(contexto)) }
     var puedeNotificar by remember { mutableStateOf(permisoPostNotificaciones(contexto)) }
+    var estadoYape by remember { mutableStateOf(Guardian.estadoYape(contexto)) }
     var vozFuerte by remember { mutableStateOf(Anunciador.vozFuerte(contexto)) }
 
     // Reevaluar permisos cada vez que el usuario vuelve de Ajustes
@@ -134,6 +136,7 @@ fun PantallaPrincipal(alSalir: () -> Unit) {
                 accesoNotificaciones = tieneAccesoNotificaciones(contexto)
                 bateriaSinRestriccion = bateriaLibre(contexto)
                 puedeNotificar = permisoPostNotificaciones(contexto)
+                estadoYape = Guardian.estadoYape(contexto)
             }
         }
         ciclo.lifecycle.addObserver(observador)
@@ -179,6 +182,34 @@ fun PantallaPrincipal(alSalir: () -> Unit) {
             }
         } ?: Text("Tu caja habla. Tus pagos suenan.", color = AzulNoche, fontSize = 15.sp)
         Spacer(Modifier.height(16.dp))
+
+        if (estadoYape == Guardian.EstadoBilletera.DETENIDA) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp)
+            ) {
+                Column(Modifier.padding(14.dp)) {
+                    Text(
+                        "⚠️ ¡Tu Yape está apagado!",
+                        fontWeight = FontWeight.Black, color = Color(0xFFB00020)
+                    )
+                    Text(
+                        "Mientras esté así, tus ventas NO van a sonar. Ábrelo para revivirlo.",
+                        fontSize = 13.sp, color = AzulNoche
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            Guardian.abrirYape(contexto)
+                            estadoYape = Guardian.estadoYape(contexto)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB00020))
+                    ) { Text("Abrir Yape ahora") }
+                }
+            }
+        }
 
         val todoListo = accesoNotificaciones && bateriaSinRestriccion &&
             (Build.VERSION.SDK_INT < 33 || puedeNotificar)

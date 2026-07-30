@@ -1,0 +1,65 @@
+rules_version = '2';
+
+// Reglas de seguridad PagoYa
+// Principio: cada usuario solo ve SU comercio. Los pagos solo los crean
+// miembros del comercio (y en el futuro, solo vía App Check + Functions).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function esMiembro(comercioId) {
+      return exists(/databases/$(database)/documents/comercios/$(comercioId)/miembros/$(request.auth.uid));
+    }
+
+    // Perfil propio: a qué comercio pertenezco
+    match /usuarios/{uid} {
+      allow read, write: if autenticado() && request.auth.uid == uid;
+    }
+
+    // Códigos de vinculación: solo lectura puntual (get) con el código exacto.
+    // Nunca listables (list) para que nadie pesque códigos ajenos.
+    match /codigos/{codigo} {
+      allow get: if autenticado();
+      allow list: if false;
+      allow create: if autenticado()
+        && request.resource.data.keys().hasOnly(['comercioId']);
+    }
+
+    match /comercios/{comercioId} {
+      allow get: if autenticado() && esMiembro(comercioId);
+      allow list: if false;
+      allow create: if autenticado()
+        && request.resource.data.duenoUid == request.auth.uid;
+      allow update, delete: if autenticado()
+        && resource.data.duenoUid == request.auth.uid;
+
+      match /miembros/{uid} {
+        allow read: if autenticado() && esMiembro(comercioId);
+        // Uno solo puede inscribirse a sí mismo, y jamás como dueño
+        allow create: if autenticado()
+          && request.auth.uid == uid
+          && request.resource.data.rol != 'dueno'
+          || (autenticado() && request.auth.uid == uid
+              && request.resource.data.rol == 'dueno'
+              && get(/databases/$(database)/documents/comercios/$(comercioId)).data.duenoUid == request.auth.uid);
+        // Salir del comercio (uno mismo) o el dueño saca a alguien
+        allow delete: if autenticado()
+          && (request.auth.uid == uid
+              || get(/databases/$(database)/documents/comercios/$(comercioId)).data.duenoUid == request.auth.uid);
+      }
+
+      match /pagos/{pagoId} {
+        allow read: if autenticado() && esMiembro(comercioId);
+        // Solo miembros crean pagos, y el origen debe ser el propio uid
+        allow create: if autenticado()
+          && esMiembro(comercioId)
+          && request.resource.data.origenUid == request.auth.uid;
+        // Los pagos no se editan ni se borran: son el registro anti-fake
+        allow update, delete: if false;
+      }
+    }
+  }
+}

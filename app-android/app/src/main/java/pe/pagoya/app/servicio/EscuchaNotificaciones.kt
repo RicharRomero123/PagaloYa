@@ -7,6 +7,7 @@ import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.Aprendizaje
 import pe.pagoya.app.core.BilleteraParser
 import pe.pagoya.app.core.RegistroPagos
+import pe.pagoya.app.nube.ComercioRepo
 
 /**
  * El corazón de PagoYa. Recibe TODAS las notificaciones del teléfono y solo
@@ -48,6 +49,8 @@ class EscuchaNotificaciones : NotificationListenerService() {
         if (pago != null) {
             RegistroPagos.agregar(applicationContext, pago)
             Anunciador.anunciar(applicationContext, BilleteraParser.fraseDeVoz(pago))
+            // Y a la nube: para que suene en los teléfonos de los trabajadores
+            ComercioRepo.subirPago(pago)
         } else {
             // Notificación de billetera que no matcheó: alimenta el modo aprendizaje
             Aprendizaje.registrar(applicationContext, paquete, textoCompleto)

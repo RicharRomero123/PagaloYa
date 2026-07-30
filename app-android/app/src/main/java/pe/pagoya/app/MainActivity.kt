@@ -13,6 +13,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -50,10 +51,15 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.runtime.LaunchedEffect
 import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.BilleteraParser
 import pe.pagoya.app.core.RegistroPagos
+import pe.pagoya.app.nube.ComercioRepo
+import pe.pagoya.app.nube.Sesion
 import pe.pagoya.app.servicio.ServicioPrimerPlano
+import pe.pagoya.app.ui.PantallaComercio
+import pe.pagoya.app.ui.PantallaLogin
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -65,17 +71,53 @@ private val Crema = Color(0xFFFFF6EF)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { PantallaPrincipal() }
+        setContent { AppPagoYa(this) }
     }
 
     override fun onResume() {
         super.onResume()
-        ServicioPrimerPlano.arrancar(this)
+        if (Sesion.conectado()) ServicioPrimerPlano.arrancar(this)
+    }
+}
+
+private enum class Etapa { CARGANDO, LOGIN, COMERCIO, PRINCIPAL }
+
+@Composable
+fun AppPagoYa(activity: MainActivity) {
+    var etapa by remember { mutableStateOf(Etapa.CARGANDO) }
+
+    LaunchedEffect(Unit) {
+        etapa = when {
+            !Sesion.conectado() -> Etapa.LOGIN
+            ComercioRepo.cargar() == null -> Etapa.COMERCIO
+            else -> Etapa.PRINCIPAL
+        }
+    }
+
+    when (etapa) {
+        Etapa.CARGANDO -> {}
+        Etapa.LOGIN -> PantallaLogin(activity) {
+            etapa = Etapa.COMERCIO
+        }
+        Etapa.COMERCIO -> {
+            // Si al entrar ya tenía comercio, saltar directo
+            LaunchedEffect(Unit) {
+                if (ComercioRepo.cargar() != null) etapa = Etapa.PRINCIPAL
+            }
+            PantallaComercio {
+                ServicioPrimerPlano.arrancar(activity)
+                etapa = Etapa.PRINCIPAL
+            }
+        }
+        Etapa.PRINCIPAL -> PantallaPrincipal {
+            Sesion.salir()
+            etapa = Etapa.LOGIN
+        }
     }
 }
 
 @Composable
-fun PantallaPrincipal() {
+fun PantallaPrincipal(alSalir: () -> Unit) {
     val contexto = LocalContext.current
     val pagos by RegistroPagos.pagos.collectAsState()
 
@@ -108,8 +150,34 @@ fun PantallaPrincipal() {
             .background(Crema)
             .padding(16.dp)
     ) {
-        Text("PagoYa", color = Naranja, fontSize = 34.sp, fontWeight = FontWeight.Black)
-        Text("Tu caja habla. Tus pagos suenan.", color = AzulNoche, fontSize = 15.sp)
+        val comercio by ComercioRepo.comercio.collectAsState()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("PagoYa", color = Naranja, fontSize = 34.sp, fontWeight = FontWeight.Black)
+            Text(
+                "Salir",
+                color = AzulNoche.copy(alpha = 0.5f),
+                modifier = Modifier
+                    .clickable { alSalir() }
+                    .padding(4.dp),
+                fontSize = 13.sp,
+            )
+        }
+        comercio?.let { c ->
+            Text(c.nombre, color = AzulNoche, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            if (c.rol == "dueno" && c.codigo.isNotBlank()) {
+                Text(
+                    "Código para tu gente: ${c.codigo}",
+                    color = Naranja, fontSize = 14.sp, fontWeight = FontWeight.Bold
+                )
+            } else if (c.rol == "trabajador") {
+                Text("Modo escucha: anunciamos lo que capture el teléfono del dueño",
+                    color = AzulNoche.copy(alpha = 0.7f), fontSize = 12.sp)
+            }
+        } ?: Text("Tu caja habla. Tus pagos suenan.", color = AzulNoche, fontSize = 15.sp)
         Spacer(Modifier.height(16.dp))
 
         val todoListo = accesoNotificaciones && bateriaSinRestriccion &&

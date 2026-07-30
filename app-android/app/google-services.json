@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "74223891463",
+    "project_id": "pagoya-45018",
+    "storage_bucket": "pagoya-45018.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:74223891463:android:ca0ea99d03a5be27fce6a2",
+        "android_client_info": {
+          "package_name": "pe.pagoya.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "74223891463-c9vi788itnmih4sb48mobalrlnavs5ng.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "pe.pagoya.app",
+            "certificate_hash": "d78b6cbc250803db31021cb0d24416ab1370614d"
+          }
+        },
+        {
+          "client_id": "74223891463-u74aae3hejrf8gt65t0tf34r4p7u5tin.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvXkJ12pEyNsn-K3J1k-IAow5RQLpszv8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "74223891463-u74aae3hejrf8gt65t0tf34r4p7u5tin.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

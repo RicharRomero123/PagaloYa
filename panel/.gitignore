@@ -1,0 +1,9 @@
+node_modules/
+.next/
+out/
+next-env.d.ts
+
+# Configuración de Firebase para la web. No es secreta (viaja en el bundle),
+# pero cada quien apunta a su propio proyecto.
+.env.local
+.env*.local

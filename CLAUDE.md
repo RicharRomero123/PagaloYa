@@ -9,11 +9,12 @@ a distancia. Anti "Yape falso": si no suena, no te pagaron.
 - `BRAND.md` — nombre, tono criollo, colores, voz del parlante, planes
 - `ROADMAP.md` — fases, mapa del sistema, checklist de tareas
 - `REDES.md` — plan de redes, contenido, prompts de flyers, crecimiento orgánico
+- `PANEL.md` — panel de operador: roles, membresías, cobertura, resellers
 
 ## Estructura
 - `app-android/` — app Kotlin nativa (captura + escucha) → agente `app-android`
 - `backend/` — Firebase (Firestore, FCM, Functions, Remote Config) → agente `backend-firebase`
-- `panel/` — panel web del dueño, Next.js → agente `panel-web`
+- `panel/` — panel web del **operador** (tuyo, no del cliente) → agente `panel-web`
 - `landing/` — pagoya.pe → agente `landing-page`
 - `hardware/` — fase 2: soundbox OEM, homologación MTC, comodato
 

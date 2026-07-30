@@ -27,9 +27,17 @@ async function prueba(nombre, promesa) {
 const DUENO = "uid-dueno";
 const TRABAJADOR = "uid-trabajador";
 const INTRUSO = "uid-intruso";
+const OPERADOR = "uid-operador";
 const dbDueno = env.authenticatedContext(DUENO).firestore();
 const dbTrabajador = env.authenticatedContext(TRABAJADOR).firestore();
 const dbIntruso = env.authenticatedContext(INTRUSO).firestore();
+const dbOperador = env.authenticatedContext(OPERADOR).firestore();
+
+// Los operadores se crean a mano desde la consola de Firebase: ningún cliente
+// puede escribir en esa colección, así que aquí se siembra saltando las reglas.
+await env.withSecurityRulesDisabled(async (ctx) => {
+  await setDoc(doc(ctx.firestore(), "operadores", OPERADOR), { nombre: "Yo" });
+});
 
 const comercioId = "comercio-test-1";
 const codigo = "123456";
@@ -230,6 +238,105 @@ await prueba("nadie sobreescribe un pago con datos válidos", assertFails(
 ));
 await prueba("nadie borra un pago (inmutable)", assertFails(
   deleteDoc(doc(dbDueno, "comercios", comercioId, "pagos", `${DUENO}-${pagoReal}-2550`))
+));
+
+console.log("\n— PANEL: el OPERADOR ve todo —");
+await prueba("operador lee cualquier comercio", assertSucceeds(
+  getDoc(doc(dbOperador, "comercios", comercioId))
+));
+await prueba("operador lista todos los comercios", assertSucceeds(
+  getDocs(collection(dbOperador, "comercios"))
+));
+await prueba("operador lee los pagos (soporte y comercios mudos)", assertSucceeds(
+  getDocs(query(
+    collection(dbOperador, "comercios", comercioId, "pagos"),
+    orderBy("recibidoEn", "desc"),
+    limit(30),
+  ))
+));
+await prueba("operador lee los miembros", assertSucceeds(
+  getDocs(collection(dbOperador, "comercios", comercioId, "miembros"))
+));
+
+console.log("\n— PANEL: membresías —");
+const MES = 30 * 86_400_000;
+await prueba("operador activa el plan Caserito", assertSucceeds(
+  updateDoc(doc(dbOperador, "comercios", comercioId), {
+    suscripcion: {
+      plan: "caserito", estado: "activa", origen: "manual",
+      vigenteHasta: Date.now() + MES,
+    },
+  })
+));
+await prueba("operador registra el cobro", assertSucceeds(
+  setDoc(doc(dbOperador, "comercios", comercioId, "pagosMembresia", "cobro-1"), {
+    monto: 12.9, metodo: "yape",
+    periodoDesde: Date.now(), periodoHasta: Date.now() + MES,
+    cobradoPor: OPERADOR, creadoEn: serverTimestamp(),
+  })
+));
+await prueba("el dueño ve su propio recibo", assertSucceeds(
+  getDocs(collection(dbDueno, "comercios", comercioId, "pagosMembresia"))
+));
+await prueba("operador NO renombra el comercio (eso es del dueño)", assertFails(
+  updateDoc(doc(dbOperador, "comercios", comercioId), { nombre: "Otro nombre" })
+));
+await prueba("el dueño SÍ puede renombrar su comercio", assertSucceeds(
+  updateDoc(doc(dbDueno, "comercios", comercioId), { nombre: "Bodega Rosita" })
+));
+
+console.log("\n— PANEL: lo que el cliente NO puede hacer —");
+await prueba("el dueño NO se activa su propio plan", assertFails(
+  updateDoc(doc(dbDueno, "comercios", comercioId), {
+    suscripcion: {
+      plan: "patron", estado: "activa", origen: "manual",
+      vigenteHasta: Date.now() + 10 * MES,
+    },
+  })
+));
+await prueba("nadie nace con membresía puesta", assertFails(
+  setDoc(doc(dbIntruso, "comercios", "comercio-gratis"), {
+    nombre: "Vivo", duenoUid: INTRUSO, codigoVinculacion: "111111", creadoEn: 1,
+    suscripcion: {
+      plan: "patron", estado: "activa", origen: "manual",
+      vigenteHasta: Date.now() + 10 * MES,
+    },
+  })
+));
+await prueba("el dueño NO registra cobros de membresía", assertFails(
+  setDoc(doc(dbDueno, "comercios", comercioId, "pagosMembresia", "cobro-falso"), {
+    monto: 0.1, metodo: "yape",
+    periodoDesde: Date.now(), periodoHasta: Date.now() + 10 * MES,
+    cobradoPor: DUENO, creadoEn: serverTimestamp(),
+  })
+));
+await prueba("un cobro no se edita (es contabilidad)", assertFails(
+  updateDoc(doc(dbOperador, "comercios", comercioId, "pagosMembresia", "cobro-1"), {
+    monto: 999,
+  })
+));
+await prueba("un cobro no se borra", assertFails(
+  deleteDoc(doc(dbOperador, "comercios", comercioId, "pagosMembresia", "cobro-1"))
+));
+await prueba("plan inventado rechazado", assertFails(
+  updateDoc(doc(dbOperador, "comercios", comercioId), {
+    suscripcion: {
+      plan: "premium_vip", estado: "activa", origen: "manual",
+      vigenteHasta: Date.now() + MES,
+    },
+  })
+));
+await prueba("nadie se asciende a operador", assertFails(
+  setDoc(doc(dbIntruso, "operadores", INTRUSO), { nombre: "Hacker" })
+));
+await prueba("el dueño NO se asciende a operador", assertFails(
+  setDoc(doc(dbDueno, "operadores", DUENO), { nombre: "Yo mismo" })
+));
+await prueba("intruso NO lista comercios", assertFails(
+  getDocs(collection(dbIntruso, "comercios"))
+));
+await prueba("intruso NO lista operadores", assertFails(
+  getDocs(collection(dbIntruso, "operadores"))
 ));
 
 await env.cleanup();

@@ -25,6 +25,52 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/comercios/$(comercioId)).data.duenoUid == request.auth.uid;
     }
 
+    // Operador = tú y tu equipo interno (ver PANEL.md). Los documentos de
+    // operadores solo se crean desde la consola de Firebase: ningún cliente
+    // puede escribir en esa colección, así que nadie se auto-asciende.
+    //
+    // OJO al orden en las reglas: siempre `esMiembro(...) || esOperador()`.
+    // Las llamadas get/exists de las reglas se cobran como lecturas, y el `||`
+    // hace cortocircuito — así el comerciante nunca paga la lectura extra.
+    function esOperador() {
+      return exists(/databases/$(database)/documents/operadores/$(request.auth.uid));
+    }
+
+    function cambiaSolo(campos) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(campos);
+    }
+
+    function cambia(campo) {
+      return campo in request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // La membresía la escribe SOLO un operador. Si el cliente pudiera activarse
+    // el plan solo, no habría negocio.
+    function suscripcionValida() {
+      let s = request.resource.data.suscripcion;
+      return s.plan in ['gratis', 'caserito', 'patron']
+        && s.estado in ['prueba', 'activa', 'vencida']
+        && s.origen in ['manual', 'pasarela']
+        && s.vigenteHasta is int;
+    }
+
+    // Un cobro de membresía es contabilidad: se crea y no se toca nunca más.
+    function pagoMembresiaValido() {
+      let d = request.resource.data;
+      let obligatorios = ['monto', 'metodo', 'periodoDesde', 'periodoHasta',
+                          'cobradoPor', 'creadoEn'];
+      let opcionales = ['nota', 'comprobanteUrl'];
+      return d.keys().hasAll(obligatorios)
+        && d.keys().hasOnly(obligatorios.concat(opcionales))
+        && d.monto is number && d.monto > 0 && d.monto <= 1000
+        && d.metodo in ['efectivo', 'yape', 'transferencia', 'tarjeta']
+        && d.periodoDesde is int
+        && d.periodoHasta is int
+        && d.periodoHasta > d.periodoDesde
+        && d.cobradoPor == request.auth.uid
+        && d.creadoEn == request.time;
+    }
+
     // ¿Este teléfono puede crear pagos? Solo el que tiene el Yape del negocio.
     // Compatibilidad: los miembros creados antes de que existiera el campo se
     // resuelven por rol (el dueño captura, el trabajador solo escucha).
@@ -61,6 +107,14 @@ service cloud.firestore {
                      + string(math.round(d.monto * 100));
     }
 
+    // Operadores del negocio. Se crean A MANO desde la consola de Firebase
+    // (ver backend/README.md). Ningún cliente escribe aquí, nunca.
+    match /operadores/{uid} {
+      allow get: if autenticado() && (request.auth.uid == uid || esOperador());
+      allow list: if autenticado() && esOperador();
+      allow write: if false;
+    }
+
     // Perfil propio: a qué comercio pertenezco
     match /usuarios/{uid} {
       allow read: if autenticado() && request.auth.uid == uid;
@@ -82,19 +136,35 @@ service cloud.firestore {
     }
 
     match /comercios/{comercioId} {
-      allow get: if autenticado() && esMiembro(comercioId);
-      allow list: if false;
+      allow get: if autenticado() && (esMiembro(comercioId) || esOperador());
+      // El panel de operador necesita listar todos los comercios; un
+      // comerciante jamás.
+      allow list: if autenticado() && esOperador();
+      // Nadie nace con membresía: la suscripción solo la escribe un operador.
       allow create: if autenticado()
-        && request.resource.data.duenoUid == request.auth.uid;
-      // El dueño puede renombrar su comercio, pero no regalarlo ni heredarlo
-      allow update: if autenticado()
-        && resource.data.duenoUid == request.auth.uid
-        && request.resource.data.duenoUid == resource.data.duenoUid;
+        && request.resource.data.duenoUid == request.auth.uid
+        && !request.resource.data.keys().hasAny(['suscripcion']);
+      // El dueño solo puede renombrar su comercio. Ni regalarlo, ni cambiar su
+      // ubicación, ni —sobre todo— tocarse el plan.
+      allow update: if autenticado() && (
+        (resource.data.duenoUid == request.auth.uid && cambiaSolo(['nombre']))
+        || (esOperador()
+            && cambiaSolo(['suscripcion', 'ubicacion', 'contacto'])
+            && (!cambia('suscripcion') || suscripcionValida()))
+      );
       allow delete: if autenticado()
         && resource.data.duenoUid == request.auth.uid;
 
+      // Historial de cobros de membresía: lo crea el operador, lo puede ver el
+      // dueño (es su propio recibo) y no se edita ni se borra jamás.
+      match /pagosMembresia/{pagoId} {
+        allow read: if autenticado() && (esMiembro(comercioId) || esOperador());
+        allow create: if autenticado() && esOperador() && pagoMembresiaValido();
+        allow update, delete: if false;
+      }
+
       match /miembros/{uid} {
-        allow read: if autenticado() && esMiembro(comercioId);
+        allow read: if autenticado() && (esMiembro(comercioId) || esOperador());
         // Uno solo puede inscribirse a sí mismo. Como "dueno" solo si el
         // comercio (tras esta misma operación) lo tiene como duenoUid —
         // getAfter permite validar el lote comercio+miembro que crea la app.
@@ -121,7 +191,8 @@ service cloud.firestore {
       }
 
       match /pagos/{pagoId} {
-        allow read: if autenticado() && esMiembro(comercioId);
+        // El operador los ve para dar soporte y detectar comercios mudos.
+        allow read: if autenticado() && (esMiembro(comercioId) || esOperador());
         // Regla de oro anti-fake: solo un teléfono habilitado para capturar
         // crea pagos, y el contenido tiene que ser coherente y sellado por el
         // servidor. Un trabajador con el APK modificado no puede inventar nada.

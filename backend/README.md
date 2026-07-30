@@ -5,13 +5,20 @@ Proyecto Firebase: `PagoYa` (consola: console.firebase.google.com)
 ## Modelo de datos (Firestore)
 
 ```
+operadores/{uid}                     → { nombre }   ← tú y tu equipo (PANEL.md)
 usuarios/{uid}                       → { comercioId }
 codigos/{codigo6digitos}             → { comercioId }
-comercios/{id}                       → { nombre, duenoUid, codigoVinculacion, creadoEn }
+comercios/{id}                       → { nombre, duenoUid, codigoVinculacion, creadoEn,
+                                         suscripcion?, ubicacion?, contacto? }
 comercios/{id}/miembros/{uid}        → { rol: "dueno"|"trabajador", nombre, puedeCapturar }
 comercios/{id}/pagos/{pagoId}        → { billeteraId, billeteraNombre, pagador,
                                          monto, timestamp, origenUid, recibidoEn }
+comercios/{id}/pagosMembresia/{id}   → { monto, metodo, periodoDesde, periodoHasta,
+                                         cobradoPor, creadoEn, nota?, comprobanteUrl? }
 ```
+
+`suscripcion` = `{ plan, estado, vigenteHasta, origen }`. La escribe **solo un
+operador**: si el cliente pudiera activarse el plan, no habría negocio.
 
 - `pagoId` es determinista (`uid-timestamp-centavos`) → subir dos veces la misma
   notificación no duplica el pago. **Las reglas exigen que el id cuadre con el
@@ -47,6 +54,24 @@ modificado, inventar pagos **en su propio negocio**. No es una amenaza (es su
 caja y su plata); la amenaza real es el cliente con la captura falsa y el
 trabajador que quiere cuadrar un faltante, y ambas están cubiertas.
 
+## Anti-fraude de membresías
+
+Mismo principio, aplicado al cobro:
+
+- La `suscripcion` solo la escribe un **operador**. El dueño puede renombrar su
+  comercio y nada más.
+- Un comercio **no puede nacer con membresía**: las reglas rechazan el campo
+  `suscripcion` al crear.
+- `pagosMembresia` es **solo-crear**. Un cobro no se edita ni se borra: se
+  corrige con un asiento nuevo. Es contabilidad, no un formulario.
+- El monto se valida (0 < monto ≤ 1000), el método es de una lista cerrada y
+  `creadoEn` lo pone el servidor.
+
+⚠️ Nota de costos: cada `get()`/`exists()` dentro de las reglas se cobra como
+lectura. Por eso las condiciones van siempre en el orden
+`esMiembro(...) || esOperador()` — el `||` hace cortocircuito y el comerciante
+nunca paga la lectura extra del chequeo de operador.
+
 ## Cómo funciona el tiempo real (sin Cloud Functions, plan gratis)
 
 - El teléfono del dueño captura la notificación → la sube a `pagos/`.
@@ -68,7 +93,21 @@ trabajador que quiere cuadrar un faltante, y ambas están cubiertas.
 Sin este paso, la base queda cerrada (modo producción rechaza todo) y la app
 no podrá guardar nada.
 
-## PASO PENDIENTE MANUAL 2: activar App Check
+## PASO PENDIENTE MANUAL 2: crearte como operador
+
+Los documentos de `operadores/` **no los puede escribir ningún cliente** — esa es
+justamente la garantía de que nadie se auto-asciende. Se crean a mano:
+
+1. Consola Firebase → **Authentication → Users** → copia tu **UID**.
+2. Firestore Database → **Iniciar colección** → id `operadores`.
+3. Id del documento = tu UID. Un campo: `nombre` (texto).
+
+Sin esto, el panel te va a rechazar aunque inicies sesión bien.
+
+Para dar de baja a alguien del equipo, borra su documento: el acceso se corta al
+instante, sin tocar reglas ni republicar nada.
+
+## PASO PENDIENTE MANUAL 3: activar App Check
 
 App Check es **gratis en el plan Spark**. Orden importante: primero registrar el
 token de depuración, al final activar la aplicación forzosa.

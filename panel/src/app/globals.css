@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    font-family: ui-rounded, "Nunito", "Segoe UI", system-ui, -apple-system,
+      sans-serif;
+  }
+}

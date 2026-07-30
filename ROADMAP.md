@@ -63,6 +63,9 @@ PagoYa/
 - [ ] Modo captura (teléfono del dueño) y modo escucha (trabajadores)
 - [ ] Onboarding criollo: 3 pantallas, pedir permisos sin asustar
 - [ ] Historial del día + total acumulado
+- [ ] **Guardián de Yape** (crítico): onboarding por marca (autostart Xiaomi/Samsung/
+      Huawei/Oppo + batería sin restricción para Yape), detector de Yape en estado
+      detenido con alerta hablada, y watchdog de horas sin pagos en horario de negocio
 
 ### Panel web (semanas 4–7)
 - [ ] Login dueño, dashboard en tiempo real, historial y cierre de caja

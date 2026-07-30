@@ -38,13 +38,16 @@ service cloud.firestore {
 
       match /miembros/{uid} {
         allow read: if autenticado() && esMiembro(comercioId);
-        // Uno solo puede inscribirse a sí mismo, y jamás como dueño
+        // Uno solo puede inscribirse a sí mismo. Como "dueno" solo si el
+        // comercio (tras esta misma operación) lo tiene como duenoUid —
+        // getAfter permite validar el lote comercio+miembro que crea la app.
         allow create: if autenticado()
           && request.auth.uid == uid
-          && request.resource.data.rol != 'dueno'
-          || (autenticado() && request.auth.uid == uid
-              && request.resource.data.rol == 'dueno'
-              && get(/databases/$(database)/documents/comercios/$(comercioId)).data.duenoUid == request.auth.uid);
+          && (
+            request.resource.data.rol == 'trabajador'
+            || (request.resource.data.rol == 'dueno'
+                && getAfter(/databases/$(database)/documents/comercios/$(comercioId)).data.duenoUid == request.auth.uid)
+          );
         // Salir del comercio (uno mismo) o el dueño saca a alguien
         allow delete: if autenticado()
           && (request.auth.uid == uid

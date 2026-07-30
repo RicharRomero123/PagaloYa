@@ -171,7 +171,9 @@ fun PantallaComercio(alListo: () -> Unit) {
                         alcance.launch {
                             ComercioRepo.crearComercio(nombreNegocio)
                                 .onSuccess { alListo() }
-                                .onFailure { error = "No se pudo crear. ¿Tienes internet?" }
+                                .onFailure {
+                                    error = "No se pudo crear: ${it.message ?: "error desconocido"}"
+                                }
                             cargando = false
                         }
                     },

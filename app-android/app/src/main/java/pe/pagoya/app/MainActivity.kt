@@ -55,6 +55,7 @@ import androidx.compose.runtime.LaunchedEffect
 import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.BilleteraParser
 import pe.pagoya.app.core.Guardian
+import pe.pagoya.app.core.ProteccionMarca
 import pe.pagoya.app.core.RegistroPagos
 import pe.pagoya.app.nube.ComercioRepo
 import pe.pagoya.app.nube.Sesion
@@ -126,6 +127,7 @@ fun PantallaPrincipal(alSalir: () -> Unit) {
     var bateriaSinRestriccion by remember { mutableStateOf(bateriaLibre(contexto)) }
     var puedeNotificar by remember { mutableStateOf(permisoPostNotificaciones(contexto)) }
     var estadoYape by remember { mutableStateOf(Guardian.estadoYape(contexto)) }
+    var yapeProtegido by remember { mutableStateOf(ProteccionMarca.yaProtegido(contexto)) }
     var vozFuerte by remember { mutableStateOf(Anunciador.vozFuerte(contexto)) }
 
     // Reevaluar permisos cada vez que el usuario vuelve de Ajustes
@@ -213,6 +215,42 @@ fun PantallaPrincipal(alSalir: () -> Unit) {
 
         val todoListo = accesoNotificaciones && bateriaSinRestriccion &&
             (Build.VERSION.SDK_INT < 33 || puedeNotificar)
+
+        if (todoListo && !yapeProtegido) {
+            val guia = remember { ProteccionMarca.guiaParaEsteTelefono() }
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp)
+            ) {
+                Column(Modifier.padding(14.dp)) {
+                    Text(
+                        "🛡️ ${guia.titulo} (solo una vez)",
+                        fontWeight = FontWeight.Black, color = AzulNoche
+                    )
+                    Text(
+                        "Tu teléfono ${guia.marca} puede dormir a Yape y las ventas no sonarían. Blíndalo así:",
+                        fontSize = 13.sp, color = AzulNoche.copy(alpha = 0.8f)
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    guia.pasos.forEach { paso ->
+                        Text(paso, fontSize = 13.sp, color = AzulNoche)
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { ProteccionMarca.abrirAjustes(contexto) },
+                            colors = ButtonDefaults.buttonColors(containerColor = Naranja)
+                        ) { Text("Abrir ajustes") }
+                        OutlinedButton(onClick = {
+                            ProteccionMarca.marcarProtegido(contexto)
+                            yapeProtegido = true
+                        }) { Text("Listo, ya lo hice") }
+                    }
+                }
+            }
+        }
 
         if (!todoListo) {
             Text(

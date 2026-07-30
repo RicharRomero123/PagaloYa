@@ -60,29 +60,36 @@ object ComercioRepo {
         val codigo = "%06d".format(Random.nextInt(0, 1_000_000))
         val refComercio = db.collection("comercios").document()
 
-        val lote = db.batch()
-        lote.set(
-            refComercio,
-            mapOf(
-                "nombre" to nombre.trim(),
-                "duenoUid" to uid,
-                "codigoVinculacion" to codigo,
-                "creadoEn" to System.currentTimeMillis(),
-            )
-        )
-        lote.set(
-            refComercio.collection("miembros").document(uid),
-            mapOf("rol" to "dueno", "nombre" to Sesion.nombreUsuario())
-        )
-        lote.set(
-            db.collection("codigos").document(codigo),
-            mapOf("comercioId" to refComercio.id)
-        )
-        lote.set(
-            db.collection("usuarios").document(uid),
-            mapOf("comercioId" to refComercio.id)
-        )
-        lote.commit().await()
+        // Pasos secuenciales con etiqueta: si Firebase rechaza uno, el error
+        // dice exactamente cuál (clave para diagnosticar reglas).
+        suspend fun paso(nombrePaso: String, accion: suspend () -> Unit) {
+            runCatching { accion() }.onFailure {
+                error("[$nombrePaso] ${it.message}")
+            }
+        }
+
+        paso("comercio") {
+            refComercio.set(
+                mapOf(
+                    "nombre" to nombre.trim(),
+                    "duenoUid" to uid,
+                    "codigoVinculacion" to codigo,
+                    "creadoEn" to System.currentTimeMillis(),
+                )
+            ).await()
+        }
+        paso("miembro-dueno") {
+            refComercio.collection("miembros").document(uid)
+                .set(mapOf("rol" to "dueno", "nombre" to Sesion.nombreUsuario())).await()
+        }
+        paso("codigo") {
+            db.collection("codigos").document(codigo)
+                .set(mapOf("comercioId" to refComercio.id)).await()
+        }
+        paso("perfil") {
+            db.collection("usuarios").document(uid)
+                .set(mapOf("comercioId" to refComercio.id)).await()
+        }
 
         val creado = Comercio(refComercio.id, nombre.trim(), codigo, "dueno")
         _comercio.value = creado

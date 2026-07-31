@@ -1,0 +1,19 @@
+{
+  "name": "PagoYa — Anunciador de voz de pagos Yape y Plin",
+  "short_name": "PagoYa",
+  "description": "Tu caja habla. Tus pagos suenan. Si no suena, no te pagaron.",
+  "lang": "es-PE",
+  "start_url": "/",
+  "scope": "/",
+  "display": "browser",
+  "background_color": "#FFFAF2",
+  "theme_color": "#FF6B1A",
+  "icons": [
+    {
+      "src": "/assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

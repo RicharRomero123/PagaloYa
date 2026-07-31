@@ -1,5 +1,6 @@
 import { IconoLogo } from './Iconos';
 import { wsp } from '../lib/enlaces';
+import { GUIAS } from '../lib/guias';
 
 /** Footer completo (home) o compacto (páginas legales). */
 export default function Pie({ compacto = false }) {
@@ -9,6 +10,7 @@ export default function Pie({ compacto = false }) {
         <div className="wrap pie-legal pie-legal--sola">
           <p>
             © 2026 PagoYa · Hecho en Perú · <a href="/">Inicio</a> ·{' '}
+            <a href="/guias/">Guías</a> ·{' '}
             <a href="/privacidad/">Política de privacidad</a> ·{' '}
             <a href="/eliminar-datos/">Eliminar mis datos</a>
           </p>
@@ -30,6 +32,17 @@ export default function Pie({ compacto = false }) {
             <br />
             Si no suena, no te pagaron.
           </p>
+        </div>
+        {/* Enlazar las guías desde todas las páginas es lo que hace que Google
+            las descubra y las considere parte del sitio, no páginas sueltas. */}
+        <div>
+          <h3>Guías</h3>
+          <ul>
+            {GUIAS.map((g) => (
+              <li key={g.ruta}><a href={g.ruta}>{g.corto}</a></li>
+            ))}
+            <li><a href="/guias/">Todas las guías</a></li>
+          </ul>
         </div>
         <div>
           <h3>Legal</h3>

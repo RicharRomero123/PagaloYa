@@ -2,7 +2,7 @@ import Cabecera from '../../components/Cabecera';
 import Pie from '../../components/Pie';
 
 export const metadata = {
-  title: 'Política de privacidad — PagoYa',
+  title: 'Política de privacidad',
   description:
     'Política de privacidad de PagoYa (pe.pagoya.app): qué datos trata la app, cómo usa el acceso a notificaciones de Android, dónde se almacenan, con quién se comparten y cómo ejercer tus derechos bajo la Ley 29733.',
   alternates: { canonical: '/privacidad/' },

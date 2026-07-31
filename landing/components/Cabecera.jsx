@@ -14,6 +14,9 @@ const SECCIONES = [
   { id: 'preguntas', texto: 'Preguntas' },
 ];
 
+// Las guías son páginas propias, no anclas: van aparte en el menú.
+const GUIAS_ENLACE = { href: '/guias/', texto: 'Guías' };
+
 /** Cabecera con toldo de mercado. `conNav` muestra las anclas (solo en la home). */
 export default function Cabecera({ conNav = false }) {
   const [abierto, setAbierto] = useState(false);
@@ -44,6 +47,7 @@ export default function Cabecera({ conNav = false }) {
                   {s.texto}
                 </a>
               ))}
+              <a href={GUIAS_ENLACE.href}>{GUIAS_ENLACE.texto}</a>
             </nav>
           )}
 
@@ -81,6 +85,9 @@ export default function Cabecera({ conNav = false }) {
                   {s.texto}
                 </a>
               ))}
+              <a href={GUIAS_ENLACE.href} onClick={() => setAbierto(false)}>
+                {GUIAS_ENLACE.texto}
+              </a>
               <a
                 className="btn btn-wsp js-wsp"
                 data-donde="menu-movil"

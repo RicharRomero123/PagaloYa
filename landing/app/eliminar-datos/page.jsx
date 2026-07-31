@@ -3,7 +3,7 @@ import Pie from '../../components/Pie';
 import { wsp } from '../../lib/enlaces';
 
 export const metadata = {
-  title: 'Eliminar mi cuenta y mis datos — PagoYa',
+  title: 'Eliminar mi cuenta y mis datos',
   description:
     'Cómo solicitar la eliminación de tu cuenta de PagoYa (pe.pagoya.app) y de todos tus datos: desde la app o por correo. Qué se elimina, qué se conserva y en qué plazos.',
   alternates: { canonical: '/eliminar-datos/' },

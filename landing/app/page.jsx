@@ -5,6 +5,7 @@ import DemoVoz from '../components/DemoVoz';
 import Cifras from '../components/Cifras';
 import { IconoWsp } from '../components/Iconos';
 import { wsp, MENSAJE_GENERAL } from '../lib/enlaces';
+import { GUIAS } from '../lib/guias';
 
 export const metadata = {
   alternates: { canonical: '/' },
@@ -14,12 +15,26 @@ const datosApp = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
   name: 'PagoYa',
-  operatingSystem: 'Android',
+  operatingSystem: 'Android 8.0 o superior',
   applicationCategory: 'FinanceApplication',
+  inLanguage: 'es-PE',
   description:
     'Anunciador de voz de pagos Yape y Plin para comercios peruanos. Anuncia cada pago real en el local y en los celulares del dueño y sus trabajadores.',
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'PEN' },
+  featureList: [
+    'Anuncio de voz de cada pago Yape o Plin recibido',
+    'Protección contra el yape falso: solo suena con la notificación real del sistema',
+    'Modo dueño remoto: el pago suena en los celulares del dueño y sus trabajadores',
+    'Historial de pagos y cierre de caja del día',
+    'Compatible con la billetera que el negocio ya usa, sin cambiar de procesador',
+  ],
+  // Los tres planes publicados. Sin aggregateRating: no inventamos reseñas.
+  offers: [
+    { '@type': 'Offer', name: 'Gratis', price: '0', priceCurrency: 'PEN', category: 'free' },
+    { '@type': 'Offer', name: 'Caserito', price: '12.90', priceCurrency: 'PEN' },
+    { '@type': 'Offer', name: 'Patrón', price: '24.90', priceCurrency: 'PEN', availability: 'https://schema.org/PreOrder' },
+  ],
   url: 'https://pagoya.pe/',
+  publisher: { '@id': 'https://pagoya.pe/#organizacion' },
 };
 
 const datosFaq = {
@@ -60,9 +75,12 @@ export default function Inicio() {
         <section className="hero">
           <div className="wrap">
             <div>
-              <span className="antetitulo">Funciona con la billetera que ya usas · Hecho en Perú</span>
+              {/* El antetítulo y el H1 cargan las palabras que la gente busca
+                  ("anunciador de voz", "pagos Yape y Plin", "yapean") sin
+                  perder el tono: es lo primero que Google lee de la página. */}
+              <span className="antetitulo">Anunciador de voz para pagos Yape y Plin · Hecho en Perú</span>
               <h1>
-                Cuando te pagan, <span>tu celular <em className="marcador">lo canta</em>.</span>
+                Cuando te yapean, <span>tu celular <em className="marcador">lo canta</em>.</span>
               </h1>
               <p className="hero-bajada">
                 Apenas te cae un Yape o un Plin, tu celular dice{' '}
@@ -783,6 +801,28 @@ export default function Inicio() {
                 </div>
               </details>
             </div>
+          </div>
+        </section>
+
+        {/* ============ GUÍAS ============ */}
+        <section className="seccion fondo-blanco" id="guias">
+          <div className="wrap">
+            <div className="sec-cab reveal">
+              <span className="antetitulo">Guías gratis</span>
+              <h2>Lo que preguntan los caseros, respondido derecho</h2>
+              <p>
+                Sin registrarte y sin comprar nada. Te sirven aunque nunca instales PagoYa.
+              </p>
+            </div>
+            <ul className="guias-home reveal">
+              {GUIAS.map((g) => (
+                <li key={g.ruta}>
+                  <h3><a href={g.ruta}>{g.titulo}</a></h3>
+                  <p>{g.gancho}</p>
+                  <a className="enlace-seguir" href={g.ruta}>Leer la guía →</a>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 

@@ -33,8 +33,8 @@ const datosFaq = {
     { '@type': 'Question', name: '¿Funciona con el celular bloqueado?', acceptedAnswer: { '@type': 'Answer', text: 'Sí. El anuncio suena aunque la pantalla esté apagada. En la instalación te ayudamos a configurar los permisos según la marca de tu celular para que nunca se detenga.' } },
     { '@type': 'Question', name: '¿Y si Yape cambia sus notificaciones?', acceptedAnswer: { '@type': 'Answer', text: 'PagoYa se actualiza solo desde nuestro servidor, sin que tengas que reinstalar nada. Si Yape cambia el texto de sus avisos, lo ajustamos por ti.' } },
     { '@type': 'Question', name: '¿Pueden falsificar el sonido de PagoYa?', acceptedAnswer: { '@type': 'Answer', text: 'El anuncio suena en tu equipo, no en el celular del cliente, y cada pago anunciado queda registrado en tu app. Si tu equipo no lo cantó y no aparece en tu historial, ese pago no cayó.' } },
-    { '@type': 'Question', name: '¿Cuántos teléfonos pueden escuchar los pagos?', acceptedAnswer: { '@type': 'Answer', text: 'Con el plan Gratis, 1 celular. Con Caserito y Patrón se conectan el celular de la caja, el del dueño y los de los trabajadores del negocio.' } },
-    { '@type': 'Question', name: '¿En qué se diferencia PagoYa de un QR parlante?', acceptedAnswer: { '@type': 'Answer', text: 'Los QR parlantes te obligan a afiliarte a otro procesador de pagos y a pagar el equipo. PagoYa funciona con el Yape que ya tienes, empiezas gratis con tu propio celular y además avisa al dueño aunque no esté en el local.' } },
+    { '@type': 'Question', name: '¿Cuántos teléfonos pueden escuchar los pagos?', acceptedAnswer: { '@type': 'Answer', text: 'Con el plan Gratis, 1 celular. Con Caserito y Patrón se conectan el celular del negocio, el del dueño y los de los trabajadores.' } },
+    { '@type': 'Question', name: '¿En qué se diferencia PagoYa de un QR parlante?', acceptedAnswer: { '@type': 'Answer', text: 'Los QR parlantes te obligan a cobrar con otra empresa y a pagar el aparato. PagoYa funciona con el Yape que ya tienes, empiezas gratis con tu propio celular y además avisa al dueño aunque no esté en la tienda.' } },
     { '@type': 'Question', name: '¿Qué pasa si se acaba mi plan?', acceptedAnswer: { '@type': 'Answer', text: 'No pierdes tu cuenta ni tu historial: tu negocio pasa al plan Gratis (1 celular con anuncio de voz) y reactivas tu plan cuando quieras.' } },
   ],
 };
@@ -60,14 +60,21 @@ export default function Inicio() {
         <section className="hero">
           <div className="wrap">
             <div>
-              <span className="antetitulo">Compatible con Yape y Plin · Hecho en Perú</span>
+              <span className="antetitulo">Funciona con la billetera que ya usas · Hecho en Perú</span>
               <h1>
-                Tu caja habla. <span>Tus pagos <em className="marcador">suenan</em>.</span>
+                Cuando te pagan, <span>tu celular <em className="marcador">lo canta</em>.</span>
               </h1>
               <p className="hero-bajada">
-                PagoYa es el anunciador de pagos que canta en voz alta cada Yape o Plin
-                que te cae: en tu tienda y en tu celular, estés donde estés.
-                Y la regla de oro, casero: <strong>si no suena, no te pagaron.</strong>
+                Apenas te cae un Yape o un Plin, tu celular dice{' '}
+                <strong>cuánto te pagaron, en voz alta</strong>. Tú sigues
+                atendiendo, sin agarrar nada.
+              </p>
+              <p className="hero-regla">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z" />
+                  <path d="M9 12l2 2 4-4" />
+                </svg>
+                Si no suena, no te pagaron
               </p>
               <div className="hero-botones">
                 <a className="btn btn-wsp js-wsp" data-donde="hero" href={wsp(MENSAJE_GENERAL)} target="_blank" rel="noopener">
@@ -78,8 +85,9 @@ export default function Inicio() {
               </div>
               <ul className="hero-sellos">
                 <li><Check /> Gratis para empezar</li>
-                <li><Check /> Sin cambiar tu Yape</li>
+                <li><Check /> Con la billetera que ya usas</li>
                 <li><Check /> Sin comisiones por venta</li>
+                <li><Check /> Nunca te pedimos tu clave</li>
               </ul>
             </div>
 
@@ -177,7 +185,7 @@ export default function Inicio() {
                     </span>
                     <div>
                       <strong>Lleva la cuenta por ti</strong>
-                      <p>Cada pago queda anotado en tu historial, con el total del día listo para el cierre de caja.</p>
+                      <p>Cada pago queda anotado, con el total del día listo para cuando cuadres en la noche.</p>
                     </div>
                   </li>
                 </ul>
@@ -190,9 +198,9 @@ export default function Inicio() {
               {/* La boleta de cierre de caja: el producto en papel */}
               <div className="boleta-zona reveal reveal-tarde">
                 <span className="sello-tampon">Todo cantado</span>
-                <div className="boleta" role="img" aria-label="Boleta de cierre de caja de PagoYa: todos los pagos del día anunciados por voz, total S/ 214.50">
+                <div className="boleta" role="img" aria-label="La cuenta del día de PagoYa: todos los pagos anunciados por voz, total S/ 214.50">
                   <div className="boleta-cab">
-                    <strong>Cierre de caja · PagoYa</strong>
+                    <strong>La cuenta del día · PagoYa</strong>
                     <span>Bodega Doña Rosa — jueves 30 de julio</span>
                   </div>
                   <ul className="boleta-filas" aria-hidden="true">
@@ -228,7 +236,7 @@ export default function Inicio() {
                   <p className="boleta-pie" aria-hidden="true">Si no sonó, no está aquí, casero.</p>
                 </div>
                 <div className="boleta-nota">
-                  <span className="nota-mano nota-mano--azul">Así cierras tu caja en la noche: sin sumar a mano</span>
+                  <span className="nota-mano nota-mano--azul">Así cuadras en la noche: sin sumar a mano</span>
                 </div>
               </div>
             </div>
@@ -238,19 +246,19 @@ export default function Inicio() {
               <div className="tarjeta-si">
                 <h3>PagoYa sí es</h3>
                 <ul className="lista-check">
-                  <li>Un anunciador de voz de tus pagos Yape y Plin</li>
+                  <li>Un aviso en voz alta de cada Yape o Plin que te cae</li>
                   <li>Una alarma contra el yape falso y las capturas trucadas</li>
-                  <li>Los oídos del dueño cuando no está en el local</li>
-                  <li>Tu historial y cierre de caja del día, ordenadito</li>
+                  <li>Los oídos del dueño cuando no está en la tienda</li>
+                  <li>La cuenta del día lista, sin sumar a mano</li>
                 </ul>
               </div>
               <div className="tarjeta-no">
                 <h3>PagoYa no es</h3>
                 <ul className="lista-x">
                   <li>Un banco ni una billetera: tu plata nunca pasa por PagoYa</li>
-                  <li>Un POS nuevo: no cambias de procesador ni de QR</li>
+                  <li>Un aparato de tarjetas: no cambias tu forma de cobrar</li>
                   <li>Una app que pide tu clave o entra a tu cuenta</li>
-                  <li>Un servicio con comisión por venta</li>
+                  <li>Un servicio que te cobra comisión por cada venta</li>
                 </ul>
               </div>
             </div>
@@ -337,27 +345,26 @@ export default function Inicio() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 10v4h4l6 5V5l-6 5H4z" /><path d="M17.5 9.5a4 4 0 0 1 0 5M20 7a8 8 0 0 1 0 10" /></svg>
                 <h3>Suena solo, para siempre</h3>
                 <p>Desde ese momento, cada pago real se anuncia al instante: «¡PagoYaaa! Te yapearon 25 soles». Con la pantalla apagada, con la app cerrada, en plena hora punta.</p>
-                <p>Y cada pago queda en tu historial, con el total del día listo para tu cierre de caja.</p>
+                <p>Y cada pago queda anotado, con el total del día listo para cuando cuadres.</p>
               </li>
             </ol>
 
             {/* Modo escucha remoto */}
             <div className="remoto reveal">
-              <span className="antetitulo">Modo dueño remoto</span>
-              <h3>¿No estás en la tienda? Igual te enteras primero</h3>
+              <span className="antetitulo">Cuando no estás en la tienda</span>
+              <h3>¿Saliste? Igual te enteras primero</h3>
               <p>
-                Si tu negocio tiene trabajadores, conecta sus celulares como{' '}
-                <strong>escuchas</strong>. Cuando cae un pago en el celular de la caja,
-                PagoYa lo manda a la nube y en segundos suena en todos los celulares
-                autorizados del negocio. Tu gente cobra segura sin llamarte, y tú
-                escuchas tus ventas desde tu casa. Cada quien escucha los pagos, nadie
-                toca tu cuenta.
+                Si tienes trabajadores, conectas <strong>sus celulares también</strong>.
+                Cuando cae un pago en el celular del negocio, en segundos suena en todos
+                los celulares que tú autorizaste. Tu gente cobra tranquila sin llamarte,
+                y tú escuchas tus ventas desde tu casa. Todos escuchan el aviso, pero
+                nadie entra a tu cuenta.
               </p>
               <div className="diagrama">
                 <div className="nodo">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="10" height="19" rx="2.5" /><path d="M19 9a5.5 5.5 0 0 1 0 6" /><path d="M9.5 18.5h3" /></svg>
-                  <strong>El celular de la caja</strong>
-                  <span>Recibe el Yape y lo anuncia en el local</span>
+                  <strong>El celular del negocio</strong>
+                  <span>Recibe el Yape y lo anuncia en la tienda</span>
                 </div>
                 <div className="flecha" aria-hidden="true">→</div>
                 <div className="nodo">
@@ -377,43 +384,80 @@ export default function Inicio() {
         </section>
 
         {/* ============ BILLETERAS Y REQUISITOS ============ */}
-        <section className="seccion" id="billeteras">
+        <section className="seccion" id="compatibilidad">
           <div className="wrap">
             <div className="sec-cab reveal">
-              <span className="antetitulo">Billeteras y requisitos</span>
-              <h2>Funciona con lo que ya tienes</h2>
+              <span className="antetitulo">Compatibilidad</span>
+              <h2>¿Funciona con mi billetera?</h2>
+              <p>
+                Es lo primero que todos preguntan. La respuesta corta: casi siempre sí,
+                y ahora te explicamos por qué.
+              </p>
             </div>
-            <div className="billeteras">
-              <article className="billetera reveal">
-                <span className="icono">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="3" /><path d="M16 12h2.5" /><path d="M2.5 9.5h19" /></svg>
-                </span>
-                <div>
-                  <h3>Yape</h3>
-                  <p>
-                    Compatible desde el día uno. Y como Yape y Plin son interoperables,
-                    los pagos Plin que lleguen a tu QR o número Yape también suenan.
-                  </p>
-                </div>
+
+            {/* El mecanismo explicado en criollo: es el diferenciador de verdad */}
+            <div className="compat-clave reveal">
+              <h3>PagoYa no entra a ninguna billetera</h3>
+              <p>
+                No se conecta a Yape, ni a tu banco, ni a nada. Lo único que hace es{' '}
+                <strong>escuchar el avisito</strong> que tu billetera ya te manda al
+                celular cuando te pagan, y decirlo en voz alta.
+              </p>
+              <p className="compat-regla">
+                Si tu billetera te avisa en el celular, PagoYa puede cantarlo.
+              </p>
+            </div>
+
+            <div className="compat-lista">
+              <article className="compat-item compat-item--listo reveal">
+                <span className="compat-estado">Listo</span>
+                <h3>Yape</h3>
+                <p>
+                  Funciona desde el día uno. Y si alguien te manda un Plin a tu número o
+                  a tu QR de Yape, ese pago también suena.
+                </p>
               </article>
-              <article className="billetera reveal reveal-tarde">
-                <span className="icono">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="3" /><path d="M6.5 15.5V8.5m0 0h3a2.2 2.2 0 0 1 0 4.4h-3" /></svg>
-                </span>
-                <div>
-                  <h3>Plin</h3>
-                  <p>
-                    Compatible con las notificaciones de Plin en las apps de los bancos
-                    que lo usan. ¿Cobras con otra billetera? Escríbenos y la ponemos en cola.
-                  </p>
-                </div>
+              <article className="compat-item compat-item--listo reveal reveal-tarde">
+                <span className="compat-estado">Listo</span>
+                <h3>Plin</h3>
+                <p>
+                  Funciona con los avisos de Plin que te llegan en la app de tu banco.
+                </p>
+              </article>
+              <article className="compat-item reveal">
+                <span className="compat-estado compat-estado--cola">La agregamos</span>
+                <h3>La app de tu banco</h3>
+                <p>
+                  BCP, BBVA, Interbank, Scotiabank y las demás avisan por notificación.
+                  Escríbenos con una foto del aviso y la dejamos andando.
+                </p>
+              </article>
+              <article className="compat-item reveal reveal-tarde">
+                <span className="compat-estado compat-estado--cola">La agregamos</span>
+                <h3>Cualquier otra</h3>
+                <p>
+                  Agora, Tunki, Ligo, billeteras nuevas… Si te avisa en el celular,
+                  la podemos hacer sonar. Mándanos cuál usas.
+                </p>
               </article>
             </div>
-            <p className="billeteras-nota reveal">
-              PagoYa se actualiza desde nuestro servidor: cuando una billetera cambia el
-              formato de sus avisos o agregamos una nueva, tu app se ajusta sola, sin
-              reinstalar nada.
-            </p>
+
+            <div className="compat-cierre reveal">
+              <p>
+                <strong>Y se agregan sin que tú hagas nada.</strong> Cuando sumamos una
+                billetera nueva —o cuando alguna cambia el texto de sus avisos— tu app lo
+                aprende sola desde nuestro servidor. No reinstalas, no actualizas, no vas
+                a ninguna tienda de apps.
+              </p>
+              <p className="compat-remate">
+                Un parlante comprado no puede hacer eso: viene amarrado a una sola empresa
+                de cobro y ahí se queda.
+              </p>
+              <a className="btn btn-wsp js-wsp" data-donde="compatibilidad" href={wsp('Hola PagoYa, quiero saber si funciona con mi billetera. Yo cobro con: ')} target="_blank" rel="noopener">
+                <IconoWsp />
+                Pregúntanos por la tuya
+              </a>
+            </div>
 
             <div className="sec-cab reveal" style={{ marginTop: '72px' }}>
               <h2 style={{ fontSize: 'clamp(1.4rem,3.6vw,1.9rem)' }}>¿Qué necesitas? Casi nada</h2>
@@ -456,7 +500,7 @@ export default function Inicio() {
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5" /><path d="M9.5 12.5l2 2 3.5-3.5" /></svg>
                 </span>
                 <h3>Con tu Yape de siempre</h3>
-                <p>No cambias de banco, no te afilias a otro procesador, no compras un POS. PagoYa trabaja con la cuenta que ya tienes y no cobra comisión por venta: lo que te yapean es tuyo completito.</p>
+                <p>No cambias de banco, no te cambias de empresa para cobrar, no compras ningún aparato. PagoYa trabaja con la cuenta que ya tienes y no te cobra comisión por venta: lo que te yapean es tuyo completito.</p>
               </article>
               <article className="dif reveal reveal-tarde">
                 <span className="dif-icono">
@@ -496,10 +540,10 @@ export default function Inicio() {
                 <h3>Seguir como estás</h3>
                 <p className="opcion-sub">Revisar el celular a cada rato o confiar en la captura</p>
                 <ul className="lista-x">
-                  <li>Expuesto al yape falso justo en hora punta</li>
-                  <li>Interrumpes la atención por cada cobro</li>
+                  <li>El yape falso te agarra justo en hora punta</li>
+                  <li>Paras de atender por cada cobro, para revisar</li>
                   <li>Si no estás, tu gente te llama por cada venta</li>
-                  <li>Cuadrar la caja en la noche es a puro ojo</li>
+                  <li>En la noche cuadras a puro ojo</li>
                 </ul>
               </article>
               <article className="opcion opcion--pagoya reveal reveal-tarde">
@@ -508,10 +552,10 @@ export default function Inicio() {
                 <p className="opcion-sub">Gratis para empezar, con tu mismo Yape</p>
                 <ul className="lista-check">
                   <li>Cada pago real suena solo, sin mirar la pantalla</li>
-                  <li>Sin cambiar de procesador ni de QR</li>
+                  <li>Sigues cobrando con tu mismo Yape y tu mismo QR</li>
                   <li>S/ 0 de equipo: usas el celular que ya tienes</li>
                   <li>El dueño y su gente escuchan a distancia</li>
-                  <li>Historial y cierre de caja incluidos</li>
+                  <li>Te lleva la cuenta del día, lista para cuadrar</li>
                 </ul>
               </article>
               <article className="opcion reveal">
@@ -519,11 +563,11 @@ export default function Inicio() {
                 <p className="opcion-sub">Por ejemplo, el QR parlante de Izipay</p>
                 <ul className="lista-x">
                   <li>Pagas el equipo (alrededor de S/ 129)</li>
-                  <li>Te afilias a su plataforma para cobrar</li>
-                  <li>Anuncia en el local, pero no le avisa al dueño que está lejos</li>
+                  <li>Tienes que cobrar con esa empresa, no con tu Yape</li>
+                  <li>Suena en la tienda, pero no le avisa al dueño que está lejos</li>
                 </ul>
                 <ul className="lista-check" style={{ marginTop: '10px' }}>
-                  <li>Opción seria si ya trabajas con ese procesador</li>
+                  <li>Buena opción si ya cobras con esa empresa</li>
                 </ul>
               </article>
             </div>
@@ -567,7 +611,7 @@ export default function Inicio() {
                   <li>Todo lo del plan Gratis</li>
                   <li>Varios celulares conectados</li>
                   <li>El dueño escucha desde su casa</li>
-                  <li>Historial de pagos y cierre de caja</li>
+                  <li>La cuenta del día lista para cuadrar</li>
                 </ul>
                 <a className="btn btn-naranja js-wsp" data-donde="plan-caserito" href={wsp('Hola PagoYa, me interesa el plan Caserito')} target="_blank" rel="noopener">
                   Lo quiero
@@ -591,9 +635,9 @@ export default function Inicio() {
               </article>
             </div>
             <p className="planes-nota reveal">
-              El plan Patrón incluye el parlante en comodato mientras tu membresía esté
-              activa. Si un mes no puedes pagar, no pierdes nada: vuelves al plan Gratis
-              y reactivas cuando quieras.
+              Con el plan Patrón el parlante te lo prestamos nosotros mientras tu plan
+              esté activo: no lo compras. Y si un mes no puedes pagar, no pierdes nada:
+              vuelves al plan Gratis y lo reactivas cuando quieras.
             </p>
           </div>
         </section>
@@ -699,7 +743,7 @@ export default function Inicio() {
                 <summary>¿Cuántos teléfonos pueden escuchar los pagos?</summary>
                 <div>
                   <p>
-                    Con el plan Gratis, 1 celular (el de la caja). Con Caserito y Patrón
+                    Con el plan Gratis, 1 celular (el del negocio). Con Caserito y Patrón
                     conectas además el celular del dueño y los de tus trabajadores, cada uno
                     con su propia cuenta y sin acceso a tu Yape. ¿Tienes un negocio grande o
                     varios locales? Escríbenos y lo armamos a tu medida.
@@ -710,11 +754,11 @@ export default function Inicio() {
                 <summary>¿En qué se diferencia de un QR parlante?</summary>
                 <div>
                   <p>
-                    Los QR parlantes que se venden te obligan a afiliarte a otro procesador de
-                    pagos y a pagar por el equipo. PagoYa funciona con el Yape que ya tienes,
-                    empiezas gratis con tu propio celular, y además le avisa al dueño aunque
-                    no esté en el local. Y cuando salga el plan Patrón, el parlante de
-                    mostrador viene incluido sin pagar el equipo.
+                    Los QR parlantes que se venden te obligan a cobrar con otra empresa y a
+                    pagar por el aparato. PagoYa funciona con el Yape que ya tienes, empiezas
+                    gratis con tu propio celular, y además le avisa al dueño aunque no esté en
+                    la tienda. Y cuando salga el plan Patrón, el parlante te lo prestamos
+                    nosotros sin que lo compres.
                   </p>
                 </div>
               </details>

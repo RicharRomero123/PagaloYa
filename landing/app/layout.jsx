@@ -20,7 +20,7 @@ export const metadata = {
   metadataBase: new URL('https://pagoya.pe'),
   title: 'PagoYa — Anunciador de voz de pagos Yape y Plin | Si no suena, no te pagaron',
   description:
-    'PagoYa anuncia por voz cada Yape o Plin que cae en tu negocio: suena en tu bodega y en tu celular aunque no estés. Adiós al yape falso: si no suena, no te pagaron. Funciona con tu Yape de siempre, sin cambiar de POS ni comprar un QR parlante.',
+    'PagoYa dice en voz alta cada Yape o Plin que te cae: suena en tu tienda y en tu celular aunque no estés. Adiós al yape falso: si no suena, no te pagaron. Funciona con tu Yape de siempre, sin cambiar tu forma de cobrar ni comprar un QR parlante.',
   icons: { icon: '/assets/favicon.svg' },
   openGraph: {
     type: 'website',

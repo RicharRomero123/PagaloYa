@@ -1,0 +1,52 @@
+# CI del backend: corre las pruebas de reglas de Firestore contra el emulador
+# en cada cambio de backend/. Las reglas son el anti-fake de PagoYa: si esta
+# suite no pasa, no se despliega nada.
+name: CI backend (reglas Firestore)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/ci-backend.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/ci-backend.yml"
+
+jobs:
+  reglas:
+    name: Pruebas de reglas de seguridad
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      # El emulador de Firestore corre sobre Java
+      - name: Instalar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Cachear binarios del emulador
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Correr pruebas de reglas
+        run: npm run test:reglas

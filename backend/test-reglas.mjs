@@ -38,10 +38,13 @@ const dbEmpleado = env.authenticatedContext(EMPLEADO).firestore();
 // El PRIMER dueño se crea a mano en la consola de Firebase; de ahí en adelante
 // los da de alta él desde el panel. Aquí se siembra saltando las reglas.
 await env.withSecurityRulesDisabled(async (ctx) => {
-  await setDoc(doc(ctx.firestore(), "operadores", OPERADOR), {
+  // ctx.firestore() solo admite UNA llamada: la segunda intenta reconfigurar
+  // una instancia ya iniciada y revienta con "Firestore has already been started".
+  const db = ctx.firestore();
+  await setDoc(doc(db, "operadores", OPERADOR), {
     nombre: "Yo", nivel: "dueno", activo: true,
   });
-  await setDoc(doc(ctx.firestore(), "operadores", EMPLEADO), {
+  await setDoc(doc(db, "operadores", EMPLEADO), {
     nombre: "Maria", nivel: "operador", activo: true,
   });
 });

@@ -1,0 +1,68 @@
+# CI de la app Android: compila el AAB de release en cada cambio de app-android/.
+# Si los secretos de firma están configurados (KEYSTORE_BASE64, KEYSTORE_PASSWORD),
+# el AAB sale firmado con la clave de subida real y listo para Play; si no,
+# sale con la clave de debug (sirve para verificar que compila, no para subir).
+name: CI app Android
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app-android/**"
+      - ".github/workflows/ci-app-android.yml"
+  pull_request:
+    paths:
+      - "app-android/**"
+      - ".github/workflows/ci-app-android.yml"
+
+jobs:
+  compilar:
+    name: Compilar AAB de release
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app-android
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configurar Gradle (con caché)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Dar permiso de ejecución a gradlew
+        run: chmod +x gradlew
+
+      - name: Restaurar firma de release desde los secretos
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > pagoya-upload.jks
+            {
+              echo "storeFile=pagoya-upload.jks"
+              echo "storePassword=$KEYSTORE_PASSWORD"
+              echo "keyAlias=pagoya"
+              echo "keyPassword=$KEYSTORE_PASSWORD"
+            } > keystore.properties
+            echo "Firma de release restaurada desde los secretos."
+          else
+            echo "Sin secretos de firma: el AAB saldrá firmado con la clave de debug."
+          fi
+
+      - name: Compilar AAB
+        run: ./gradlew bundleRelease --console=plain
+
+      - name: Guardar AAB como artefacto
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pagoya-release-aab
+          path: app-android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30

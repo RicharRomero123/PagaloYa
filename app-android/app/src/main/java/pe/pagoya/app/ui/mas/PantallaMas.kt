@@ -48,7 +48,9 @@ import compose.icons.tablericons.Volume
 import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.Enlaces
 import pe.pagoya.app.core.Plan
+import pe.pagoya.app.core.PreferenciasApariencia
 import pe.pagoya.app.core.ProteccionMarca
+import pe.pagoya.app.ui.tema.BilleteraBadge
 import pe.pagoya.app.nube.ComercioRepo
 import pe.pagoya.app.ui.onboarding.Permiso
 import pe.pagoya.app.ui.onboarding.Permisos
@@ -83,6 +85,7 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
     val comercio by ComercioRepo.comercio.collectAsState()
     val permisos = recordarPermisos(captura = comercio?.puedeCapturar ?: false)
     var vozFuerte by remember { mutableStateOf(Anunciador.vozFuerte(contexto)) }
+    val mostrarIconoBilletera by PreferenciasApariencia.mostrarIconoBilletera.collectAsState()
     var enPantallaVoz by remember { mutableStateOf(false) }
     var confirmarSalida by remember { mutableStateOf(false) }
 
@@ -203,6 +206,52 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
                 )
                 Spacer(Modifier.height(10.dp))
                 BotonPagoYa("Elegir otra voz", alPulsar = { enPantallaVoz = true })
+            }
+        }
+
+        // ── Apariencia ──
+        item { Etiqueta("Apariencia", Modifier.padding(top = 8.dp)) }
+        item {
+            TarjetaPagoYa {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Mostrar el logo de la billetera",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = AzulNoche,
+                        )
+                        Text(
+                            "En la lista de pagos, muestra el ícono de Yape o Plin. " +
+                                "Si lo apagas, verás un círculo de color con la inicial.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextoMedio,
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Switch(
+                        checked = mostrarIconoBilletera,
+                        onCheckedChange = {
+                            PreferenciasApariencia.definirMostrarIconoBilletera(contexto, it)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Blanco,
+                            checkedTrackColor = NaranjaPagoYa,
+                        ),
+                    )
+                }
+                Spacer(Modifier.height(14.dp))
+                // Vista previa en vivo: reacciona al toggle al instante.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Así se ve:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextoTenue,
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    BilleteraBadge("yape", "Yape")
+                    Spacer(Modifier.width(8.dp))
+                    BilleteraBadge("plin", "Plin")
+                }
             }
         }
 

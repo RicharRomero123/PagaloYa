@@ -23,6 +23,10 @@ a distancia. Anti "Yape falso": si no suena, no te pagaron.
    del sistema capturadas por la app Android. Ningún otro componente crea pagos.
 2. **Patrones de billeteras viven en Remote Config**, nunca hardcodeados en el APK.
 3. **Marca**: tono cercano y criollo (BRAND.md). Naranja #FF6B1A + azul #1A2B4A.
-   Prohibido usar logo/morado de Yape o implicar asociación con BCP.
+   Prohibido usar el logo/morado de Yape en la **identidad de PagoYa**, en la
+   ficha de Play, capturas o marketing, o implicar asociación con BCP.
+   Excepción acotada: los logos de Yape/Plin SÍ se muestran **dentro de la app,
+   solo en la lista de pagos** (badge de billetera), como uso descriptivo para
+   indicar de qué billetera vino cada cobro. Nunca fuera de ahí.
 4. **Idioma**: todo el producto y los commits en español.
 5. **Datos personales** (nombres de pagadores): minimizar, proteger (Ley 29733).

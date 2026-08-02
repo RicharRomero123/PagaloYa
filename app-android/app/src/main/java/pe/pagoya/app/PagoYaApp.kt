@@ -6,6 +6,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.BilleteraParser
 import pe.pagoya.app.core.Enlaces
+import pe.pagoya.app.core.PreferenciasApariencia
 import pe.pagoya.app.core.RegistroPagos
 import pe.pagoya.app.nube.AppCheckPagoYa
 import pe.pagoya.app.servicio.VigilanteWorker
@@ -20,6 +21,7 @@ class PagoYaApp : Application() {
         // 1. Patrones locales (assets) — siempre disponibles aunque no haya internet
         BilleteraParser.cargar(this)
         RegistroPagos.cargar(this)
+        PreferenciasApariencia.cargar(this)
         Anunciador.inicializar(this)
         // 2. Patrones desde la nube — si Yape cambia su texto, se corrige desde la
         //    consola (Remote Config, parámetro "billeteras_json") sin republicar APK

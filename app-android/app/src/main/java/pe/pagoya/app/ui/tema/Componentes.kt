@@ -1,6 +1,7 @@
 package pe.pagoya.app.ui.tema
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,18 +29,24 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import compose.icons.TablerIcons
 import compose.icons.tablericons.AlertTriangle
 import compose.icons.tablericons.CircleCheck
 import compose.icons.tablericons.Shield
+import pe.pagoya.app.R
 import pe.pagoya.app.core.Pago
+import pe.pagoya.app.core.PreferenciasApariencia
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -240,9 +248,41 @@ fun CirculoIcono(
  */
 @Composable
 fun BilleteraBadge(billeteraId: String, nombre: String, modifier: Modifier = Modifier) {
-    val fondo = when (billeteraId.lowercase(Locale.ROOT)) {
-        "yape" -> Color(0xFF742284)   // morado con el que el cliente reconoce su Yape
-        "plin" -> Color(0xFF00B9AD)   // turquesa de Plin
+    val id = billeteraId.lowercase(Locale.ROOT)
+    // Ajuste de Apariencia: el comerciante puede apagar el logo. Reactivo, así
+    // la lista cambia al instante sin reabrir la app.
+    val mostrarIcono by PreferenciasApariencia.mostrarIconoBilletera.collectAsState()
+    // Logo real de la billetera (SOLO dentro de la app, en la lista de pagos;
+    // ver CLAUDE.md regla 3). Si el ajuste está apagado, cae al círculo de color.
+    val logo = if (!mostrarIcono) null else when (id) {
+        "yape" -> R.drawable.ic_yape
+        "plin" -> R.drawable.ic_plin
+        else -> null
+    }
+    if (logo != null) {
+        // Fondo blanco detrás: el PNG de Plin es transparente, así se ve limpio;
+        // el de Yape es opaco y cubre el blanco.
+        Box(
+            modifier = modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(Blanco),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(logo),
+                contentDescription = nombre,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        }
+        return
+    }
+    // Sin logo (ajuste apagado o billetera desconocida): círculo con la inicial.
+    // Conserva los colores de marca para seguir distinguiendo la billetera.
+    val fondo = when (id) {
+        "yape" -> Color(0xFF742284)
+        "plin" -> Color(0xFF00B9AD)
         else -> AzulNoche
     }
     Box(

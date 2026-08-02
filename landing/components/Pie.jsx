@@ -10,8 +10,10 @@ export default function Pie({ compacto = false }) {
         <div className="wrap pie-legal pie-legal--sola">
           <p>
             © 2026 PagoYa · Hecho en Perú · <a href="/">Inicio</a> ·{' '}
-            <a href="/guias/">Guías</a> ·{' '}
+            <a href="/ayuda/">Ayuda</a> ·{' '}
+            <a href="/preguntas-frecuentes/">Preguntas frecuentes</a> ·{' '}
             <a href="/privacidad/">Política de privacidad</a> ·{' '}
+            <a href="/terminos/">Términos</a> ·{' '}
             <a href="/eliminar-datos/">Eliminar mis datos</a>
           </p>
         </div>
@@ -45,9 +47,18 @@ export default function Pie({ compacto = false }) {
           </ul>
         </div>
         <div>
+          <h3>Ayuda</h3>
+          <ul>
+            <li><a href="/ayuda/">Centro de ayuda</a></li>
+            <li><a href="/preguntas-frecuentes/">Preguntas frecuentes</a></li>
+            <li><a href="/consultas/">Consultas</a></li>
+          </ul>
+        </div>
+        <div>
           <h3>Legal</h3>
           <ul>
             <li><a href="/privacidad/">Política de privacidad</a></li>
+            <li><a href="/terminos/">Términos y condiciones</a></li>
             <li><a href="/eliminar-datos/">Eliminar mi cuenta y mis datos</a></li>
           </ul>
         </div>

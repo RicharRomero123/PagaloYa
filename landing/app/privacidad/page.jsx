@@ -1,5 +1,6 @@
 import Cabecera from '../../components/Cabecera';
 import Pie from '../../components/Pie';
+import { SITIO } from '../../lib/seo';
 
 export const metadata = {
   title: 'Política de privacidad',
@@ -207,7 +208,7 @@ export default function Privacidad() {
         <h2>11. Cambios a esta política</h2>
         <p>
           Si modificamos esta política, publicaremos la nueva versión en{' '}
-          <a href="https://pagoya.pe/privacidad/">pagoya.pe/privacidad</a> con su nueva
+          <a href={`${SITIO}/privacidad/`}>esta misma página</a> con su nueva
           fecha de vigencia. Si el cambio es significativo (por ejemplo, un nuevo uso de
           los datos), te lo avisaremos además dentro de la App antes de que entre en
           vigor.
@@ -219,9 +220,13 @@ export default function Privacidad() {
           <br />
           Correo: <a href="mailto:pimentel@inklop.com">pimentel@inklop.com</a>
           <br />
-          Web: <a href="https://pagoya.pe/">pagoya.pe</a>
+          Web: <a href={`${SITIO}/`}>{SITIO.replace('https://', '')}</a>
           <br />
           Aplicación: PagoYa (<code>pe.pagoya.app</code>) en Google Play.
+        </p>
+        <p>
+          Ver también nuestros <a href="/terminos/">Términos y condiciones</a> y el{' '}
+          <a href="/ayuda/">centro de ayuda</a>.
         </p>
       </main>
       <Pie compacto />

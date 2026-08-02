@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Logo "G" de Google para el botón de inicio de sesión (colores oficiales,
+     uso permitido por las guías de Google Sign-In). No teñir jamás. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#4285F4"
+        android:pathData="M23.7693,12.2769C23.7693,11.4611 23.7032,10.641 23.5621,9.8384H12.2429V14.4596H18.7249C18.4559,15.95 17.5916,17.2684 16.3261,18.1062V21.1047H20.1932C22.4641,19.0146 23.7693,15.9279 23.7693,12.2769Z" />
+    <path
+        android:fillColor="#34A853"
+        android:pathData="M12.2429,24.0016C15.4795,24.0016 18.2089,22.939 20.1976,21.1046L16.3305,18.1062C15.2546,18.8381 13.8656,19.2526 12.2473,19.2526C9.1166,19.2526 6.4621,17.1405 5.5096,14.3008H1.519V17.3918C3.5562,21.4441 7.7056,24.0016 12.2429,24.0016Z" />
+    <path
+        android:fillColor="#FBBC04"
+        android:pathData="M5.5053,14.3008C5.0026,12.8104 5.0026,11.1965 5.5053,9.7061V6.6151H1.5191C-0.183,10.0059 -0.183,14.0009 1.5191,17.3918L5.5053,14.3008Z" />
+    <path
+        android:fillColor="#EA4335"
+        android:pathData="M12.2429,4.7498C13.9538,4.7234 15.6073,5.3672 16.8464,6.5489L20.2726,3.1227C18.1031,1.0855 15.2237,-0.0345 12.2429,0.0008C7.7056,0.0008 3.5562,2.5583 1.519,6.615L5.5052,9.7061C6.4533,6.862 9.1122,4.7498 12.2429,4.7498Z" />
+</vector>

@@ -209,6 +209,10 @@ p { margin: 0 0 1em; }
 }
 .logo svg { width: 36px; height: 36px; }
 .logo b { color: var(--naranja); font-weight: 800; }
+.logo .logo-icono { display: block; width: 36px; height: 36px; }
+/* Wordmark oficial ("Pago" azul + "Ya" naranja): solo sobre fondos claros.
+   En el pie (fondo azul noche) se queda el texto blanco de siempre. */
+.logo .logo-wordmark { display: block; width: auto; height: 30px; }
 
 /* Siete enlaces + logo + botón no entran antes de ~1000px; debajo manda la
    hamburguesa, que ya cubre bien ese caso. El gap es elástico porque con
@@ -947,6 +951,7 @@ p { margin: 0 0 1em; }
 
 /* Modo remoto: diagrama */
 .remoto {
+  position: relative;
   margin-top: 68px;
   background: var(--crema);
   border: var(--borde);
@@ -955,6 +960,20 @@ p { margin: 0 0 1em; }
   padding: 40px 26px;
 }
 @media (min-width: 900px) { .remoto { padding: 50px 54px; } }
+/* La mascota (el parlantito) asomada en la esquina de la tarjeta. En celular
+   va chiquita para no tapar el texto; en escritorio se asoma por el borde. */
+.remoto-mascota {
+  position: absolute;
+  top: -34px;
+  right: 14px;
+  width: 92px;
+  height: auto;
+  transform: rotate(5deg);
+  filter: drop-shadow(3px 4px 0 rgba(26, 43, 74, .15));
+}
+@media (min-width: 900px) {
+  .remoto-mascota { width: 150px; top: -52px; right: 44px; }
+}
 .remoto h3 { font-size: clamp(1.3rem, 3.4vw, 1.7rem); }
 .remoto > p { max-width: 44em; }
 .diagrama {
@@ -1355,7 +1374,7 @@ p { margin: 0 0 1em; }
 }
 .pie .logo { color: var(--blanco); margin-bottom: 10px; }
 .pie-grid { display: grid; gap: 36px; }
-@media (min-width: 800px) { .pie-grid { grid-template-columns: 1.4fr 1fr .8fr 1fr; gap: 40px; } }
+@media (min-width: 800px) { .pie-grid { grid-template-columns: 1.4fr repeat(4, 1fr); gap: 40px; } }
 .pie h3 { color: var(--blanco); font-size: 1rem; margin-bottom: .7em; }
 .pie ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
 .pie a { color: #D4DCEC; text-decoration: none; }
@@ -1631,6 +1650,63 @@ p { margin: 0 0 1em; }
   .cifra:hover strong { text-shadow: 0 0 20px rgba(255, 201, 60, .5); }
 
   .wsp-flotante:hover { transform: scale(1.05) rotate(-3deg); }
+}
+
+/* ============================================================
+   FORMULARIO DE CONSULTAS (/consultas)
+   ------------------------------------------------------------
+   Sitio estático: no hay backend. El form solo arma el mensaje
+   y lo abre en WhatsApp o correo. Estilo alineado a la prosa
+   .legal para que calce con el resto de páginas de contenido.
+   ============================================================ */
+.form-consulta {
+  display: grid;
+  gap: 16px;
+  max-width: 620px;
+  margin: 1.6em 0 0.4em;
+}
+.form-consulta label {
+  display: grid;
+  gap: 6px;
+  font-family: var(--display);
+  font-weight: 700;
+  color: var(--azul);
+}
+.form-consulta .opcional {
+  font-weight: 400;
+  color: var(--texto-suave);
+  font-family: inherit;
+}
+.form-consulta input,
+.form-consulta textarea {
+  font: inherit;
+  font-weight: 400;
+  color: var(--azul);
+  background: var(--blanco);
+  border: var(--borde);
+  border-radius: 14px;
+  padding: 12px 14px;
+  width: 100%;
+}
+.form-consulta textarea { resize: vertical; }
+.form-consulta input::placeholder,
+.form-consulta textarea::placeholder { color: var(--texto-suave); }
+.form-consulta input:focus,
+.form-consulta textarea:focus {
+  outline: none;
+  box-shadow: 4px 4px 0 rgba(255, 107, 26, .35);
+}
+.form-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+.form-botones .btn { border: none; cursor: pointer; }
+.form-nota {
+  color: var(--texto-suave);
+  font-size: .95rem;
+  margin-top: 2px;
 }
 
 /* ---------- Movimiento reducido ---------- */

@@ -9,7 +9,7 @@ operadores/{uid}                     → { nombre }   ← tú y tu equipo (PANEL
 usuarios/{uid}                       → { comercioId }
 codigos/{codigo6digitos}             → { comercioId }
 comercios/{id}                       → { nombre, duenoUid, codigoVinculacion, creadoEn,
-                                         suscripcion?, ubicacion?, contacto? }
+                                         numDispositivos, suscripcion?, ubicacion?, contacto? }
 comercios/{id}/miembros/{uid}        → { rol: "dueno"|"trabajador", nombre, puedeCapturar }
 comercios/{id}/pagos/{pagoId}        → { billeteraId, billeteraNombre, pagador,
                                          monto, timestamp, origenUid, recibidoEn }
@@ -53,6 +53,23 @@ Lo que queda fuera del alcance de las reglas: el dueño podría, con un APK
 modificado, inventar pagos **en su propio negocio**. No es una amenaza (es su
 caja y su plata); la amenaza real es el cliente con la captura falsa y el
 trabajador que quiere cuadrar un faltante, y ambas están cubiertas.
+
+## Tope de dispositivos por plan (baranda de servidor)
+
+PagoYa cobra por nº de teléfonos vinculados a un comercio. El tope se hace
+cumplir en las reglas (el límite del cliente Android es evadible):
+
+- Topes canónicos (`maxDispositivosDePlan` en `firestore.rules`): gratis=1,
+  caserito=3, patron=10. Sin suscripción → gratis (1). Espejo en el cliente:
+  `app-android/.../core/Plan.kt`.
+- Contador denormalizado `comercios/{id}.numDispositivos` (= nº de docs en
+  `miembros`, el dueño incluido). Nace en 1 al crear el comercio. Unirse suma +1
+  y salir resta -1, **en el mismo lote atómico** que crea/borra el miembro; las
+  reglas exigen esa coherencia y que el +1 no pase del tope del plan. La carrera
+  se descarta porque el ±1 es un update sobre el mismo doc del comercio, que
+  Firestore serializa.
+- Detalle, migración de comercios legacy y pendientes: ver
+  `backend/PENDIENTE-LIMITE-DISPOSITIVOS.md`.
 
 ## Anti-fraude de membresías
 

@@ -19,8 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -43,7 +41,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import compose.icons.TablerIcons
+import compose.icons.tablericons.ArrowLeft
+import compose.icons.tablericons.Bulb
+import compose.icons.tablericons.PlayerPlay
+import compose.icons.tablericons.Volume
 import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.voz.CatalogoVoces
 import pe.pagoya.app.core.voz.PreferenciasVoz
@@ -105,7 +107,7 @@ fun PantallaVoz(alVolver: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = alVolver) {
                     Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
+                        TablerIcons.ArrowLeft,
                         contentDescription = "Volver",
                         tint = AzulNoche,
                     )
@@ -308,17 +310,30 @@ fun PantallaVoz(alVolver: () -> Unit) {
         }
 
         item {
-            BotonPagoYa("🔊 Probar cómo suena una venta", alPulsar = { probar() })
+            BotonPagoYa(
+                "Probar cómo suena una venta",
+                icono = TablerIcons.Volume,
+                alPulsar = { probar() },
+            )
         }
         item {
             TarjetaPagoYa(color = Humo) {
-                Text(
-                    "💡 Estas voces salen de tu teléfono, así que funcionan aunque " +
-                        "se caiga el internet. Prefiere siempre una que diga " +
-                        "“sin internet”.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextoMedio,
-                )
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(
+                        TablerIcons.Bulb,
+                        contentDescription = null,
+                        tint = NaranjaPagoYa,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Estas voces salen de tu teléfono, así que funcionan aunque " +
+                            "se caiga el internet. Prefiere siempre una que diga " +
+                            "“sin internet”.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextoMedio,
+                    )
+                }
             }
         }
     }
@@ -356,7 +371,13 @@ private fun TarjetaVoz(
                     .background(if (seleccionada) NaranjaPagoYa else NaranjaSuave),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(if (seleccionada) "🔊" else "▶", fontSize = 16.sp)
+                Icon(
+                    if (seleccionada) TablerIcons.Volume
+                    else TablerIcons.PlayerPlay,
+                    contentDescription = if (seleccionada) "Voz elegida" else "Probar esta voz",
+                    tint = if (seleccionada) Blanco else NaranjaHondo,
+                    modifier = Modifier.size(20.dp),
+                )
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {

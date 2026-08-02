@@ -1,7 +1,10 @@
 // Constantes y helpers de SEO. ÚNICO lugar donde vive el dominio: si algún día
-// cambia pagoya.pe, se cambia aquí y en public/robots.txt + public/sitemap.xml.
-
-export const SITIO = 'https://pagoya.pe';
+// cambia el dominio, se cambia aquí y en public/robots.txt + public/sitemap.xml.
+//
+// TODO(dominio): volver a 'https://pagoya.pe' cuando el dominio esté comprado y
+// apuntando. Por ahora el dominio REAL es el de Vercel, para que los canonical,
+// Open Graph y la URL de privacidad que valida Play Store resuelvan de verdad.
+export const SITIO = 'https://pagalo-ya.vercel.app';
 export const NOMBRE = 'PagoYa';
 
 /** URL absoluta a partir de una ruta ('/yape-falso/'). */
@@ -82,7 +85,8 @@ export const ORGANIZACION = {
   '@id': `${SITIO}/#organizacion`,
   name: NOMBRE,
   url: SITIO,
-  logo: url('/assets/favicon.svg'),
+  // Google pide un logo raster de al menos 112x112 para el panel de marca.
+  logo: url('/assets/icon-512.png'),
   email: 'pimentel@inklop.com',
   areaServed: { '@type': 'Country', name: 'Perú' },
   slogan: 'Tu caja habla. Tus pagos suenan.',

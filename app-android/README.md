@@ -116,5 +116,7 @@ desde todas.
 
 ## Siguiente hito
 
-FCM + Cloud Functions para despertar teléfonos aunque el sistema haya matado el
-proceso, y panel web del dueño con el historial completo del comercio.
+El modo escucha ya llega por **push FCM** (Cloud Function → `MensajesPagoYa`),
+no por listener de Firestore: el anuncio despierta aunque la app esté en
+segundo plano. Falta el panel web del dueño con el historial completo del
+comercio.

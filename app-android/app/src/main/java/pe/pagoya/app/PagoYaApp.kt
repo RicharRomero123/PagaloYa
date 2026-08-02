@@ -5,8 +5,10 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.BilleteraParser
+import pe.pagoya.app.core.Enlaces
 import pe.pagoya.app.core.RegistroPagos
 import pe.pagoya.app.nube.AppCheckPagoYa
+import pe.pagoya.app.servicio.VigilanteWorker
 
 class PagoYaApp : Application() {
 
@@ -22,6 +24,11 @@ class PagoYaApp : Application() {
         // 2. Patrones desde la nube — si Yape cambia su texto, se corrige desde la
         //    consola (Remote Config, parámetro "billeteras_json") sin republicar APK
         actualizarPatronesDesdeNube()
+        // 3. Enlaces configurables (WhatsApp de ventas, redes) desde Firestore:
+        //    el operador los edita en su panel sin republicar la app.
+        Enlaces.cargarDesdeNube()
+        // 4. Vigilante externo: revive servicio y listener aunque maten el proceso
+        VigilanteWorker.programar(this)
     }
 
     private fun actualizarPatronesDesdeNube() {

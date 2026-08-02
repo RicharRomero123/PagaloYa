@@ -1,5 +1,6 @@
 package pe.pagoya.app.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,11 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -27,14 +23,21 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import compose.icons.TablerIcons
+import compose.icons.tablericons.Cash
+import compose.icons.tablericons.Home
+import compose.icons.tablericons.Settings
+import compose.icons.tablericons.Users
+import pe.pagoya.app.R
 import pe.pagoya.app.ui.caja.PantallaCaja
 import pe.pagoya.app.ui.equipo.PantallaEquipo
 import pe.pagoya.app.ui.inicio.PantallaInicio
 import pe.pagoya.app.ui.mas.PantallaMas
 import pe.pagoya.app.ui.tema.AzulNoche
 import pe.pagoya.app.ui.tema.Blanco
-import pe.pagoya.app.ui.tema.CirculoEmoji
 import pe.pagoya.app.ui.tema.Crema
 import pe.pagoya.app.ui.tema.NaranjaPagoYa
 import pe.pagoya.app.ui.tema.NaranjaSuave
@@ -45,10 +48,10 @@ import pe.pagoya.app.ui.tema.TextoTenue
  * El orden es el de importancia para el comerciante, no el alfabético.
  */
 enum class Pestana(val etiqueta: String, val icono: ImageVector) {
-    INICIO("Inicio", Icons.Filled.Home),
-    CAJA("Caja", Icons.Filled.DateRange),
-    EQUIPO("Equipo", Icons.Filled.Person),
-    MAS("Más", Icons.Filled.Settings),
+    INICIO("Inicio", TablerIcons.Home),
+    CAJA("Caja", TablerIcons.Cash),
+    EQUIPO("Equipo", TablerIcons.Users),
+    MAS("Más", TablerIcons.Settings),
 }
 
 /**
@@ -88,7 +91,10 @@ fun ShellPagoYa(
     ) { relleno ->
         Box(Modifier.padding(relleno)) {
             when (pestana) {
-                Pestana.INICIO -> PantallaInicio(alRevisarPermisos = alRevisarPermisos)
+                Pestana.INICIO -> PantallaInicio(
+                    alRevisarPermisos = alRevisarPermisos,
+                    alIrA = { pestana = it },
+                )
                 Pestana.CAJA -> PantallaCaja()
                 Pestana.EQUIPO -> PantallaEquipo()
                 Pestana.MAS -> PantallaMas(
@@ -110,13 +116,20 @@ fun PantallaCargando() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
     ) {
-        CirculoEmoji("🔊", tamano = 110.dp)
-        Spacer(Modifier.height(20.dp))
-        Text(
-            "PagoYa",
-            style = MaterialTheme.typography.displayMedium,
-            color = NaranjaPagoYa,
+        Image(
+            painterResource(R.drawable.splash_icono),
+            contentDescription = "PagoYa",
+            modifier = Modifier.height(110.dp),
+            contentScale = ContentScale.Fit,
         )
+        Spacer(Modifier.height(20.dp))
+        Image(
+            painterResource(R.drawable.wordmark_pagoya),
+            contentDescription = null,
+            modifier = Modifier.height(44.dp),
+            contentScale = ContentScale.Fit,
+        )
+        Spacer(Modifier.height(6.dp))
         Text(
             "Tu caja habla. Tus pagos suenan.",
             style = MaterialTheme.typography.bodyMedium,

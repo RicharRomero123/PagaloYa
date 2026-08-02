@@ -35,8 +35,11 @@ export const metadata = {
   alternates: { canonical: '/' },
   manifest: '/site.webmanifest',
   icons: {
-    icon: '/assets/favicon.svg',
-    apple: '/assets/favicon.svg',
+    icon: [
+      { url: '/assets/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/assets/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/assets/apple-touch-icon.png',
   },
   robots: {
     index: true,

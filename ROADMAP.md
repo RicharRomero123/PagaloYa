@@ -106,7 +106,7 @@ PagoYa/
 ## Fase 2 — Lanzamiento comercial (semanas 9–12)
 
 - [ ] Publicar en Play Store (declarar bien el permiso de notificaciones)
-- [ ] Activar precios: Gratis / Caserito S/ 12.90 / Patrón S/ 24.90
+- [ ] Activar precios: Gratis / Caserito S/ 9.90 / Patrón S/ 24.90
 - [ ] Marketing: TikTok orgánico (el parlante anunciando es muy viral) + venta
       puerta a puerta en 2–3 mercados de Lima con demo en vivo
 - [ ] Métricas norte: comercios activos/semana, % que pasa de gratis a pago, churn

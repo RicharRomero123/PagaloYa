@@ -32,7 +32,9 @@ landing/
 │   ├── seo.js                   ← dominio, metadata, JSON-LD (ÚNICO lugar)
 │   └── guias.js                 ← catálogo de guías (pie, home, hub y relacionadas)
 ├── public/
-│   ├── assets/ (favicon.svg, og.png)
+│   ├── assets/                  ← marca oficial: favicons (favicon-32, icon-192/512,
+│   │                              apple-touch-icon), icono-96, wordmark-pagoya,
+│   │                              mascota-pagoya y og.png (generado con esos assets)
 │   ├── robots.txt / sitemap.xml / site.webmanifest
 ├── next.config.mjs              ← output: 'export', trailingSlash
 ├── postcss.config.mjs           ← Tailwind v4
@@ -88,15 +90,15 @@ componentes nuevos para respetar la marca.
 | **Número de WhatsApp real** 🔴 | `lib/enlaces.js` | Cambiar `NUMERO_WSP = '51999999999'` por el real (formato `51XXXXXXXXX`). Es el único lugar. **Hasta que se haga, ningún botón del sitio funciona.** |
 | **Verificación de Search Console** 🔴 | `app/layout.jsx` (`verification`) | Descomentar con el código de Google. Sin esto no se puede pedir indexación manual. Ver `SEO.md`. |
 | **Analytics** | `app/layout.jsx` (head) | Descomentar el snippet de Plausible (o cambiar por GA4). Los eventos `WhatsApp` (prop `donde`) y `DemoVoz` ya se disparan solos. |
-| **Dominio** | metadata/sitemap/robots asumen `https://pagoya.pe` | Si cambia, reemplazar en `lib/seo.js`, `public/sitemap.xml` y `public/robots.txt`. |
+| **Dominio** 🟡 | metadata/sitemap/robots usan `https://pagalo-ya.vercel.app` (provisional, en Vercel) | Cuando `pagoya.pe` esté comprado y apuntando, reemplazar en `lib/seo.js` (constante `SITIO`), `public/sitemap.xml` y `public/robots.txt`. Está marcado con `TODO(dominio)`. |
 | **Redes sociales** | `components/Pie.jsx` | Enlaces a `@pagoya.pe` en TikTok/Facebook/Instagram; verificar URLs finales. |
-| **Favicon/OG definitivos** | `public/assets/` | Placeholders con la marca; reemplazar cuando exista el logo oficial. |
+| ~~Favicon/OG definitivos~~ | `public/assets/` | ✅ Listo: assets oficiales (ícono, wordmark y mascota) integrados; fuentes en la raíz del repo (`icono-pagoya.png`, `Untitled design (6).png`, `mascota-pagalo-ya.svg`). |
 | **Enlace a Google Play** | `app/page.jsx` (paso 1 y CTA) | Agregar el badge cuando la app esté publicada. |
 
 ## Notas para Google Play Console
 
-- **URL de política de privacidad:** `https://pagoya.pe/privacidad/`
-- **URL de eliminación de datos:** `https://pagoya.pe/eliminar-datos/`
+- **URL de política de privacidad:** `https://pagalo-ya.vercel.app/privacidad/` (provisional; será `https://pagoya.pe/privacidad/` cuando el dominio apunte)
+- **URL de eliminación de datos:** `https://pagalo-ya.vercel.app/eliminar-datos/` (provisional; será `https://pagoya.pe/eliminar-datos/`)
 - La política cubre: acceso a notificaciones (`BIND_NOTIFICATION_LISTENER_SERVICE`),
   Google Sign-In, Firebase/Google Cloud, no compartición con terceros, retención
   y eliminación, derechos ARCO (Ley 29733), menores, cambios y contacto

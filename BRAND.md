@@ -60,5 +60,5 @@ con confianza, sin tecnicismos.
 | Plan | Qué incluye | Precio |
 |---|---|---|
 | **Gratis** | 1 teléfono, anuncio de voz | S/ 0 |
-| **Caserito** | Multi-teléfono, dueño remoto, historial, cierre de caja | S/ 12.90/mes |
+| **Caserito** | Multi-teléfono, dueño remoto, historial, cierre de caja | S/ 9.90/mes |
 | **Patrón** | Todo + parlante PagoYa en comodato | S/ 24.90/mes |

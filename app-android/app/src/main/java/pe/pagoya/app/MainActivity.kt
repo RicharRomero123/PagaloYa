@@ -4,6 +4,15 @@ import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -12,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntOffset
 import pe.pagoya.app.nube.ComercioRepo
 import pe.pagoya.app.nube.Sesion
 import pe.pagoya.app.servicio.ServicioPrimerPlano
@@ -28,6 +38,9 @@ import pe.pagoya.app.ui.tema.TemaPagoYa
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // El splash (Theme.PagoYa.Splash del manifest) solo vive durante el
+        // arranque en frío; aquí se vuelve al tema normal antes de Compose.
+        setTheme(R.style.Theme_PagoYa)
         super.onCreate(savedInstanceState)
         setContent { TemaPagoYa { RaizPagoYa(this) } }
     }
@@ -49,45 +62,88 @@ private enum class Etapa { CARGANDO, LOGIN, COMERCIO, BIENVENIDA, PERMISOS, PRIN
 fun RaizPagoYa(activity: MainActivity) {
     val contexto = LocalContext.current
     var etapa by remember { mutableStateOf(Etapa.CARGANDO) }
+    // PERMISOS se abre desde el onboarding o desde "Revisar permisos" del
+    // hogar: atrás debe regresar a donde se estaba de verdad.
+    var permisosDesdePrincipal by remember { mutableStateOf(false) }
     val comercio by ComercioRepo.comercio.collectAsState()
 
     LaunchedEffect(Unit) { etapa = etapaInicial(contexto) }
 
-    when (etapa) {
-        Etapa.CARGANDO -> PantallaCargando()
-
-        Etapa.LOGIN -> PantallaLogin(activity) { etapa = Etapa.COMERCIO }
-
-        Etapa.COMERCIO -> {
-            // Si al entrar ya tenía comercio, saltar directo
-            LaunchedEffect(Unit) {
-                if (ComercioRepo.cargar() != null) etapa = trasElComercio(contexto)
+    // Misma coreografía que el flujo de acceso: avanzar desliza a la
+    // izquierda, retroceder desliza a la derecha, siempre con fundido.
+    AnimatedContent(
+        targetState = etapa,
+        transitionSpec = {
+            val adelante = targetState.ordinal > initialState.ordinal
+            val resorte = spring<IntOffset>(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessMediumLow,
+            )
+            if (adelante) {
+                (slideInHorizontally(resorte) { it / 3 } + fadeIn(tween(220))) togetherWith
+                    (slideOutHorizontally(resorte) { -it / 3 } + fadeOut(tween(160)))
+            } else {
+                (slideInHorizontally(resorte) { -it / 3 } + fadeIn(tween(220))) togetherWith
+                    (slideOutHorizontally(resorte) { it / 3 } + fadeOut(tween(160)))
             }
-            PantallaComercio {
+        },
+        label = "raiz",
+    ) { actual ->
+        when (actual) {
+            Etapa.CARGANDO -> PantallaCargando()
+
+            Etapa.LOGIN -> PantallaLogin(activity) { etapa = Etapa.COMERCIO }
+
+            Etapa.COMERCIO -> {
+                // Si al entrar ya tenía comercio, saltar directo
+                LaunchedEffect(Unit) {
+                    if (ComercioRepo.cargar() != null) etapa = trasElComercio(contexto)
+                }
+                PantallaComercio(
+                    alCerrarSesion = {
+                        Sesion.salir()
+                        etapa = Etapa.LOGIN
+                    },
+                    alListo = {
+                        ServicioPrimerPlano.arrancar(activity)
+                        etapa = trasElComercio(contexto)
+                    },
+                )
+            }
+
+            Etapa.BIENVENIDA -> PantallaBienvenida(
+                alSalirCuenta = {
+                    Sesion.salir()
+                    etapa = Etapa.LOGIN
+                },
+                alTerminar = {
+                    marcarBienvenidaVista(contexto)
+                    permisosDesdePrincipal = false
+                    etapa = Etapa.PERMISOS
+                },
+            )
+
+            Etapa.PERMISOS -> AsistentePermisos(
+                captura = comercio?.puedeCapturar ?: false,
+                alVolver = {
+                    etapa = if (permisosDesdePrincipal) Etapa.PRINCIPAL else Etapa.BIENVENIDA
+                },
+            ) {
                 ServicioPrimerPlano.arrancar(activity)
-                etapa = trasElComercio(contexto)
+                etapa = Etapa.PRINCIPAL
             }
-        }
 
-        Etapa.BIENVENIDA -> PantallaBienvenida {
-            marcarBienvenidaVista(contexto)
-            etapa = Etapa.PERMISOS
+            Etapa.PRINCIPAL -> ShellPagoYa(
+                alRevisarPermisos = {
+                    permisosDesdePrincipal = true
+                    etapa = Etapa.PERMISOS
+                },
+                alSalir = {
+                    Sesion.salir()
+                    etapa = Etapa.LOGIN
+                },
+            )
         }
-
-        Etapa.PERMISOS -> AsistentePermisos(
-            captura = comercio?.puedeCapturar ?: false,
-        ) {
-            ServicioPrimerPlano.arrancar(activity)
-            etapa = Etapa.PRINCIPAL
-        }
-
-        Etapa.PRINCIPAL -> ShellPagoYa(
-            alRevisarPermisos = { etapa = Etapa.PERMISOS },
-            alSalir = {
-                Sesion.salir()
-                etapa = Etapa.LOGIN
-            },
-        )
     }
 }
 

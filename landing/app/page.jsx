@@ -6,6 +6,7 @@ import Cifras from '../components/Cifras';
 import { IconoWsp } from '../components/Iconos';
 import { wsp, MENSAJE_GENERAL } from '../lib/enlaces';
 import { GUIAS } from '../lib/guias';
+import { SITIO } from '../lib/seo';
 
 export const metadata = {
   alternates: { canonical: '/' },
@@ -33,8 +34,8 @@ const datosApp = {
     { '@type': 'Offer', name: 'Caserito', price: '12.90', priceCurrency: 'PEN' },
     { '@type': 'Offer', name: 'Patrón', price: '24.90', priceCurrency: 'PEN', availability: 'https://schema.org/PreOrder' },
   ],
-  url: 'https://pagoya.pe/',
-  publisher: { '@id': 'https://pagoya.pe/#organizacion' },
+  url: `${SITIO}/`,
+  publisher: { '@id': `${SITIO}/#organizacion` },
 };
 
 const datosFaq = {
@@ -369,6 +370,16 @@ export default function Inicio() {
 
             {/* Modo escucha remoto */}
             <div className="remoto reveal">
+              {/* La mascota oficial: el parlantito de PagoYa, asomado en la tarjeta */}
+              <img
+                className="remoto-mascota"
+                src="/assets/mascota-pagoya.png"
+                alt=""
+                aria-hidden="true"
+                width="360"
+                height="301"
+                loading="lazy"
+              />
               <span className="antetitulo">Cuando no estás en la tienda</span>
               <h3>¿Saliste? Igual te enteras primero</h3>
               <p>

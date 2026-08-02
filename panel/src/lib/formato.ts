@@ -17,6 +17,17 @@ export function fechaCorta(ms: number): string {
   }).format(new Date(ms));
 }
 
+/** "hace 5 min" / "hace 2 h" / "hace 3 días" — para latidos y cosas frescas. */
+export function haceRato(ms: number, ahora = Date.now()): string {
+  if (!ms) return "nunca";
+  const min = Math.round((ahora - ms) / 60_000);
+  if (min < 1) return "ahorita";
+  if (min < 60) return `hace ${min} min`;
+  const horas = Math.round(min / 60);
+  if (horas < 24) return `hace ${horas} h`;
+  return `hace ${Math.round(horas / 24)} días`;
+}
+
 /** "en 12 días" / "hace 3 días" / "hoy" — se lee más rápido que una fecha. */
 export function haceOEn(ms: number, ahora = Date.now()): string {
   if (!ms) return "—";

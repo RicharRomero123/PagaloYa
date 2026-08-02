@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://pagoya.pe/sitemap.xml
+Sitemap: https://pagalo-ya.vercel.app/sitemap.xml

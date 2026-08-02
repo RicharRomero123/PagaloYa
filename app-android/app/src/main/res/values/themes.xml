@@ -7,4 +7,12 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowBackground">@color/crema</item>
     </style>
+
+    <!-- Splash: se ve solo durante el arranque en frío; MainActivity vuelve a
+         Theme.PagoYa con setTheme() antes de dibujar Compose. -->
+    <style name="Theme.PagoYa.Splash">
+        <item name="android:statusBarColor">@color/naranja_pagoya</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">@drawable/splash_pagoya</item>
+    </style>
 </resources>

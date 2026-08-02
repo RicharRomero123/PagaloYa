@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+: SplashScreen nativo con el parlantito sobre naranja. -->
+    <style name="Theme.PagoYa.Splash">
+        <item name="android:windowSplashScreenBackground">@color/naranja_pagoya</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="android:windowBackground">@color/crema</item>
+        <item name="android:statusBarColor">@color/crema</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

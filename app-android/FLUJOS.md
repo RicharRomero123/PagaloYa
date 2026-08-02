@@ -133,17 +133,29 @@ Los patrones vienen de Remote Config (`billeteras_json`) con los de
 
 ## 6. Modo escucha (el dueño remoto)
 
+Por **push FCM**, no por listener de Firestore: el anuncio llega aunque la app
+esté en segundo plano o cerrada, y no gasta lecturas por tener la app abierta.
+
 ```
-ServicioPrimerPlano.onStartCommand
+Teléfono capturador → ComercioRepo.subirPago → comercios/{id}/pagos/{pagoId}
    ▼
-ComercioRepo.escucharPagos { pago -> registrar + anunciar }
-   │
-   │  query: pagos ordenados por recibidoEn (hora del servidor), limit 30
-   │
-   ├─ primera foto  → se marca todo como visto, NO se anuncia
-   │                  (esos pagos ya sonaron cuando cayeron)
-   └─ de ahí en adelante → cada ADDED nuevo que no sea propio → suena
+Cloud Function (onCreate del pago)
+   │  lee comercios/{id}/dispositivos/*.fcmToken (menos el origenUid)
+   │  arma data-only { tipo:"pago", comercioId, pagoId, billeteraId,
+   │                   billeteraNombre, pagador, monto, timestamp, origenUid }
+   ▼
+MensajesPagoYa.onMessageReceived  (data["tipo"] == "pago")
+   ▼
+ComercioRepo.recibirPagoRemoto
+   ├─ ¿comercioId == comercio actual?     no → se descarta
+   ├─ ¿origenUid == mi uid?               sí → se descarta (ya sonó local)
+   ├─ dedup por pagoId (yaVistos)         repetido → se descarta
+   └─ RegistroPagos.agregar + Anunciador.anunciarPago  → suena
 ```
+
+El token FCM viaja en el **latido** de `TelemetriaRepo` (campo `fcmToken` en
+`dispositivos/{uid}`); `onNewToken` lo re-sube al rotar. El foreground service
+mantiene vivo el proceso para que el push despierte el anuncio.
 
 **Sin relojes.** No se filtra por hora del teléfono: da igual que el equipo del
 trabajador esté adelantado o atrasado respecto al del dueño.

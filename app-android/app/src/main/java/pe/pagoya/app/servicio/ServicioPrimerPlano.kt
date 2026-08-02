@@ -9,7 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.content.ContextCompat
-import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -20,10 +19,9 @@ import kotlinx.coroutines.launch
 import pe.pagoya.app.core.Guardian
 import pe.pagoya.app.MainActivity
 import pe.pagoya.app.R
-import pe.pagoya.app.core.Anunciador
-import pe.pagoya.app.core.RegistroPagos
 import pe.pagoya.app.nube.ComercioRepo
 import pe.pagoya.app.nube.Sesion
+import pe.pagoya.app.nube.TelemetriaRepo
 
 /**
  * Servicio de primer plano: mantiene vivo el proceso para que el listener y el
@@ -32,13 +30,16 @@ import pe.pagoya.app.nube.Sesion
 class ServicioPrimerPlano : Service() {
 
     private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var oidoNube: ListenerRegistration? = null
 
     private var guardianActivo = false
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        conectarOidoNube()
+        // Si el sistema soltó el listener mientras estábamos muertos, re-vincularlo
+        EscuchaNotificaciones.reconectar(this)
+        prepararModoEscucha()
         vigilarYape()
+        // Offline Guard: vigila la conexión y avisa cuando se cae la red.
+        RedGuardia.iniciar(this)
         crearCanal()
         val abrirApp = PendingIntent.getActivity(
             this, 0,
@@ -60,36 +61,49 @@ class ServicioPrimerPlano : Service() {
 
     /**
      * Modo escucha: este teléfono anuncia los pagos que capturan OTROS teléfonos
-     * del comercio (trabajadores oyen lo que captura el teléfono del dueño).
+     * del comercio (trabajadores/dueño remoto oyen lo que captura el teléfono
+     * del negocio).
+     *
+     * Ya NO abrimos un listener de Firestore: el anuncio llega por PUSH FCM
+     * (Cloud Function → MensajesPagoYa) aunque la app esté en segundo plano o
+     * cerrada. Aquí solo dejamos listo el comercio en memoria (para que el push
+     * sepa cuál es el actual) y las suscripciones a las campañas del operador.
      */
-    private fun conectarOidoNube() {
-        if (oidoNube != null || !Sesion.conectado()) return
+    private fun prepararModoEscucha() {
+        if (!Sesion.conectado()) return
         alcance.launch {
             runCatching {
-                ComercioRepo.cargar() ?: return@launch
-                oidoNube = ComercioRepo.escucharPagos { pago ->
-                    RegistroPagos.agregar(applicationContext, pago)
-                    Anunciador.anunciarPago(applicationContext, pago)
-                }
+                val comercio = ComercioRepo.cargar() ?: return@launch
+                // Campañas del operador: suscribir a los topics de este teléfono
+                // según su plan (todos + plan_x). Idempotente.
+                MensajesPagoYa.suscribirTopics(applicationContext, comercio.plan)
+                // El token FCM viaja en el latido; forzamos uno al arrancar para
+                // que la Function tenga a dónde empujar cuanto antes.
+                TelemetriaRepo.subirLatido(applicationContext)
             }
         }
     }
 
-    /** Guardián de Yape: cada 30 min verifica que Yape no esté detenida. */
+    /**
+     * Guardián de Yape: cada 5 min verifica que Yape no esté detenida y, si lo
+     * está, la revive solo (autoCurar). El chequeo es barato (un flag del
+     * PackageManager), así la ventana en que Yape puede estar muerta es corta.
+     */
     private fun vigilarYape() {
         if (guardianActivo) return
         guardianActivo = true
         alcance.launch {
             while (isActive) {
-                Guardian.alertaSiDetenida(applicationContext)
-                delay(30 * 60 * 1000L)
+                Guardian.autoCurar(applicationContext)
+                // El latido tiene su propio freno interno: no satura escrituras
+                TelemetriaRepo.subirLatido(applicationContext)
+                delay(5 * 60 * 1000L)
             }
         }
     }
 
     override fun onDestroy() {
-        oidoNube?.remove()
-        oidoNube = null
+        RedGuardia.detener(this)
         alcance.cancel()
         super.onDestroy()
     }

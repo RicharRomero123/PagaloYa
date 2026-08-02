@@ -37,7 +37,14 @@ export default function Cabecera({ conNav = false }) {
         <div className="wrap">
           <a className="logo" href="/" aria-label="PagoYa, inicio">
             <IconoLogo />
-            Pago<b>Ya</b>
+            {/* Wordmark oficial: "Pago" azul + "Ya" naranja. El alto lo fija el CSS. */}
+            <img
+              className="logo-wordmark"
+              src="/assets/wordmark-pagoya.png"
+              alt="PagoYa"
+              width="480"
+              height="173"
+            />
           </a>
 
           {conNav && (

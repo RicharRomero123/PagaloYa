@@ -349,6 +349,58 @@ object ComercioRepo {
         return true
     }
 
+    /**
+     * Rehidrata la Caja desde Firestore: rellena el registro local con los pagos
+     * inmutables del comercio (`comercios/{id}/pagos`). Es carga SILENCIOSA —
+     * NO pasa por el Anunciador, NO suena TTS ni vibra: solo llena el registro
+     * para que el historial no se sienta perdido tras reinstalar, cambiar de
+     * teléfono o limpiar datos (los pagos siguen en la nube, no en el APK).
+     *
+     * SUMA una carga inicial; no reemplaza ni el capturador ni el push FCM.
+     *
+     * Ventana de lecturas (para no comerse la cuota): `orderBy(recibidoEn, DESC)`
+     * + `limit(300)`. Elegí un tope fijo por docs (no una ventana por fecha)
+     * porque es una sola query, sin cálculo de fechas, y 300 coincide con el
+     * tope local (RegistroPagos.MAX_GUARDADOS): traer más se truncaría igual al
+     * fusionar. Es UNA lectura de <=300 docs por arranque de sesión. A escala
+     * grande esto se puede paginar o cachear; Firestore ya cachea offline, así
+     * que un `get()` por sesión es aceptable.
+     *
+     * Deduplicación: la hace RegistroPagos.fusionar por huella estable, así que
+     * coexiste sin duplicar con lo ya guardado en SharedPreferences y con lo que
+     * llegue por `recibirPagoRemoto` (push).
+     *
+     * Falla con gracia: si la lectura falla (sin red, etc.), no crashea; la Caja
+     * sigue mostrando lo local. Pensado para correr en coroutine de fondo.
+     */
+    suspend fun rehidratarPagos(context: Context) {
+        val comercioId = _comercio.value?.id ?: return
+        runCatching {
+            val docs = db.collection("comercios").document(comercioId)
+                .collection("pagos")
+                .orderBy("recibidoEn", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .limit(300)
+                .get()
+                .await()
+            val pagos = docs.mapNotNull { d ->
+                val monto = d.getDouble("monto") ?: return@mapNotNull null
+                Pago(
+                    billeteraId = d.getString("billeteraId") ?: "?",
+                    billeteraNombre = d.getString("billeteraNombre") ?: "Pago",
+                    pagador = d.getString("pagador") ?: "Alguien",
+                    monto = monto,
+                    // `timestamp` del pago (de la notificación). Ignoramos
+                    // `recibidoEn`/`origenUid`: no son parte del modelo Pago.
+                    timestamp = d.getLong("timestamp") ?: 0L,
+                )
+            }
+            RegistroPagos.fusionar(context, pagos)
+        }.onFailure {
+            // Sin red o sin permiso: la Caja se queda con lo local, no se cae.
+            Log.w(TAG, "Rehidratación de caja falló: ${it.message}")
+        }
+    }
+
     /** true si es la primera vez que vemos este pago. */
     private fun recordar(idPago: String): Boolean {
         if (!yaVistos.add(idPago)) return false

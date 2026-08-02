@@ -13,6 +13,7 @@ import {
 import { listarDispositivos, type Dispositivo } from "@/lib/dispositivos";
 import { fechaCorta, haceOEn } from "@/lib/formato";
 import { salir } from "@/lib/sesion";
+import { Campanas } from "./Campanas";
 import { Configuracion } from "./Configuracion";
 import { Equipo } from "./Equipo";
 import { FichaComercio } from "./FichaComercio";
@@ -44,6 +45,7 @@ export function ListaComercios({
 }) {
   const [verEquipo, setVerEquipo] = useState(false);
   const [verConfig, setVerConfig] = useState(false);
+  const [verCampanas, setVerCampanas] = useState(false);
   const [comercios, setComercios] = useState<Comercio[] | null>(null);
   const [dispositivos, setDispositivos] = useState<Dispositivo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -128,6 +130,13 @@ export function ListaComercios({
             className="text-sm font-bold text-azul underline underline-offset-4"
           >
             Configuración
+          </button>
+          <button
+            type="button"
+            onClick={() => setVerCampanas(true)}
+            className="text-sm font-bold text-azul underline underline-offset-4"
+          >
+            Campañas
           </button>
           <button
             type="button"
@@ -222,6 +231,8 @@ export function ListaComercios({
       )}
 
       {verConfig && <Configuracion alCerrar={() => setVerConfig(false)} />}
+
+      {verCampanas && <Campanas alCerrar={() => setVerCampanas(false)} />}
 
       {comercios !== null && comercios.length >= 200 && (
         <p className="mt-4 text-center text-xs text-texto-tenue">

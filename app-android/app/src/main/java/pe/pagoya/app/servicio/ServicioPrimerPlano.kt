@@ -33,6 +33,13 @@ class ServicioPrimerPlano : Service() {
 
     private var guardianActivo = false
 
+    /**
+     * La rehidratación de la Caja se hace una sola vez por vida del servicio
+     * (equivale a "una vez por sesión/arranque"): onStartCommand se re-ejecuta
+     * en cada onResume de la app y no queremos gastar una lectura cada vez.
+     */
+    private var cajaRehidratada = false
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Si el sistema soltó el listener mientras estábamos muertos, re-vincularlo
         EscuchaNotificaciones.reconectar(this)
@@ -80,6 +87,17 @@ class ServicioPrimerPlano : Service() {
                 // El token FCM viaja en el latido; forzamos uno al arrancar para
                 // que la Function tenga a dónde empujar cuanto antes.
                 TelemetriaRepo.subirLatido(applicationContext)
+                // Rehidratar la Caja desde Firestore UNA vez por arranque, para
+                // que el historial no se sienta perdido tras reinstalar/cambiar
+                // de teléfono. Silenciosa: no anuncia. Solo si el usuario va a
+                // ver la caja (dueño o trabajador con caja visible); si la caja
+                // está oculta, no gastamos lecturas.
+                if (!cajaRehidratada &&
+                    (comercio.rol == "dueno" || comercio.trabajadorVeCaja)
+                ) {
+                    cajaRehidratada = true
+                    ComercioRepo.rehidratarPagos(applicationContext)
+                }
             }
         }
     }

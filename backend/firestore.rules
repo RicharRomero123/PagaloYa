@@ -338,6 +338,15 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Historial de campañas push enviadas desde el panel (Function enviarCampana
+    // con el Admin SDK es la ÚNICA que escribe aquí: server key nunca en el
+    // navegador). Es auditoría/contabilidad de qué se mandó, a qué topic, quién
+    // y cuándo. El operador lo lee/lista en el panel; ningún cliente escribe.
+    match /campanas/{id} {
+      allow read: if autenticado() && esOperador();
+      allow write: if false;
+    }
+
     // Códigos de vinculación: solo lectura puntual (get) con el código exacto.
     // Nunca listables (list) para que nadie pesque códigos ajenos, y solo el
     // dueño puede crear un código que apunte a su comercio.

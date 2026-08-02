@@ -312,3 +312,113 @@ exports.canjearReferido = onCall(opciones, async (request) => {
 
   return { ok: true, mensaje: "¡Ganaste 15 días, casero!" };
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4) enviarCampana — el operador dispara una campaña push a un topic desde el
+//    panel web (antes se hacía a mano en la consola de Firebase; ver
+//    PUSH-CAMPANAS.md §4, "Fase 2 con Blaze").
+//
+//    Callable v2. SOLO operadores: la server key / Admin SDK jamás puede vivir
+//    en el navegador del panel (cualquiera abriría DevTools y spamearía a toda
+//    la base), así que el envío autenticado va SIEMPRE detrás de esta Function.
+//
+//    Es un mensaje `notification` (NO data-only): así el sistema lo muestra
+//    aunque la app esté cerrada, idéntico a la consola de Firebase. Ojo: esto NO
+//    es un pago (regla de oro anti-fake). Un push de campaña nunca crea ni suena
+//    como un pago; los pagos solo nacen de notificaciones reales capturadas.
+//
+//    Costo: 1 invocación por campaña, y se mandan poquísimas al mes → lejísimos
+//    del free tier (2 000 000 invocaciones/mes gratis).
+// ─────────────────────────────────────────────────────────────────────────────
+const TOPICS_CAMPANA = ["todos", "plan_gratis", "plan_caserito", "plan_patron"];
+
+exports.enviarCampana = onCall(opciones, async (request) => {
+  // Requiere auth.
+  const uid = request.auth && request.auth.uid;
+  if (!uid) {
+    throw new HttpsError(
+      "unauthenticated",
+      "Tienes que iniciar sesión para enviar campañas."
+    );
+  }
+
+  // SOLO operadores activos. Se lee operadores/{uid} con el Admin SDK (salta las
+  // reglas), igual que el panel confía en esa colección.
+  const operadorSnap = await db.collection("operadores").doc(uid).get();
+  if (!operadorSnap.exists || operadorSnap.get("activo") === false) {
+    throw new HttpsError(
+      "permission-denied",
+      "Solo un operador puede enviar campañas."
+    );
+  }
+
+  const datos = request.data || {};
+  const titulo = datos.titulo;
+  const cuerpo = datos.cuerpo;
+  const topic = datos.topic;
+
+  // Título: 1..60 caracteres.
+  if (typeof titulo !== "string" || titulo.trim().length < 1 || titulo.length > 60) {
+    throw new HttpsError(
+      "invalid-argument",
+      "El título va de 1 a 60 caracteres, casero. Ni vacío ni tan largo."
+    );
+  }
+
+  // Cuerpo: 1..180 caracteres.
+  if (typeof cuerpo !== "string" || cuerpo.trim().length < 1 || cuerpo.length > 180) {
+    throw new HttpsError(
+      "invalid-argument",
+      "El mensaje va de 1 a 180 caracteres. Corto y al grano."
+    );
+  }
+
+  // Topic: solo los que la app Android ya conoce.
+  if (!TOPICS_CAMPANA.includes(topic)) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Elige un destino válido: todos, plan_gratis, plan_caserito o plan_patron."
+    );
+  }
+
+  // Envío por FCM a topic. Mensaje `notification` (lo muestra el sistema aunque
+  // la app esté cerrada). `pagoya_avisos` es el canal que la app ya crea.
+  //
+  // Si FCM falla (lo más común la primera vez: la "Firebase Cloud Messaging API
+  // (V1)" deshabilitada en Google Cloud), el error crudo llegaría al panel como
+  // un opaco "internal". Lo envolvemos en un HttpsError para que su `message` SÍ
+  // viaje al cliente y se vea el motivo real (un throw normal se oculta como
+  // INTERNAL; el message de un HttpsError sí se entrega).
+  try {
+    await getMessaging().send({
+      topic,
+      notification: { title: titulo, body: cuerpo },
+      android: { notification: { channelId: "pagoya_avisos" } },
+    });
+  } catch (err) {
+    logger.error("campana: FCM falló", {
+      codigo: err.code,
+      mensaje: err.message,
+    });
+    throw new HttpsError(
+      "internal",
+      `No se pudo enviar por FCM: ${err.message}. ` +
+        "Revisa que la API de Firebase Cloud Messaging esté habilitada en Google Cloud.",
+      { codigoFcm: err.code || "desconocido" }
+    );
+  }
+
+  // Historial / auditoría: qué se mandó, quién y cuándo.
+  await db.collection("campanas").add({
+    titulo,
+    cuerpo,
+    topic,
+    operadorUid: uid,
+    operadorNombre: operadorSnap.get("nombre") || "",
+    enviadoEn: FieldValue.serverTimestamp(),
+  });
+
+  logger.info("campana: enviada", { topic, operadorUid: uid });
+
+  return { ok: true };
+});

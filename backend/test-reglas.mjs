@@ -47,6 +47,14 @@ await env.withSecurityRulesDisabled(async (ctx) => {
   await setDoc(doc(db, "operadores", EMPLEADO), {
     nombre: "Maria", nivel: "operador", activo: true,
   });
+  // Historial de una campaña ya enviada (lo escribe la Function enviarCampana
+  // con el Admin SDK, que salta reglas). Aquí lo sembramos igual, sin reglas.
+  await setDoc(doc(db, "campanas", "campana-test-1"), {
+    titulo: "¡PagoYa está fino!",
+    cuerpo: "Actualizamos la app pa' que tus pagos suenen más rápido, casero.",
+    topic: "todos", operadorUid: OPERADOR, operadorNombre: "Yo",
+    enviadoEn: serverTimestamp(),
+  });
 });
 
 const comercioId = "comercio-test-1";
@@ -752,6 +760,46 @@ await prueba("campo desconocido colado rechazado", assertFails(
 ));
 await prueba("nadie borra la config (ni el operador)", assertFails(
   deleteDoc(doc(dbOperador, "config", "enlaces"))
+));
+
+console.log("\n— CAMPAÑAS: historial de push (solo la Function escribe) —");
+// La Function enviarCampana (Admin SDK) es la única que escribe aquí. Desde el
+// cliente: el operador lee/lista para el panel; nadie más lee; nadie escribe.
+await prueba("operador LEE una campaña", assertSucceeds(
+  getDoc(doc(dbOperador, "campanas", "campana-test-1"))
+));
+await prueba("operador LISTA las campañas", assertSucceeds(
+  getDocs(collection(dbOperador, "campanas"))
+));
+await prueba("un empleado (operador raso) también lee el historial", assertSucceeds(
+  getDocs(collection(dbEmpleado, "campanas"))
+));
+await prueba("intruso NO lee las campañas", assertFails(
+  getDoc(doc(dbIntruso, "campanas", "campana-test-1"))
+));
+await prueba("el dueño de un comercio NO lee las campañas", assertFails(
+  getDoc(doc(dbDueno, "campanas", "campana-test-1"))
+));
+await prueba("el dueño NO lista las campañas", assertFails(
+  getDocs(collection(dbDueno, "campanas"))
+));
+await prueba("NADIE escribe una campaña desde el cliente (ni el operador)", assertFails(
+  setDoc(doc(dbOperador, "campanas", "campana-falsa"), {
+    titulo: "Truco", cuerpo: "Colada desde el cliente", topic: "todos",
+    operadorUid: OPERADOR, operadorNombre: "Yo", enviadoEn: serverTimestamp(),
+  })
+));
+await prueba("intruso NO escribe una campaña", assertFails(
+  setDoc(doc(dbIntruso, "campanas", "campana-hacker"), {
+    titulo: "Hack", cuerpo: "x", topic: "todos",
+    operadorUid: INTRUSO, operadorNombre: "Hacker", enviadoEn: serverTimestamp(),
+  })
+));
+await prueba("nadie edita una campaña del historial", assertFails(
+  updateDoc(doc(dbOperador, "campanas", "campana-test-1"), { titulo: "Editado" })
+));
+await prueba("nadie borra una campaña del historial", assertFails(
+  deleteDoc(doc(dbOperador, "campanas", "campana-test-1"))
 ));
 
 await env.cleanup();

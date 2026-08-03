@@ -87,17 +87,57 @@ function subirPago(db, uid, cid, opciones = {}) {
   });
 }
 
+const MES0 = 30 * 86_400_000;
 console.log("\n— Flujo del DUEÑO: crear comercio (pasos secuenciales de la app) —");
-await prueba("[comercio] crear", assertSucceeds(
+// La app siembra el comercio CON la prueba de 30 días (estado 'prueba', plan
+// 'caserito', inicioPrueba, vigenteHasta = ahora + 30 días). Mismo contrato que
+// lee/edita el panel. Las reglas lo aceptan como semilla de prueba acotada.
+await prueba("[comercio] crear con prueba de 30 días (como la app)", assertSucceeds(
   setDoc(doc(dbDueno, "comercios", comercioId), {
     nombre: "Bodega Test", duenoUid: DUENO, codigoVinculacion: codigo, creadoEn: 111,
     numDispositivos: 1,
+    suscripcion: {
+      estado: "prueba", plan: "caserito",
+      inicioPrueba: Date.now(), vigenteHasta: Date.now() + MES0,
+    },
   })
 ));
 await prueba("[comercio] NO nace con numDispositivos != 1", assertFails(
   setDoc(doc(dbDueno, "comercios", "comercio-inflado"), {
     nombre: "Trampa", duenoUid: DUENO, codigoVinculacion: "777777", creadoEn: 1,
     numDispositivos: 10,
+  })
+));
+// Barandas de la semilla de prueba: el dueño NO puede auto-regalarse un plan
+// pagado ni una prueba eterna al crear el comercio.
+await prueba("comercio NO nace 'activa' (semilla solo prueba)", assertFails(
+  setDoc(doc(dbDueno, "comercios", "comercio-vivo"), {
+    nombre: "Trampa", duenoUid: DUENO, codigoVinculacion: "777701", creadoEn: 1,
+    numDispositivos: 1,
+    suscripcion: {
+      estado: "activa", plan: "caserito",
+      inicioPrueba: Date.now(), vigenteHasta: Date.now() + MES0,
+    },
+  })
+));
+await prueba("comercio NO nace con 'patron' auto-regalado", assertFails(
+  setDoc(doc(dbDueno, "comercios", "comercio-patron"), {
+    nombre: "Trampa", duenoUid: DUENO, codigoVinculacion: "777702", creadoEn: 1,
+    numDispositivos: 1,
+    suscripcion: {
+      estado: "prueba", plan: "patron",
+      inicioPrueba: Date.now(), vigenteHasta: Date.now() + MES0,
+    },
+  })
+));
+await prueba("comercio NO nace con prueba de años (vigenteHasta lejano)", assertFails(
+  setDoc(doc(dbDueno, "comercios", "comercio-eterno"), {
+    nombre: "Trampa", duenoUid: DUENO, codigoVinculacion: "777703", creadoEn: 1,
+    numDispositivos: 1,
+    suscripcion: {
+      estado: "prueba", plan: "caserito",
+      inicioPrueba: Date.now(), vigenteHasta: Date.now() + 365 * 86_400_000,
+    },
   })
 ));
 await prueba("[miembro-dueno] crear (captura habilitada)", assertSucceeds(
@@ -112,11 +152,11 @@ await prueba("[perfil] crear", assertSucceeds(
   setDoc(doc(dbDueno, "usuarios", DUENO), { comercioId })
 ));
 
-console.log("\n— TOPE DE DISPOSITIVOS: el plan gratis solo admite 1 teléfono —");
-const MES0 = 30 * 86_400_000;
-// El comercio nace en plan gratis (sin suscripción) → tope 1 (solo el dueño).
-// Un trabajador NO puede entrar aunque el lote esté bien formado.
-await prueba("comercio gratis NO admite un 2do teléfono", assertFails(
+console.log("\n— PLAN EFECTIVO POR FECHA: prueba vigente vs. vencida —");
+// El comercio NACIÓ con una prueba de 30 días VIGENTE (plan 'caserito', estado
+// 'prueba', vigenteHasta futuro). Como la fecha aún no pasa, el plan EFECTIVO es
+// caserito (tope 3) → un 2do teléfono SÍ entra. Es el caso "primeros 30 días".
+await prueba("prueba VIGENTE = caserito: un 2do teléfono SÍ entra", assertSucceeds(
   (() => {
     const b = writeBatch(dbTrabajador);
     b.set(doc(dbTrabajador, "comercios", comercioId, "miembros", TRABAJADOR), {
@@ -126,6 +166,39 @@ await prueba("comercio gratis NO admite un 2do teléfono", assertFails(
     return b.commit();
   })()
 ));
+// Sacamos al trabajador para dejar el contador en 1 y probar el caso vencido.
+await prueba("limpieza: el trabajador sale (contador vuelve a 1)", assertSucceeds(
+  (() => {
+    const b = writeBatch(dbTrabajador);
+    b.delete(doc(dbTrabajador, "comercios", comercioId, "miembros", TRABAJADOR));
+    b.update(doc(dbTrabajador, "comercios", comercioId), { numDispositivos: increment(-1) });
+    return b.commit();
+  })()
+));
+
+// UN TRABAJADOR NO TOCA LA SUSCRIPCIÓN. Ni activarse un plan, ni extender su
+// propia prueba: la suscripcion solo la escribe un operador (ruta de update de
+// las reglas). Aquí el trabajador aún NO es miembro, pero como update sobre el
+// comercio la regla lo rechaza igual (no es dueño, no es operador).
+await prueba("trabajador NO puede tocar la suscripción (auto-extender prueba)", assertFails(
+  updateDoc(doc(dbTrabajador, "comercios", comercioId), {
+    suscripcion: {
+      estado: "activa", plan: "patron",
+      vigenteHasta: Date.now() + 999 * 86_400_000,
+    },
+  })
+));
+// Tampoco el DUEÑO puede tocarse el plan por su cuenta (solo renombra su
+// comercio); la suscripción es del operador/panel.
+await prueba("dueño NO puede auto-activarse un plan (suscripción es del operador)", assertFails(
+  updateDoc(doc(dbDueno, "comercios", comercioId), {
+    suscripcion: {
+      estado: "activa", plan: "patron",
+      vigenteHasta: Date.now() + MES0,
+    },
+  })
+));
+
 // PRUEBA DE 30 DÍAS VENCIDA: aunque `plan` siga diciendo "caserito", si la
 // fecha ya pasó el plan EFECTIVO es gratis (tope 1) → el 2do teléfono se
 // rechaza. La degradación la hace la propia `vigenteHasta`, sin Cloud
@@ -138,7 +211,7 @@ await prueba("operador deja una prueba caserito YA vencida", assertSucceeds(
     },
   })
 ));
-await prueba("prueba vencida NO admite un 2do teléfono (cae a gratis)", assertFails(
+await prueba("prueba VENCIDA = gratis: NO admite un 2do teléfono", assertFails(
   (() => {
     const b = writeBatch(dbTrabajador);
     b.set(doc(dbTrabajador, "comercios", comercioId, "miembros", TRABAJADOR), {
@@ -149,7 +222,8 @@ await prueba("prueba vencida NO admite un 2do teléfono (cae a gratis)", assertF
   })()
 ));
 
-// El operador sube el plan a Caserito VIGENTE (tope 3) → ahora sí hay cupo.
+// El operador sube el plan a Caserito VIGENTE (tope 3) → ahora sí hay cupo para
+// el resto de la suite (que asume tope 3).
 await prueba("operador activa Caserito (tope 3) para probar el cupo", assertSucceeds(
   updateDoc(doc(dbOperador, "comercios", comercioId), {
     suscripcion: {
@@ -437,6 +511,27 @@ await prueba("suscripción con origen 'sistema' (escrita por operador) aceptada"
     },
   })
 ));
+// El panel EXTIENDE/EDITA una prueba sembrada por la APP (sin 'origen', con
+// 'inicioPrueba') → debe ser válida (origen es opcional en las reglas). Es el
+// caso real: un comercio nace con la prueba de la app y el operador la extiende.
+await prueba("operador extiende una prueba sembrada por la app (sin origen)", assertSucceeds(
+  updateDoc(doc(dbOperador, "comercios", comercioId), {
+    suscripcion: {
+      estado: "prueba", plan: "caserito",
+      inicioPrueba: Date.now(), vigenteHasta: Date.now() + 2 * MES,
+    },
+  })
+));
+// El panel PROMUEVE a plan pagado 'patron' vía pasarela (cambia estado, plan y
+// vigenteHasta a la vez) → es exactamente lo que el operador controla.
+await prueba("operador promueve a Patrón por pasarela (estado+plan+vigenteHasta)", assertSucceeds(
+  updateDoc(doc(dbOperador, "comercios", comercioId), {
+    suscripcion: {
+      estado: "activa", plan: "patron", origen: "pasarela",
+      vigenteHasta: Date.now() + MES,
+    },
+  })
+));
 await prueba("operador registra el cobro", assertSucceeds(
   setDoc(doc(dbOperador, "comercios", comercioId, "pagosMembresia", "cobro-1"), {
     monto: 12.9, metodo: "yape",
@@ -476,9 +571,12 @@ await prueba("el dueño NO se activa su propio plan", assertFails(
     },
   })
 ));
-await prueba("nadie nace con membresía puesta", assertFails(
+// El comercio SÍ puede nacer con una prueba (semilla de la app), pero NO con un
+// plan PAGADO/activo puesto por el propio cliente: solo el operador da 'activa'.
+await prueba("nadie nace con membresía PAGADA puesta (activa+patron)", assertFails(
   setDoc(doc(dbIntruso, "comercios", "comercio-gratis"), {
     nombre: "Vivo", duenoUid: INTRUSO, codigoVinculacion: "111111", creadoEn: 1,
+    numDispositivos: 1,
     suscripcion: {
       plan: "patron", estado: "activa", origen: "manual",
       vigenteHasta: Date.now() + 10 * MES,

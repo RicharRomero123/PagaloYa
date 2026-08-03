@@ -83,18 +83,52 @@ service cloud.firestore {
       return campo in request.resource.data.diff(resource.data).affectedKeys();
     }
 
-    // La membresía la escribe SOLO un operador. Si el cliente pudiera activarse
-    // el plan solo, no habría negocio.
+    // La membresía la escribe SOLO un operador (ruta de update de abajo). Si el
+    // cliente pudiera activarse el plan solo, no habría negocio.
+    //
+    // Contrato de `suscripcion` (idéntico al que siembra la app Android y lee el
+    // panel):
+    //   { estado, plan, vigenteHasta, inicioPrueba?, origen? }
+    // - estado ∈ {prueba, activa, vencida}   (string)
+    // - plan   ∈ {gratis, caserito, patron}  (string, id del plan)
+    // - vigenteHasta: millis (int) — FUENTE DE VERDAD del vencimiento
+    // - inicioPrueba: millis (int), opcional — solo informativo (la app lo pone
+    //   al sembrar el trial; el panel lo muestra)
+    // - origen ∈ {manual, pasarela, sistema}, OPCIONAL. La app NO lo escribe al
+    //   sembrar el trial; el operador/pasarela/Function sí. Se valida solo si
+    //   está presente para no romper una suscripción sembrada por la app cuando
+    //   el operador la edite después.
     function suscripcionValida() {
       let s = request.resource.data.suscripcion;
-      return s.plan in ['gratis', 'caserito', 'patron']
+      return s.keys().hasOnly(['plan', 'estado', 'vigenteHasta', 'inicioPrueba', 'origen'])
+        && s.plan in ['gratis', 'caserito', 'patron']
         && s.estado in ['prueba', 'activa', 'vencida']
         // 'sistema' = escrito por una Cloud Function con el Admin SDK (trial de
         // 30 días al crear el comercio, premio de referido). Las Functions
         // saltan estas reglas, pero permitir 'sistema' aquí evita que un update
         // POSTERIOR del operador (que conserve origen:'sistema') sea rechazado.
-        && s.origen in ['manual', 'pasarela', 'sistema']
+        && (!('origen' in s) || s.origen in ['manual', 'pasarela', 'sistema'])
+        && (!('inicioPrueba' in s) || s.inicioPrueba is int)
         && s.vigenteHasta is int;
+    }
+
+    // Semilla de PRUEBA que la app Android escribe AL CREAR el comercio (no un
+    // operador). Es la única `suscripcion` que un cliente puede fijar por sí
+    // mismo, y está acotada para que nadie se auto-regale un plan pagado eterno:
+    //   · estado forzado a 'prueba' (nunca 'activa'),
+    //   · plan solo 'caserito' o 'gratis' (jamás 'patron' por su cuenta),
+    //   · shape cerrado (mismo contrato que arriba),
+    //   · vigenteHasta a lo sumo ~31 días en el futuro (30 días de trial + 1 de
+    //     holgura por reloj del teléfono): no puede fabricar una prueba de años.
+    // Al vencer, planEfectivo() la degrada sola a gratis por fecha, sin servidor.
+    function suscripcionPruebaSemilla() {
+      let s = request.resource.data.suscripcion;
+      return s.keys().hasOnly(['plan', 'estado', 'vigenteHasta', 'inicioPrueba'])
+        && s.estado == 'prueba'
+        && s.plan in ['caserito', 'gratis']
+        && s.vigenteHasta is int
+        && s.vigenteHasta <= request.time.toMillis() + 31 * 24 * 60 * 60 * 1000
+        && (!('inicioPrueba' in s) || s.inicioPrueba is int);
     }
 
     // ── Tope de dispositivos por plan (fuente canónica en el servidor) ─────────
@@ -365,13 +399,21 @@ service cloud.firestore {
       // El panel de operador necesita listar todos los comercios; un
       // comerciante jamás.
       allow list: if autenticado() && esOperador();
-      // Nadie nace con membresía: la suscripción solo la escribe un operador.
       // El comercio nace con numDispositivos == 1 (su dueño): es la semilla del
       // contador que hace cumplir el tope del plan del lado servidor.
+      //
+      // SUSCRIPCIÓN AL CREAR: la app siembra una PRUEBA de 30 días (estado
+      // 'prueba', plan 'caserito', vigenteHasta = ahora + 30 días). Se permite,
+      // pero SOLO como semilla de prueba acotada (suscripcionPruebaSemilla): no
+      // puede nacer 'activa' ni con un 'patron' auto-regalado ni con vigencia de
+      // años. Un plan PAGADO real solo lo fija un operador por la vía de update.
+      // Si el comercio nace sin `suscripcion`, la Function trialAlCrearComercio
+      // la siembra del lado servidor (misma prueba de 30 días).
       allow create: if autenticado()
         && request.resource.data.duenoUid == request.auth.uid
-        && !request.resource.data.keys().hasAny(['suscripcion'])
-        && request.resource.data.get('numDispositivos', 0) == 1;
+        && request.resource.data.get('numDispositivos', 0) == 1
+        && (!request.resource.data.keys().hasAny(['suscripcion'])
+            || suscripcionPruebaSemilla());
       // El dueño solo puede renombrar su comercio. Ni regalarlo, ni cambiar su
       // ubicación, ni —sobre todo— tocarse el plan.
       //

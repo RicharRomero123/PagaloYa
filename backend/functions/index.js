@@ -57,14 +57,22 @@ exports.trialAlCrearComercio = onDocumentCreated(
     }
 
     // Date.now() aquí SÍ se puede: es runtime de Function (servidor), no cliente.
-    const vigenteHasta = Date.now() + TRIAL_DIAS * DIA_MS;
+    const inicioPrueba = Date.now();
+    const vigenteHasta = inicioPrueba + TRIAL_DIAS * DIA_MS;
 
+    // Mismo contrato EXACTO que siembra la app Android en ComercioRepo:
+    //   { estado, plan, inicioPrueba, vigenteHasta }  (+ origen del lado servidor).
+    // Así, venga el comercio de la app o de un alta servidor, la suscripción de
+    // prueba es idéntica y planEfectivo() la degrada sola por fecha a los 30 días.
     await snap.ref.update({
       suscripcion: {
-        plan: "caserito",
         estado: "prueba",
-        origen: "sistema",
+        plan: "caserito",
+        inicioPrueba,
         vigenteHasta,
+        // origen 'sistema' = sembrado por Function (no lo escribe la app). Las
+        // reglas lo aceptan como opcional; queda como rastro de procedencia.
+        origen: "sistema",
       },
     });
 

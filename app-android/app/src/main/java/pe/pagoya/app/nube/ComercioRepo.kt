@@ -31,6 +31,12 @@ object ComercioRepo {
     /** Ids de pagos que recordamos para no anunciar dos veces el mismo. */
     private const val MAX_RECORDADOS = 200
 
+    /** Días de la prueba gratis con la que nace todo comercio nuevo. */
+    private const val DIAS_PRUEBA = 30
+
+    /** Plan que se activa durante la prueba gratis (el intermedio, "Caserito"). */
+    private const val PLAN_PRUEBA = "caserito"
+
     data class Comercio(
         val id: String,
         val nombre: String,
@@ -186,16 +192,31 @@ object ComercioRepo {
             }
         }
 
+        // Prueba gratis de 30 días: el comercio nace con una suscripción "prueba"
+        // que vence a los DIAS_PRUEBA. La fecha de vencimiento (vigenteHasta) es
+        // la fuente de verdad — la app y el panel la muestran, y al vencer el
+        // plan se degrada solo a Gratis (ver planDe/planEfectivo). El operador
+        // controla y extiende esto desde el panel.
+        val ahora = System.currentTimeMillis()
+        val venceElPrueba = ahora + DIAS_PRUEBA * 24L * 60L * 60L * 1000L
+
         paso("comercio") {
             refComercio.set(
                 mapOf(
                     "nombre" to nombre.trim(),
                     "duenoUid" to uid,
                     "codigoVinculacion" to codigo,
-                    "creadoEn" to System.currentTimeMillis(),
+                    "creadoEn" to ahora,
                     // Semilla del contador de dispositivos: nace con el dueño (1).
                     // Es lo que hace cumplir el tope del plan del lado servidor.
                     "numDispositivos" to 1,
+                    // Prueba gratis de 30 días con fecha de finalización explícita.
+                    "suscripcion" to mapOf(
+                        "estado" to "prueba",
+                        "plan" to PLAN_PRUEBA,
+                        "inicioPrueba" to ahora,
+                        "vigenteHasta" to venceElPrueba,
+                    ),
                 )
             ).await()
         }
@@ -218,7 +239,18 @@ object ComercioRepo {
                 .set(mapOf("comercioId" to refComercio.id)).await()
         }
 
-        val creado = Comercio(refComercio.id, nombre.trim(), codigo, "dueno", puedeCapturar = true)
+        val creado = Comercio(
+            id = refComercio.id,
+            nombre = nombre.trim(),
+            codigo = codigo,
+            rol = "dueno",
+            puedeCapturar = true,
+            // Refleja la prueba recién sembrada para que el Perfil muestre la
+            // fecha de vencimiento sin esperar a una recarga desde la nube.
+            plan = Plan.desdeId(PLAN_PRUEBA),
+            planEstado = "prueba",
+            planVigenteHasta = venceElPrueba,
+        )
         _comercio.value = creado
         creado
     }

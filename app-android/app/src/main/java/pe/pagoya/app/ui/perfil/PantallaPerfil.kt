@@ -312,7 +312,7 @@ fun PantallaPerfil(
 /**
  * Texto de vigencia del plan:
  *  - Gratis: sin vencimiento.
- *  - Prueba: "Prueba gratis · vence 27 jun 2026".
+ *  - Prueba: "Prueba gratis · te quedan 12 días · vence 27 jun 2026".
  *  - Activa: "Se renueva el 27 jun 2026".
  */
 private fun textoVigencia(plan: Plan, estado: String?, vence: Long): String {
@@ -321,10 +321,23 @@ private fun textoVigencia(plan: Plan, estado: String?, vence: Long): String {
     }
     val fecha = fechaCorta(vence)
     return when (estado) {
-        "prueba" -> "Prueba gratis · vence $fecha"
+        "prueba" -> "Prueba gratis · ${textoDias(diasHasta(vence))} · vence $fecha"
         "activa" -> "Se renueva el $fecha"
         else -> "Vence $fecha"
     }
+}
+
+/** Días enteros que faltan hasta una fecha (redondeo hacia arriba, mínimo 0). */
+private fun diasHasta(vence: Long): Long {
+    val restanMs = vence - System.currentTimeMillis()
+    if (restanMs <= 0L) return 0L
+    return (restanMs / (24L * 60L * 60L * 1000L)) + 1
+}
+
+private fun textoDias(dias: Long): String = when (dias) {
+    0L -> "vence hoy"
+    1L -> "te queda 1 día"
+    else -> "te quedan $dias días"
 }
 
 /**

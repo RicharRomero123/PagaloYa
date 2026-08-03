@@ -37,13 +37,17 @@ private val EsquemaPagoYa = lightColorScheme(
     onErrorContainer = RojoAlerta,
 )
 
-/** Esquinas generosas: se ve amable, no bancario. */
+/**
+ * Esquinas MUY generosas: se ve amable y moderno, no bancario. Se subieron los
+ * radios (botones y tarjetas más redondeados) para el look "tech" que pide la
+ * marca — botones tipo píldora, tarjetas con esquinas suaves.
+ */
 private val FormasPagoYa = Shapes(
-    extraSmall = RoundedCornerShape(10.dp),
-    small = RoundedCornerShape(14.dp),
-    medium = RoundedCornerShape(18.dp),
-    large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(30.dp),
+    extraSmall = RoundedCornerShape(14.dp),
+    small = RoundedCornerShape(18.dp),
+    medium = RoundedCornerShape(24.dp),
+    large = RoundedCornerShape(28.dp),
+    extraLarge = RoundedCornerShape(36.dp),
 )
 
 @Composable

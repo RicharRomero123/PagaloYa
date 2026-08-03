@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,33 +37,33 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import compose.icons.TablerIcons
+import compose.icons.tablericons.Bell
 import compose.icons.tablericons.ChevronRight
 import compose.icons.tablericons.CircleCheck
-import compose.icons.tablericons.Crown
 import compose.icons.tablericons.Help
 import compose.icons.tablericons.Logout
+import compose.icons.tablericons.Users
 import compose.icons.tablericons.Volume
+import compose.icons.tablericons.Wallet
 import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.Enlaces
-import pe.pagoya.app.core.Plan
 import pe.pagoya.app.core.PreferenciasApariencia
 import pe.pagoya.app.core.ProteccionMarca
-import pe.pagoya.app.ui.tema.BilleteraBadge
 import pe.pagoya.app.nube.ComercioRepo
 import pe.pagoya.app.ui.onboarding.Permiso
 import pe.pagoya.app.ui.onboarding.Permisos
 import pe.pagoya.app.ui.onboarding.recordarPermisos
 import pe.pagoya.app.ui.tema.Aviso
 import pe.pagoya.app.ui.tema.AzulNoche
+import pe.pagoya.app.ui.tema.BilleteraBadge
 import pe.pagoya.app.ui.tema.Blanco
 import pe.pagoya.app.ui.tema.Borde
+import pe.pagoya.app.ui.tema.BotonPanico
 import pe.pagoya.app.ui.tema.BotonPagoYa
 import pe.pagoya.app.ui.tema.BotonSecundario
 import pe.pagoya.app.ui.tema.Crema
 import pe.pagoya.app.ui.tema.DialogoSalirCuenta
 import pe.pagoya.app.ui.tema.Etiqueta
-import pe.pagoya.app.ui.tema.Humo
-import pe.pagoya.app.ui.tema.NaranjaHondo
 import pe.pagoya.app.ui.tema.NaranjaPagoYa
 import pe.pagoya.app.ui.tema.NaranjaSuave
 import pe.pagoya.app.ui.tema.RojoAlerta
@@ -74,8 +74,13 @@ import pe.pagoya.app.ui.tema.TipoAviso
 import pe.pagoya.app.ui.tema.VerdeOk
 
 /**
- * Más: la voz, el estado de los permisos, el plan y la sesión.
- * Todo lo que se toca una vez y se olvida.
+ * Configuración, SEGMENTADA por temas para que el comerciante encuentre rápido
+ * (regla: como mucho 3 toques hasta lo que busca). Cada sección es una tarjeta
+ * con encabezado claro:
+ *   Voz · Billetera · Notificaciones · Equipo · Anti fake · Permisos · Ayuda.
+ * Textos grandes y directos (lo usa gente mayor). Cerrar sesión al final.
+ *
+ * Los PLANES ya NO viven aquí: se movieron al Perfil (identidad + plan juntos).
  */
 @Composable
 fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
@@ -120,15 +125,15 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
                     color = AzulNoche,
                 )
                 Text(
-                    "La voz, la apariencia y tu plan.",
-                    style = MaterialTheme.typography.bodySmall,
+                    "Acomoda PagoYa a tu gusto.",
+                    style = MaterialTheme.typography.bodyMedium,
                     color = TextoMedio,
                 )
             }
         }
 
-        // ── La voz ──
-        item { Etiqueta("La voz de tu caja") }
+        // ══════════ VOZ ══════════
+        item { EncabezadoSeccion(TablerIcons.Volume, "Voz") }
         item {
             TarjetaPagoYa {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -139,8 +144,8 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
                             color = AzulNoche,
                         )
                         Text(
-                            "Sube el volumen al máximo mientras anuncia. En mercado, obligatorio.",
-                            style = MaterialTheme.typography.bodySmall,
+                            "Sube el volumen al máximo al anunciar. En mercado, obligatorio.",
+                            style = MaterialTheme.typography.bodyMedium,
                             color = TextoMedio,
                         )
                     }
@@ -170,8 +175,8 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
             }
         }
 
-        // ── Apariencia ──
-        item { Etiqueta("Apariencia", Modifier.padding(top = 8.dp)) }
+        // ══════════ BILLETERA ══════════
+        item { EncabezadoSeccion(TablerIcons.Wallet, "Billetera") }
         item {
             TarjetaPagoYa {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -183,8 +188,8 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
                         )
                         Text(
                             "En la lista de pagos, muestra el ícono de Yape o Plin. " +
-                                "Si lo apagas, verás un círculo de color con la inicial.",
-                            style = MaterialTheme.typography.bodySmall,
+                                "Si lo apagas, verás un círculo con la inicial.",
+                            style = MaterialTheme.typography.bodyMedium,
                             color = TextoMedio,
                         )
                     }
@@ -201,11 +206,10 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
                     )
                 }
                 Spacer(Modifier.height(14.dp))
-                // Vista previa en vivo: reacciona al toggle al instante.
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         "Así se ve:",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = TextoTenue,
                     )
                     Spacer(Modifier.width(12.dp))
@@ -216,8 +220,54 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
             }
         }
 
-        // ── Estado del sistema ──
-        item { Etiqueta("Que nada te deje mudo", Modifier.padding(top = 8.dp)) }
+        // ══════════ NOTIFICACIONES ══════════
+        item { EncabezadoSeccion(TablerIcons.Bell, "Notificaciones") }
+        item {
+            TarjetaPagoYa {
+                Text(
+                    "PagoYa te avisa por notificación cuando cae un pago y cuando " +
+                        "hay algo importante de tu caja.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextoMedio,
+                )
+                Spacer(Modifier.height(12.dp))
+                BotonSecundario(
+                    "Ajustes de notificaciones del teléfono",
+                    icono = TablerIcons.Bell,
+                    alPulsar = { abrirAjustesNotificaciones(contexto) },
+                )
+            }
+        }
+
+        // ══════════ EQUIPO ══════════
+        item { EncabezadoSeccion(TablerIcons.Users, "Equipo") }
+        item {
+            TarjetaPagoYa {
+                Text(
+                    if (comercio?.rol == "dueno")
+                        "Suma a tu gente para que escuche cada venta desde su propio teléfono."
+                    else
+                        "Escuchas los pagos que captura el teléfono del dueño.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextoMedio,
+                )
+            }
+        }
+
+        // ══════════ ANTI FAKE (botón de pánico) ══════════
+        item { EncabezadoSeccion(TablerIcons.Volume, "Anti fake") }
+        item {
+            Text(
+                "Si un cliente te muestra un pantallazo para presionarte, aprieta " +
+                    "este botón: suena fuerte que ese pago NO entró.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextoMedio,
+            )
+        }
+        item { BotonPanico() }
+
+        // ══════════ PERMISOS ══════════
+        item { EncabezadoSeccion(TablerIcons.CircleCheck, "Permisos") }
         item {
             if (permisos.todoListo) {
                 Aviso(
@@ -254,30 +304,8 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
             }
         }
 
-        // ── Plan ──
-        item { Etiqueta("Tu plan", Modifier.padding(top = 8.dp)) }
-        val planActual = comercio?.plan ?: Plan.GRATIS
-        items(Plan.entries) { plan ->
-            FilaPlan(plan = plan, esActual = plan == planActual)
-        }
-        item {
-            TarjetaPagoYa(color = Humo) {
-                Text(
-                    "¿Necesitas más teléfonos? El cambio de plan lo vemos por " +
-                        "WhatsApp — te lo activamos al toque, sin vueltas.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextoMedio,
-                )
-                Spacer(Modifier.height(12.dp))
-                BotonPagoYa(
-                    "Escríbenos para subir de plan",
-                    alPulsar = { abrirWhatsappPlanes(contexto, planActual) },
-                )
-            }
-        }
-
-        // ── Ayuda y sesión ──
-        item { Etiqueta("Ayuda", Modifier.padding(top = 8.dp)) }
+        // ══════════ AYUDA Y SESIÓN ══════════
+        item { EncabezadoSeccion(TablerIcons.Help, "Ayuda") }
         item {
             TarjetaPagoYa(relleno = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
                 FilaAjuste(
@@ -295,14 +323,14 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable(onClick = { confirmarSalida = true })
-                        .padding(vertical = 14.dp),
+                        .padding(vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         TablerIcons.Logout,
                         contentDescription = null,
                         tint = RojoAlerta,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(22.dp),
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
@@ -324,83 +352,51 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
     }
 }
 
-/**
- * Tarjeta de un plan en la lista de planes. El actual va resaltado en naranja
- * con la palomita; los demás quedan de vitrina. Precios solo informativos —
- * no hay botón de "pagar" (el upgrade se cierra por WhatsApp).
- */
+/** Encabezado de sección: chip con ícono + nombre grande. Guía al ojo. */
 @Composable
-private fun FilaPlan(plan: Plan, esActual: Boolean) {
-    TarjetaPagoYa(
-        color = if (esActual) NaranjaSuave else Blanco,
+private fun EncabezadoSeccion(icono: ImageVector, titulo: String) {
+    Row(
+        modifier = Modifier.padding(top = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (plan == Plan.GRATIS) {
-                        Icon(
-                            TablerIcons.Volume,
-                            contentDescription = null,
-                            tint = if (esActual) NaranjaHondo else AzulNoche,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    } else {
-                        Icon(
-                            TablerIcons.Crown,
-                            contentDescription = null,
-                            tint = if (esActual) NaranjaHondo else NaranjaPagoYa,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        plan.etiqueta,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = AzulNoche,
-                    )
-                    if (esActual) {
-                        Spacer(Modifier.width(8.dp))
-                        Icon(
-                            TablerIcons.CircleCheck,
-                            contentDescription = "Tu plan",
-                            tint = VerdeOk,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    plan.resumen,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextoMedio,
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Text(
-                if (plan.precioMensual == 0.0) "Gratis"
-                else "S/ %.2f".format(plan.precioMensual),
-                style = MaterialTheme.typography.titleMedium,
-                color = if (esActual) NaranjaHondo else AzulNoche,
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(NaranjaSuave),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                icono,
+                contentDescription = null,
+                tint = NaranjaPagoYa,
+                modifier = Modifier.size(20.dp),
             )
         }
+        Spacer(Modifier.width(10.dp))
+        Text(
+            titulo,
+            style = MaterialTheme.typography.titleLarge,
+            color = AzulNoche,
+        )
     }
 }
 
-/** Fila de ajuste con ícono, título y chevron — el patrón del concepto. */
+/** Fila de ajuste con ícono, título y chevron. */
 @Composable
 private fun FilaAjuste(icono: ImageVector, titulo: String, alPulsar: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = alPulsar)
-            .padding(vertical = 14.dp),
+            .padding(vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             icono,
             contentDescription = null,
             tint = AzulNoche,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(22.dp),
         )
         Spacer(Modifier.width(12.dp))
         Text(
@@ -413,7 +409,7 @@ private fun FilaAjuste(icono: ImageVector, titulo: String, alPulsar: () -> Unit)
             TablerIcons.ChevronRight,
             contentDescription = null,
             tint = TextoTenue,
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(20.dp),
         )
     }
 }
@@ -433,7 +429,7 @@ private fun FilaPermiso(permiso: Permiso, concedido: Boolean, alPulsar: () -> Un
             texto.icono,
             contentDescription = null,
             tint = AzulNoche,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(22.dp),
         )
         Spacer(Modifier.width(12.dp))
         Text(
@@ -447,7 +443,7 @@ private fun FilaPermiso(permiso: Permiso, concedido: Boolean, alPulsar: () -> Un
                 TablerIcons.CircleCheck,
                 contentDescription = "Concedido",
                 tint = VerdeOk,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(22.dp),
             )
         } else {
             Text(
@@ -459,11 +455,20 @@ private fun FilaPermiso(permiso: Permiso, concedido: Boolean, alPulsar: () -> Un
     }
 }
 
-/** Abre WhatsApp de ventas para subir de plan desde Ajustes. */
-private fun abrirWhatsappPlanes(contexto: android.content.Context, planActual: Plan) {
-    val mensaje = "¡Hola! Uso PagoYa (plan ${planActual.etiqueta}) y quiero " +
-        "sumar más teléfonos. ¿Cómo subo de plan?"
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(Enlaces.whatsappVentas(mensaje)))
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    runCatching { contexto.startActivity(intent) }
+/** Abre los ajustes de notificaciones de la app en el sistema. */
+private fun abrirAjustesNotificaciones(contexto: android.content.Context) {
+    runCatching {
+        val intent = Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, contexto.packageName)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        contexto.startActivity(intent)
+    }.onFailure {
+        runCatching {
+            contexto.startActivity(
+                Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    .setData(Uri.parse("package:${contexto.packageName}"))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
+    }
 }

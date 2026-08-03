@@ -3,6 +3,7 @@ package pe.pagoya.app.ui.tema
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import compose.icons.TablerIcons
+import compose.icons.tablericons.AlertOctagon
 import compose.icons.tablericons.AlertTriangle
 import compose.icons.tablericons.CircleCheck
 import compose.icons.tablericons.Shield
@@ -413,6 +415,59 @@ fun Cargando(modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Botón de pánico (spec 3.2). Lo aprieta quien atiende el mostrador —cualquier
+ * rol— cuando un cliente le muestra un "pantallazo falso" para presionarlo:
+ * anuncia a VOLUMEN MÁXIMO un mensaje disuasivo y vibra fuerte, para que se oiga
+ * en todo el local. Es manual, nunca automático. Vive en Configuración → Anti
+ * fake. Debounce mientras habla (lo cuida el propio Anunciador).
+ */
+@Composable
+fun BotonPanico(modifier: Modifier = Modifier) {
+    val contexto = androidx.compose.ui.platform.LocalContext.current
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.large)
+            .background(
+                androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(RojoAlerta, Color(0xFF8E1616))
+                )
+            )
+            .clickable {
+                if (pe.pagoya.app.core.Anunciador.estaHablando()) return@clickable
+                pe.pagoya.app.core.Vibraciones.fuerte(contexto)
+                pe.pagoya.app.core.Anunciador.anunciarPanico(
+                    contexto,
+                    "¡Ojo, casero! Ese pago NO entró. Si no sonó el PagoYa, no te pagaron.",
+                )
+            }
+            .padding(horizontal = 18.dp, vertical = 18.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                TablerIcons.AlertOctagon,
+                contentDescription = null,
+                tint = Blanco,
+                modifier = Modifier.size(30.dp),
+            )
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "¿Te muestran un pantallazo?",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Blanco,
+                )
+                Text(
+                    "Apriétalo: avisa en voz alta que ese pago no entró.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Blanco.copy(alpha = 0.9f),
+                )
+            }
+        }
+    }
+}
+
 // ── Formato ───────────────────────────────────────────────────────────────
 
 /** 25.5 → "S/ 25.50" */
@@ -427,6 +482,10 @@ fun horaCorta(timestamp: Long): String =
 fun fechaLarga(timestamp: Long): String =
     SimpleDateFormat("EEEE d 'de' MMMM", Locale("es", "PE")).format(Date(timestamp))
         .replaceFirstChar { it.uppercase(Locale("es", "PE")) }
+
+/** 1782960000000 → "27 jun 2026" — fecha corta para vencimiento de plan. */
+fun fechaCorta(timestamp: Long): String =
+    SimpleDateFormat("d MMM yyyy", Locale("es", "PE")).format(Date(timestamp))
 
 fun inicialDe(nombre: String): String =
     nombre.trim().firstOrNull()?.uppercase(Locale("es", "PE")) ?: "?"

@@ -2,7 +2,6 @@ package pe.pagoya.app.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Bell
 import compose.icons.tablericons.Cash
+import compose.icons.tablericons.Headphones
 import compose.icons.tablericons.Home
 import compose.icons.tablericons.Settings
 import compose.icons.tablericons.Users
@@ -49,10 +52,11 @@ import pe.pagoya.app.ui.inicio.PantallaInicio
 import pe.pagoya.app.ui.mas.PantallaMas
 import pe.pagoya.app.ui.notificaciones.PantallaNotificaciones
 import pe.pagoya.app.ui.perfil.PantallaPerfil
+import pe.pagoya.app.ui.soporte.PantallaSoporte
 import pe.pagoya.app.ui.tema.AzulNoche
 import pe.pagoya.app.ui.tema.Blanco
-import pe.pagoya.app.ui.tema.Borde
 import pe.pagoya.app.ui.tema.Crema
+import pe.pagoya.app.ui.tema.DegradadoMarca
 import pe.pagoya.app.ui.tema.NaranjaPagoYa
 import pe.pagoya.app.ui.tema.NaranjaSuave
 import pe.pagoya.app.ui.tema.RojoAlerta
@@ -81,6 +85,7 @@ fun ShellPagoYa(
     var pestana by rememberSaveable { mutableStateOf(Pestana.INICIO) }
     var verNotificaciones by rememberSaveable { mutableStateOf(false) }
     var verPerfil by rememberSaveable { mutableStateOf(false) }
+    var verSoporte by rememberSaveable { mutableStateOf(false) }
     val noLeidas by BandejaNotificaciones.noLeidas.collectAsState()
     val comercio by ComercioRepo.comercio.collectAsState()
 
@@ -88,15 +93,16 @@ fun ShellPagoYa(
         Scaffold(
             containerColor = Crema,
             topBar = {
-                // Barra superior fija de la app, INTEGRADA en el header (ya no
-                // flotante encima de las pantallas). Igual en todas las pestañas:
-                // avatar de perfil a la izquierda, marca al centro, campanita a
-                // la derecha.
+                // Barra superior fija con el DEGRADADO naranja de marca (look
+                // tech). Avatar de perfil a la izquierda; a la derecha, soporte
+                // (audífonos) y campanita. Igual en todas las pestañas.
                 BarraSuperior(
                     inicialNegocio = (comercio?.nombre ?: "?").take(1).uppercase(),
+                    nombreNegocio = comercio?.nombre ?: "Mi negocio",
                     noLeidas = noLeidas,
                     alAbrirPerfil = { verPerfil = true },
                     alAbrirAvisos = { verNotificaciones = true },
+                    alAbrirSoporte = { verSoporte = true },
                 )
             },
             bottomBar = {
@@ -157,54 +163,102 @@ fun ShellPagoYa(
                 alSalir = alSalir,
             )
         }
+
+        // Soporte a pantalla completa por encima de todo.
+        if (verSoporte) {
+            PantallaSoporte(alVolver = { verSoporte = false })
+        }
     }
 }
 
 /**
- * Barra superior fija de la app (topBar del Scaffold, no flotante): avatar de
- * perfil a la izquierda que abre el Perfil, la marca al centro y la campanita de
- * avisos a la derecha. Igual en todas las pantallas.
+ * Barra superior fija de la app (topBar del Scaffold): fondo con el DEGRADADO
+ * naranja de marca (look tech, oscuro→claro). Avatar de perfil a la izquierda
+ * con el saludo; a la derecha, soporte (audífonos) y campanita de avisos.
+ * Igual en todas las pantallas.
  */
 @Composable
 private fun BarraSuperior(
     inicialNegocio: String,
+    nombreNegocio: String,
     noLeidas: Int,
     alAbrirPerfil: () -> Unit,
     alAbrirAvisos: () -> Unit,
+    alAbrirSoporte: () -> Unit,
 ) {
-    androidx.compose.foundation.layout.Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Crema)
-            .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .background(DegradadoMarca)
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .padding(start = 12.dp, end = 8.dp, top = 8.dp, bottom = 12.dp),
     ) {
-        // Avatar de perfil (inicial del negocio) → abre el Perfil.
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(NaranjaPagoYa)
-                .clickable(onClick = alAbrirPerfil),
-            contentAlignment = Alignment.Center,
+        androidx.compose.foundation.layout.Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                inicialNegocio,
-                style = MaterialTheme.typography.titleMedium,
-                color = Blanco,
+            // Avatar de perfil (inicial del negocio) → abre el Perfil.
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(Blanco)
+                    .clickable(onClick = alAbrirPerfil),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    inicialNegocio,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = NaranjaPagoYa,
+                )
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Hola, casero",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Blanco.copy(alpha = 0.85f),
+                )
+                Text(
+                    nombreNegocio,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Blanco,
+                    maxLines = 1,
+                )
+            }
+            // Soporte (audífonos).
+            IconoBarra(
+                icono = TablerIcons.Headphones,
+                descripcion = "Ayuda y soporte",
+                alPulsar = alAbrirSoporte,
             )
+            Spacer(Modifier.width(4.dp))
+            // Campanita de avisos (con puntito de no leídas).
+            CampanitaAvisos(noLeidas = noLeidas, alPulsar = alAbrirAvisos)
         }
-        Spacer(Modifier.width(10.dp))
-        Image(
-            painterResource(R.drawable.wordmark_pagoya),
-            contentDescription = "PagoYa",
-            modifier = Modifier.height(24.dp),
-            contentScale = ContentScale.Fit,
-        )
-        Spacer(Modifier.weight(1f))
-        CampanitaAvisos(
-            noLeidas = noLeidas,
-            alPulsar = alAbrirAvisos,
+    }
+}
+
+/** Botón circular translúcido de la barra superior (sobre el degradado). */
+@Composable
+private fun IconoBarra(
+    icono: ImageVector,
+    descripcion: String,
+    alPulsar: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .background(Blanco.copy(alpha = 0.18f))
+            .clickable(onClick = alPulsar),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            icono,
+            contentDescription = descripcion,
+            tint = Blanco,
+            modifier = Modifier.size(22.dp),
         )
     }
 }
@@ -219,18 +273,16 @@ private fun CampanitaAvisos(
     Box(modifier = modifier.size(44.dp)) {
         Box(
             modifier = Modifier
-                .size(40.dp)
-                .align(Alignment.Center)
+                .size(44.dp)
                 .clip(CircleShape)
-                .background(Blanco)
-                .border(1.dp, Borde, CircleShape)
+                .background(Blanco.copy(alpha = 0.18f))
                 .clickable(onClick = alPulsar),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 TablerIcons.Bell,
                 contentDescription = "Avisos",
-                tint = AzulNoche,
+                tint = Blanco,
                 modifier = Modifier.size(22.dp),
             )
         }

@@ -1,5 +1,6 @@
 package pe.pagoya.app.ui.tema
 
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 /**
@@ -12,9 +13,23 @@ import androidx.compose.ui.graphics.Color
 // Marca
 val NaranjaPagoYa = Color(0xFFFF6B1A)   // primario: energía, calle
 val NaranjaHondo = Color(0xFFD95100)    // presionado / texto sobre naranja suave
+val NaranjaBrasa = Color(0xFFB53E00)    // el extremo oscuro del degradado
+val NaranjaClaro = Color(0xFFFF9248)    // el extremo claro del degradado
 val NaranjaSuave = Color(0xFFFFE9DA)    // fondos de realce
 val AzulNoche = Color(0xFF1A2B4A)       // secundario: confianza, la plata
 val AzulNocheClaro = Color(0xFF2C4570)
+
+/**
+ * Degradado naranja de marca (oscuro → claro), en diagonal. Es el "sello tech"
+ * de la parte superior de la app (barra + cabecera). Se define una sola vez
+ * aquí para que toda la app use exactamente el mismo.
+ */
+val DegradadoMarca: Brush
+    get() = Brush.linearGradient(listOf(NaranjaBrasa, NaranjaPagoYa, NaranjaClaro))
+
+/** Degradado vertical (arriba oscuro → abajo claro) para cabeceras altas. */
+val DegradadoMarcaVertical: Brush
+    get() = Brush.verticalGradient(listOf(NaranjaBrasa, NaranjaPagoYa))
 
 // Fondos
 val Crema = Color(0xFFFFF6EF)

@@ -45,6 +45,16 @@ object ComercioRepo {
         /** Plan del comercio (deriva su tope de dispositivos). */
         val plan: Plan = Plan.GRATIS,
         /**
+         * Estado de la suscripción: "prueba" | "activa" | null (gratis puro).
+         * Sirve para mostrar en pantalla si es prueba gratis o plan pagado.
+         */
+        val planEstado: String? = null,
+        /**
+         * Hasta cuándo vige el plan (millis). 0 = sin vencimiento (gratis).
+         * Se muestra como fecha de expiración/renovación en el Perfil.
+         */
+        val planVigenteHasta: Long = 0L,
+        /**
          * Privacidad de caja (permiso criollo). Por DEFECTO en true: el
          * trabajador ve la caja como el dueño. Si el dueño lo apaga, su gente
          * solo escucha los pagos y no ve totales ni métricas. Campo ausente en
@@ -97,6 +107,8 @@ object ComercioRepo {
             // Miembros creados antes de que existiera el campo: manda el rol
             puedeCapturar = miembro.getBoolean("puedeCapturar") ?: (rol == "dueno"),
             plan = planDe(doc),
+            planEstado = estadoDe(doc),
+            planVigenteHasta = vigenteHastaDe(doc),
             trabajadorVeCaja = doc.getBoolean("trabajadorVeCaja") ?: true,
             referidoCanjeado = doc.getBoolean("referidoCanjeado") ?: false,
         )
@@ -132,6 +144,28 @@ object ComercioRepo {
         val vigente = estado in setOf("prueba", "activa") &&
             vigenteHasta >= System.currentTimeMillis()
         return if (vigente) Plan.desdeId(susc["plan"] as? String) else Plan.GRATIS
+    }
+
+    /** Estado de la suscripción ("prueba"|"activa") si sigue vigente; si no, null. */
+    @Suppress("UNCHECKED_CAST")
+    private fun estadoDe(doc: com.google.firebase.firestore.DocumentSnapshot): String? {
+        val susc = doc.get("suscripcion") as? Map<String, Any> ?: return null
+        val estado = susc["estado"] as? String
+        val vigenteHasta = (susc["vigenteHasta"] as? Number)?.toLong() ?: 0L
+        val vigente = estado in setOf("prueba", "activa") &&
+            vigenteHasta >= System.currentTimeMillis()
+        return if (vigente) estado else null
+    }
+
+    /** Millis de vencimiento del plan si sigue vigente; si no, 0. */
+    @Suppress("UNCHECKED_CAST")
+    private fun vigenteHastaDe(doc: com.google.firebase.firestore.DocumentSnapshot): Long {
+        val susc = doc.get("suscripcion") as? Map<String, Any> ?: return 0L
+        val estado = susc["estado"] as? String
+        val vigenteHasta = (susc["vigenteHasta"] as? Number)?.toLong() ?: 0L
+        val vigente = estado in setOf("prueba", "activa") &&
+            vigenteHasta >= System.currentTimeMillis()
+        return if (vigente) vigenteHasta else 0L
     }
 
     /** Cuántos teléfonos hay vinculados al comercio (dueño incluido). */
@@ -239,6 +273,8 @@ object ComercioRepo {
             rol = "trabajador",
             puedeCapturar = false,
             plan = plan,
+            planEstado = estadoDe(doc),
+            planVigenteHasta = vigenteHastaDe(doc),
             trabajadorVeCaja = doc.getBoolean("trabajadorVeCaja") ?: true,
             referidoCanjeado = doc.getBoolean("referidoCanjeado") ?: false,
         )

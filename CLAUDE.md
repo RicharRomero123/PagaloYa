@@ -6,8 +6,14 @@ a distancia. Anti "Yape falso": si no suena, no te pagaron.
 
 ## Documentos maestros (leer antes de trabajar)
 - `PLAN.md` — negocio, competencia, precios, presupuesto, riesgos
+- `MERCADO.md` — mapa de segmentos (bodegas, taxis, delivery, transporte) y qué
+  implica cada uno para el producto y la landing
 - `BRAND.md` — nombre, tono criollo, colores, voz del parlante, planes
 - `ROADMAP.md` — fases, mapa del sistema, checklist de tareas
+- `ESCALA.md` — cómo escalar: del 80 % de precisión al 100 %, iOS, 0 % comisión,
+  capa de ingesta multi-fuente y por qué NO volverse pasarela ni billetera
+- `CRECIMIENTO.md` — factor diferencial, ventaja competitiva por capas, la
+  Garantía PagoYa, los 4 motores de crecimiento y las etapas 0 → 2,000 comercios
 - `REDES.md` — plan de redes, contenido, prompts de flyers, crecimiento orgánico
 - `PANEL.md` — panel de operador: roles, membresías, cobertura, resellers
 

@@ -57,8 +57,18 @@ con confianza, sin tecnicismos.
 
 ## Nombres de planes (propuesta)
 
-| Plan | Qué incluye | Precio |
-|---|---|---|
-| **Gratis** | 1 teléfono, anuncio de voz | S/ 0 |
-| **Caserito** | Multi-teléfono, dueño remoto, historial, cierre de caja | S/ 9.90/mes |
-| **Patrón** | Todo + parlante PagoYa en comodato | S/ 24.90/mes |
+| Plan | Dispositivos | Qué incluye | Precio |
+|---|---|---|---|
+| **Gratis** | **1** | Anuncio de voz, anti yape falso | S/ 0 |
+| **Caserito** | **2 a 3** | Dueño remoto, historial, cierre de caja | S/ 9.90/mes |
+| **Patrón** | **4 o más** | Todo + parlante PagoYa en comodato | S/ 24.90/mes |
+
+> **El conteo de dispositivos incluye siempre el celular del negocio** (el que
+> recibe los Yapes), no solo los adicionales. Si en un sitio se cuenta el total y
+> en otro los añadidos, se arma una confusión que termina llegando por WhatsApp.
+> Al escribir copy nuevo, respetar esa regla.
+
+> ⚠️ **Discrepancia de precio pendiente de resolver:** aquí y en `CRECIMIENTO.md`
+> §7 el plan Caserito figura a **S/ 9.90**, pero la landing lo publica a
+> **S/ 12.90**. Hay que decidir cuál es el precio real y alinear los tres
+> documentos: la economía del crecimiento está calculada sobre S/ 9.90.

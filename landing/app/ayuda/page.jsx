@@ -96,24 +96,26 @@ export default function Ayuda() {
         <p>
           Muchas cosas las puedes destrabar en un minuto sin escribirnos. Empieza por acá:
         </p>
+        {/* h3, no h2: estas tarjetas cuelgan del h2 de arriba. Saltarse un nivel
+            rompe el esquema que leen Google y los lectores de pantalla. */}
         <ul className="lista-guias">
           <li>
-            <h2><a href="/preguntas-frecuentes/">Preguntas frecuentes</a></h2>
+            <h3><a href="/preguntas-frecuentes/">Preguntas frecuentes</a></h3>
             <p>Qué es PagoYa, cómo funciona, si es seguro darle acceso a tus notificaciones, cuánto cuesta y cómo sumar a tu trabajador.</p>
             <a className="enlace-seguir" href="/preguntas-frecuentes/">Ver las preguntas →</a>
           </li>
           <li>
-            <h2><a href="/no-me-llegan-notificaciones-yape/">No me suenan los pagos</a></h2>
+            <h3><a href="/no-me-llegan-notificaciones-yape/">No me suenan los pagos</a></h3>
             <p>Si PagoYa no está anunciando tus Yapes, casi siempre es un permiso o el ahorro de batería del celular. Te lo arreglamos paso a paso por marca.</p>
             <a className="enlace-seguir" href="/no-me-llegan-notificaciones-yape/">Cómo arreglarlo →</a>
           </li>
           <li>
-            <h2><a href="/yape-falso/">Me quieren pasar un yape falso</a></h2>
+            <h3><a href="/yape-falso/">Me quieren pasar un yape falso</a></h3>
             <p>Cómo confirmar un pago sin mirar la pantalla del cliente y por qué la regla es simple: si no suena, no te pagaron.</p>
             <a className="enlace-seguir" href="/yape-falso/">Leer la guía →</a>
           </li>
           <li>
-            <h2><a href="/guias/">Todas las guías</a></h2>
+            <h3><a href="/guias/">Todas las guías</a></h3>
             <p>Guías prácticas para cobrar seguro con Yape y Plin. Gratis y sin registrarte.</p>
             <a className="enlace-seguir" href="/guias/">Ver todas →</a>
           </li>

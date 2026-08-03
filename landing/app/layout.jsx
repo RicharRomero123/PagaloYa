@@ -103,8 +103,10 @@ export default function RootLayout({ children }) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ld(ORGANIZACION) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ld(SITIO_WEB) }} />
         {/* TODO(analytics): descomentar cuando exista la cuenta de Plausible (o cambiar por GA4).
-            Los eventos "WhatsApp" y "DemoVoz" ya se disparan solos desde los componentes. */}
-        {/* <script defer data-domain="pagoya.pe" src="https://plausible.io/js/script.js"></script> */}
+            Los eventos "WhatsApp" y "DemoVoz" ya se disparan solos desde los componentes.
+            OJO: `data-domain` debe ser el dominio donde corre el sitio de verdad. Hoy es
+            pagalo-ya.vercel.app; si se deja pagoya.pe antes de migrar, no registra nada. */}
+        {/* <script defer data-domain="pagalo-ya.vercel.app" src="https://plausible.io/js/script.js"></script> */}
       </head>
       <body>
         {children}

@@ -13,24 +13,45 @@ manuscritas). Tipografías Baloo 2 + Caveat autoalojadas vía `next/font`.
 ```
 landing/
 ├── app/
-│   ├── layout.jsx               ← metadata global, fuentes, efectos
+│   ├── layout.jsx               ← metadata global, JSON-LD del sitio, fuentes
 │   ├── globals.css              ← Tailwind v4 + tokens de marca + CSS artesanal
 │   ├── page.jsx                 ← página principal
+│   ├── guias/page.jsx           ← índice de guías (hub de enlazado interno)
+│   ├── yape-falso/page.jsx                      ← guía SEO
+│   ├── parlante-para-yape/page.jsx              ← guía SEO
+│   ├── no-me-llegan-notificaciones-yape/page.jsx ← guía SEO
 │   ├── privacidad/page.jsx      ← política de privacidad (URL para Play Console)
 │   └── eliminar-datos/page.jsx  ← solicitud de eliminación de cuenta/datos
 ├── components/
 │   ├── Cabecera.jsx / Pie.jsx / WspFlotante.jsx / Iconos.jsx
+│   ├── Guia.jsx                 ← migas, caja de CTA y relacionadas de las guías
 │   ├── DemoVoz.jsx              ← botón "Escúchalo" (TTS del navegador)
 │   └── Efectos.jsx              ← reveal al scroll + evento WhatsApp (Plausible)
-├── lib/enlaces.js               ← número de WhatsApp centralizado (ÚNICO lugar)
+├── lib/
+│   ├── enlaces.js               ← número de WhatsApp centralizado (ÚNICO lugar)
+│   ├── seo.js                   ← dominio, metadata, JSON-LD (ÚNICO lugar)
+│   └── guias.js                 ← catálogo de guías (pie, home, hub y relacionadas)
 ├── public/
-│   ├── assets/ (favicon.svg, og.png)
-│   ├── robots.txt / sitemap.xml
+│   ├── assets/                  ← marca oficial: favicons (favicon-32, icon-192/512,
+│   │                              apple-touch-icon), icono-96, wordmark-pagoya,
+│   │                              mascota-pagoya y og.png (generado con esos assets)
+│   ├── robots.txt / sitemap.xml / site.webmanifest
 ├── next.config.mjs              ← output: 'export', trailingSlash
 ├── postcss.config.mjs           ← Tailwind v4
 ├── firebase.json                ← hosting apunta a out/
+├── SEO.md                       ← estado del SEO y plan de posicionamiento
 └── package.json
 ```
+
+## Agregar una guía nueva
+
+1. Añade la entrada en `lib/guias.js` (ruta con `/` final).
+2. Crea `app/<ruta>/page.jsx` copiando la estructura de una guía existente.
+3. Agrega la URL en `public/sitemap.xml`.
+4. Reenvía el sitemap en Google Search Console.
+
+El enlazado interno (pie, bloque de la home, relacionadas) se actualiza solo
+desde `lib/guias.js`.
 
 ## Comandos
 
@@ -66,17 +87,18 @@ componentes nuevos para respetar la marca.
 
 | Pendiente | Dónde | Cómo |
 |---|---|---|
-| **Número de WhatsApp real** | `lib/enlaces.js` | Cambiar `NUMERO_WSP = '51999999999'` por el real (formato `51XXXXXXXXX`). Es el único lugar. |
+| **Número de WhatsApp real** 🔴 | `lib/enlaces.js` | Cambiar `NUMERO_WSP = '51999999999'` por el real (formato `51XXXXXXXXX`). Es el único lugar. **Hasta que se haga, ningún botón del sitio funciona.** |
+| **Verificación de Search Console** 🔴 | `app/layout.jsx` (`verification`) | Descomentar con el código de Google. Sin esto no se puede pedir indexación manual. Ver `SEO.md`. |
 | **Analytics** | `app/layout.jsx` (head) | Descomentar el snippet de Plausible (o cambiar por GA4). Los eventos `WhatsApp` (prop `donde`) y `DemoVoz` ya se disparan solos. |
-| **Dominio** | metadata/sitemap/robots asumen `https://pagoya.pe` | Si cambia, reemplazar en `app/layout.jsx`, `public/sitemap.xml` y `public/robots.txt`. |
+| **Dominio** 🟡 | metadata/sitemap/robots usan `https://pagalo-ya.vercel.app` (provisional, en Vercel) | Cuando `pagoya.pe` esté comprado y apuntando, reemplazar en `lib/seo.js` (constante `SITIO`), `public/sitemap.xml` y `public/robots.txt`. Está marcado con `TODO(dominio)`. |
 | **Redes sociales** | `components/Pie.jsx` | Enlaces a `@pagoya.pe` en TikTok/Facebook/Instagram; verificar URLs finales. |
-| **Favicon/OG definitivos** | `public/assets/` | Placeholders con la marca; reemplazar cuando exista el logo oficial. |
+| ~~Favicon/OG definitivos~~ | `public/assets/` | ✅ Listo: assets oficiales (ícono, wordmark y mascota) integrados; fuentes en la raíz del repo (`icono-pagoya.png`, `Untitled design (6).png`, `mascota-pagalo-ya.svg`). |
 | **Enlace a Google Play** | `app/page.jsx` (paso 1 y CTA) | Agregar el badge cuando la app esté publicada. |
 
 ## Notas para Google Play Console
 
-- **URL de política de privacidad:** `https://pagoya.pe/privacidad/`
-- **URL de eliminación de datos:** `https://pagoya.pe/eliminar-datos/`
+- **URL de política de privacidad:** `https://pagalo-ya.vercel.app/privacidad/` (provisional; será `https://pagoya.pe/privacidad/` cuando el dominio apunte)
+- **URL de eliminación de datos:** `https://pagalo-ya.vercel.app/eliminar-datos/` (provisional; será `https://pagoya.pe/eliminar-datos/`)
 - La política cubre: acceso a notificaciones (`BIND_NOTIFICATION_LISTENER_SERVICE`),
   Google Sign-In, Firebase/Google Cloud, no compartición con terceros, retención
   y eliminación, derechos ARCO (Ley 29733), menores, cambios y contacto

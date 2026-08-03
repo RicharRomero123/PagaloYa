@@ -1,18 +1,16 @@
 /** Iconos SVG inline reutilizados en toda la página. */
 
+/** Ícono oficial de PagoYa: el parlantito sonriente (generado desde icono-pagoya.png). */
 export function IconoLogo({ ancho = 36 }) {
   return (
-    <svg viewBox="0 0 64 64" aria-hidden="true" width={ancho} height={ancho}>
-      <rect width="64" height="64" rx="14" fill="#FF6B1A" />
-      <path d="M14 26v12h8l10 8V18l-10 8z" fill="#fff" />
-      <path
-        d="M38 24c3 2.5 3 13.5 0 16M44 20c5 4 5 20 0 24"
-        stroke="#fff"
-        strokeWidth="4"
-        fill="none"
-        strokeLinecap="round"
-      />
-    </svg>
+    <img
+      src="/assets/icono-96.png"
+      alt=""
+      aria-hidden="true"
+      width={ancho}
+      height={ancho}
+      className="logo-icono"
+    />
   );
 }
 

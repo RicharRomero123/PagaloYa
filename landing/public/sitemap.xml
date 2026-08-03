@@ -1,19 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Al agregar una guía nueva: añadirla aquí y volver a enviar el sitemap en
+     Google Search Console (Sitemaps → Enviar). Es lo que acelera la indexación.
+     TODO(dominio): dominio provisional en Vercel (pagalo-ya.vercel.app). Cuando
+     pagoya.pe esté comprado y apuntando, reemplazar aquí, en public/robots.txt
+     y en lib/seo.js (constante SITIO). -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://pagoya.pe/</loc>
-    <lastmod>2026-07-30</lastmod>
+    <loc>https://pagalo-ya.vercel.app/</loc>
+    <lastmod>2026-07-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://pagoya.pe/privacidad/</loc>
+    <loc>https://pagalo-ya.vercel.app/guias/</loc>
+    <lastmod>2026-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://pagalo-ya.vercel.app/yape-falso/</loc>
+    <lastmod>2026-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://pagalo-ya.vercel.app/parlante-para-yape/</loc>
+    <lastmod>2026-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://pagalo-ya.vercel.app/no-me-llegan-notificaciones-yape/</loc>
+    <lastmod>2026-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://pagalo-ya.vercel.app/ayuda/</loc>
+    <lastmod>2026-08-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pagalo-ya.vercel.app/preguntas-frecuentes/</loc>
+    <lastmod>2026-08-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://pagalo-ya.vercel.app/consultas/</loc>
+    <lastmod>2026-08-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://pagalo-ya.vercel.app/privacidad/</loc>
     <lastmod>2026-07-30</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://pagoya.pe/eliminar-datos/</loc>
+    <loc>https://pagalo-ya.vercel.app/terminos/</loc>
+    <lastmod>2026-08-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://pagalo-ya.vercel.app/eliminar-datos/</loc>
     <lastmod>2026-07-30</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>

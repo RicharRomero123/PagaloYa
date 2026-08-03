@@ -93,6 +93,24 @@ export const ETIQUETA_PLAN: Record<Plan, string> = {
   patron: "Patrón",
 };
 
+/**
+ * Tope de teléfonos por plan. Es la MISMA tabla que hace cumplir el servidor
+ * (backend/firestore.rules → maxDispositivosDePlan): gratis=1, caserito=3,
+ * patron=10. Un comercio sin suscripción se trata como gratis.
+ *
+ * Se duplica aquí solo para pintar el "N de M" en el panel; la fuente de verdad
+ * que impide vincular de más sigue siendo la regla, no el cliente.
+ */
+export const MAX_DISPOSITIVOS: Record<Plan, number> = {
+  gratis: 1,
+  caserito: 3,
+  patron: 10,
+};
+
+export function maxDispositivosDe(comercio: Comercio): number {
+  return MAX_DISPOSITIVOS[comercio.suscripcion?.plan ?? "gratis"];
+}
+
 export function nombrePlan(comercio: Comercio): string {
   const plan = comercio.suscripcion?.plan;
   return plan ? ETIQUETA_PLAN[plan] : "—";

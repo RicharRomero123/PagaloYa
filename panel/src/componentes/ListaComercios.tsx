@@ -10,10 +10,14 @@ import {
   type EstadoMembresia,
   type Suscripcion,
 } from "@/lib/comercios";
+import { listarDispositivos, type Dispositivo } from "@/lib/dispositivos";
 import { fechaCorta, haceOEn } from "@/lib/formato";
 import { salir } from "@/lib/sesion";
+import { Campanas } from "./Campanas";
+import { Configuracion } from "./Configuracion";
 import { Equipo } from "./Equipo";
 import { FichaComercio } from "./FichaComercio";
+import { SaludTelefonos } from "./SaludTelefonos";
 
 const COLOR_ESTADO: Record<EstadoMembresia, string> = {
   "al-dia": "bg-verde-suave text-verde-ok",
@@ -40,7 +44,10 @@ export function ListaComercios({
   soyDueno: boolean;
 }) {
   const [verEquipo, setVerEquipo] = useState(false);
+  const [verConfig, setVerConfig] = useState(false);
+  const [verCampanas, setVerCampanas] = useState(false);
   const [comercios, setComercios] = useState<Comercio[] | null>(null);
+  const [dispositivos, setDispositivos] = useState<Dispositivo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [filtro, setFiltro] = useState<EstadoMembresia | "todos">("todos");
@@ -66,6 +73,13 @@ export function ListaComercios({
       .catch(() => {
         if (vigente) setError("No se pudo cargar la lista. Revisa tu conexión.");
       });
+    // El semáforo es un extra: si falla (p. ej. falta el índice), el panel
+    // sigue funcionando y solo no se muestra la sección.
+    listarDispositivos()
+      .then((lista) => {
+        if (vigente) setDispositivos(lista);
+      })
+      .catch(() => {});
     return () => {
       vigente = false;
     };
@@ -112,6 +126,20 @@ export function ListaComercios({
         <div className="flex items-center gap-4">
           <button
             type="button"
+            onClick={() => setVerConfig(true)}
+            className="text-sm font-bold text-azul underline underline-offset-4"
+          >
+            Configuración
+          </button>
+          <button
+            type="button"
+            onClick={() => setVerCampanas(true)}
+            className="text-sm font-bold text-azul underline underline-offset-4"
+          >
+            Campañas
+          </button>
+          <button
+            type="button"
             onClick={() => setVerEquipo(true)}
             className="text-sm font-bold text-azul underline underline-offset-4"
           >
@@ -133,6 +161,12 @@ export function ListaComercios({
         <Tarjeta titulo="Vencen pronto" valor={comercios ? conteos["por-vencer"] : null} />
         <Tarjeta titulo="Al día" valor={comercios ? conteos["al-dia"] : null} />
       </section>
+
+      <SaludTelefonos
+        dispositivos={dispositivos}
+        comercios={comercios}
+        alAbrirComercio={setAbiertoId}
+      />
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
@@ -195,6 +229,10 @@ export function ListaComercios({
           alCerrar={() => setVerEquipo(false)}
         />
       )}
+
+      {verConfig && <Configuracion alCerrar={() => setVerConfig(false)} />}
+
+      {verCampanas && <Campanas alCerrar={() => setVerCampanas(false)} />}
 
       {comercios !== null && comercios.length >= 200 && (
         <p className="mt-4 text-center text-xs text-texto-tenue">

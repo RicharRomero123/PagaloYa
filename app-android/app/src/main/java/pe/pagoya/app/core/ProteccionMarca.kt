@@ -32,9 +32,9 @@ object ProteccionMarca {
                 marca = "Xiaomi/Redmi/POCO",
                 titulo = "Blinda tu Yape en tu Xiaomi",
                 pasos = listOf(
-                    "1. En la pantalla que se abre, busca Yape y activa \"Inicio automático\".",
-                    "2. Luego abre tus apps recientes (botón cuadrado), busca Yape y arrástralo hacia abajo para ponerle el candado 🔒.",
-                    "3. Haz lo mismo con PagoYa.",
+                    "1. En la pantalla que se abre, busca Yape y activa \"Inicio automático\". Haz lo mismo con PagoYa.",
+                    "2. Luego abre tus apps recientes (botón cuadrado), busca Yape y arrástralo hacia abajo para ponerle el candado 🔒. Haz lo mismo con PagoYa.",
+                    "3. Por último: Ajustes → Apps → PagoYa → Otros permisos → activa \"Mostrar ventanas emergentes en segundo plano\" (así podemos revivir tu Yape).",
                 ),
                 intentos = listOf(
                     intento("com.miui.securitycenter",

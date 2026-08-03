@@ -1,12 +1,15 @@
 package pe.pagoya.app.servicio
 
 import android.app.Notification
+import android.content.ComponentName
+import android.content.Context
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.Aprendizaje
 import pe.pagoya.app.core.BilleteraParser
 import pe.pagoya.app.core.RegistroPagos
+import pe.pagoya.app.core.Salud
 import pe.pagoya.app.nube.ComercioRepo
 
 /**
@@ -24,6 +27,7 @@ class EscuchaNotificaciones : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val paquete = sbn.packageName ?: return
         if (BilleteraParser.billeteraDe(paquete) == null) return
+        Salud.marcarNotificacionVista(this)
 
         val extras = sbn.notification?.extras ?: return
         val titulo = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
@@ -59,6 +63,27 @@ class EscuchaNotificaciones : NotificationListenerService() {
 
     override fun onListenerConnected() {
         super.onListenerConnected()
+        Salud.marcarConectado(this)
         ServicioPrimerPlano.arrancar(this)
+    }
+
+    /**
+     * Android a veces desvincula el listener (ahorro de batería agresivo, crash
+     * del proceso, actualización) y NO lo reconecta solo: la app queda "sorda"
+     * aunque el permiso siga dado. Pedimos la reconexión al toque.
+     */
+    override fun onListenerDisconnected() {
+        super.onListenerDisconnected()
+        Salud.marcarDesconectado(this)
+        reconectar(this)
+    }
+
+    companion object {
+        /** Pide al sistema volver a vincular el listener. Inofensivo si ya está vivo. */
+        fun reconectar(context: Context) {
+            runCatching {
+                requestRebind(ComponentName(context, EscuchaNotificaciones::class.java))
+            }
+        }
     }
 }

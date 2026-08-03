@@ -1,6 +1,7 @@
 import {
   Timestamp,
   collection,
+  deleteDoc,
   doc,
   getDocs,
   limit,
@@ -121,6 +122,58 @@ export async function darPrueba(
   };
   await updateDoc(doc(db, "comercios", comercioId), { suscripcion });
   return suscripcion;
+}
+
+export type EstadoSuscripcion = Suscripcion["estado"];
+
+export const ETIQUETA_ESTADO_SUSCRIPCION: Record<EstadoSuscripcion, string> = {
+  prueba: "En prueba",
+  activa: "Activa",
+  vencida: "Vencida",
+};
+
+/**
+ * Ajuste manual directo de la suscripción: fija plan, estado y fecha de
+ * vencimiento a mano, sin generar cobro. Es la escotilla de operador para
+ * casos que el flujo de "cobrar N meses" no cubre — corregir una fecha mal
+ * puesta, activar un gratis con más teléfonos por cortesía, o registrar un
+ * pago que ya se hizo por fuera. Respeta el shape exacto que exige
+ * suscripcionValida() en las reglas (origen: "manual", vigenteHasta: int).
+ *
+ * Para "cobrar" con asiento contable usa cobrarYActivar; esto NO deja recibo.
+ */
+export async function ajustarSuscripcion(datos: {
+  comercioId: string;
+  plan: Plan;
+  estado: EstadoSuscripcion;
+  vigenteHasta: number;
+}): Promise<Suscripcion> {
+  const suscripcion: Suscripcion = {
+    plan: datos.plan,
+    estado: datos.estado,
+    origen: "manual",
+    // Math.trunc: vigenteHasta DEBE ser int para pasar suscripcionValida().
+    vigenteHasta: Math.trunc(datos.vigenteHasta),
+  };
+  await updateDoc(doc(db, "comercios", datos.comercioId), { suscripcion });
+  return suscripcion;
+}
+
+/**
+ * Saca a un miembro/teléfono del comercio (borra comercios/{id}/miembros/{uid}).
+ *
+ * ⚠️ OJO — reglas: hoy `backend/firestore.rules` permite el delete de un
+ * miembro solo al propio miembro (`request.auth.uid == uid`) o al dueño del
+ * comercio (`esDueno(comercioId)`), NO a un operador. Para que el operador
+ * pueda desvincular teléfonos desde este panel hace falta agregar
+ * `|| esOperador()` a la regla de delete de miembros. Mientras eso no se
+ * despliegue, esta llamada devolverá permission-denied y la UI lo informa.
+ */
+export async function quitarMiembro(
+  comercioId: string,
+  uid: string,
+): Promise<void> {
+  await deleteDoc(doc(db, "comercios", comercioId, "miembros", uid));
 }
 
 /** Corta el plan de inmediato. El historial de cobros queda intacto. */

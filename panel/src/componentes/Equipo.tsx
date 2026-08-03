@@ -11,6 +11,13 @@ import {
   type NivelOperador,
   type Operador,
 } from "@/lib/operadores";
+import {
+  ReglasNoListas,
+  aceptarSolicitud,
+  listarSolicitudesPendientes,
+  rechazarSolicitud,
+  type Solicitud,
+} from "@/lib/solicitudes";
 
 export function Equipo({
   miUid,
@@ -22,6 +29,8 @@ export function Equipo({
   alCerrar: () => void;
 }) {
   const [equipo, setEquipo] = useState<Operador[] | null>(null);
+  const [solicitudes, setSolicitudes] = useState<Solicitud[] | null>(null);
+  const [avisoSolicitudes, setAvisoSolicitudes] = useState<string | null>(null);
   const [uid, setUid] = useState("");
   const [nombre, setNombre] = useState("");
   const [nivel, setNivel] = useState<NivelOperador>("operador");
@@ -32,9 +41,27 @@ export function Equipo({
     setEquipo(await listarOperadores());
   }
 
+  async function recargarSolicitudes() {
+    setAvisoSolicitudes(null);
+    try {
+      setSolicitudes(await listarSolicitudesPendientes());
+    } catch (e) {
+      setSolicitudes([]);
+      setAvisoSolicitudes(
+        e instanceof ReglasNoListas
+          ? "Las reglas de acceso aún no están activas, así que no se pueden leer las postulaciones todavía."
+          : "No se pudieron cargar las postulaciones.",
+      );
+    }
+  }
+
   useEffect(() => {
     void listarOperadores().then(setEquipo).catch(() => setEquipo([]));
   }, []);
+
+  useEffect(() => {
+    if (soyDueno) void recargarSolicitudes();
+  }, [soyDueno]);
 
   useEffect(() => {
     const alTeclear = (e: KeyboardEvent) => {
@@ -78,6 +105,60 @@ export function Equipo({
         </header>
 
         <div className="space-y-3 px-4 pb-16">
+          {soyDueno && (
+            <section className="rounded-2xl bg-white p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-black">Solicitudes de acceso</h3>
+                {solicitudes && solicitudes.length > 0 && (
+                  <span className="rounded-full bg-naranja px-2.5 py-1 text-xs font-bold text-white">
+                    {solicitudes.length}
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-sm text-texto-medio">
+                Gente que postuló desde la pantalla de acceso. Tú decides quién entra.
+              </p>
+
+              {avisoSolicitudes && (
+                <p className="mt-3 rounded-xl bg-humo p-3 text-sm text-texto-medio">
+                  {avisoSolicitudes}
+                </p>
+              )}
+
+              {solicitudes === null && !avisoSolicitudes && (
+                <p className="mt-3 text-sm text-texto-medio">Cargando…</p>
+              )}
+
+              {solicitudes && solicitudes.length === 0 && !avisoSolicitudes && (
+                <p className="mt-3 text-sm text-texto-tenue">
+                  No hay postulaciones pendientes por ahora.
+                </p>
+              )}
+
+              <ul className="mt-3 space-y-3">
+                {(solicitudes ?? []).map((s) => (
+                  <FilaSolicitud
+                    key={s.uid}
+                    solicitud={s}
+                    ocupado={guardando}
+                    alAceptar={(nivelElegido) =>
+                      void ejecutar(async () => {
+                        await aceptarSolicitud(s, nivelElegido);
+                        await recargarSolicitudes();
+                      }, "No se pudo aceptar la solicitud.")
+                    }
+                    alRechazar={() =>
+                      void ejecutar(async () => {
+                        await rechazarSolicitud(s.uid);
+                        await recargarSolicitudes();
+                      }, "No se pudo rechazar la solicitud.")
+                    }
+                  />
+                ))}
+              </ul>
+            </section>
+          )}
+
           {soyDueno && (
             <section className="rounded-2xl bg-white p-4">
               <h3 className="font-black">Dar de alta a alguien</h3>
@@ -208,6 +289,75 @@ export function Equipo({
         </div>
       </aside>
     </div>
+  );
+}
+
+function FilaSolicitud({
+  solicitud,
+  ocupado,
+  alAceptar,
+  alRechazar,
+}: {
+  solicitud: Solicitud;
+  ocupado: boolean;
+  alAceptar: (nivel: NivelOperador) => void;
+  alRechazar: () => void;
+}) {
+  const [nivel, setNivel] = useState<NivelOperador>("operador");
+
+  return (
+    <li className="rounded-xl bg-humo p-3">
+      <p className="font-bold">{solicitud.nombre}</p>
+      {solicitud.email && (
+        <p className="truncate text-xs text-texto-tenue">{solicitud.email}</p>
+      )}
+      <p className="truncate font-mono text-[11px] text-texto-tenue">
+        {solicitud.uid}
+      </p>
+      {solicitud.notaRol && (
+        <p className="mt-1 text-sm text-texto-medio">“{solicitud.notaRol}”</p>
+      )}
+
+      <div className="mt-3 flex gap-2">
+        {(["operador", "dueno"] as NivelOperador[]).map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => setNivel(n)}
+            className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold transition ${
+              nivel === n
+                ? "bg-naranja text-white"
+                : "bg-white text-texto-medio hover:bg-naranja-suave"
+            }`}
+          >
+            {ETIQUETA_NIVEL[n]}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-2 flex gap-2">
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={() => alAceptar(nivel)}
+          className="flex-1 rounded-lg bg-naranja px-3 py-2 text-sm font-bold text-white transition hover:bg-naranja-hondo disabled:opacity-50"
+        >
+          Aceptar
+        </button>
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={() => {
+            if (!window.confirm(`¿Rechazar la postulación de ${solicitud.nombre}?`))
+              return;
+            alRechazar();
+          }}
+          className="rounded-lg bg-white px-3 py-2 text-sm font-bold text-rojo-alerta transition hover:bg-humo disabled:opacity-50"
+        >
+          Rechazar
+        </button>
+      </div>
+    </li>
   );
 }
 

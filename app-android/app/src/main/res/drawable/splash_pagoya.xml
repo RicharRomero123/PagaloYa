@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pantalla de arranque (API 26-30): naranja de marca con el parlantito al
+     centro. En API 31+ manda el SplashScreen nativo (values-v31/themes.xml). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/naranja_pagoya" />
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/splash_icono" />
+    </item>
+</layer-list>

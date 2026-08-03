@@ -9,7 +9,8 @@ operadores/{uid}                     → { nombre }   ← tú y tu equipo (PANEL
 usuarios/{uid}                       → { comercioId }
 codigos/{codigo6digitos}             → { comercioId }
 comercios/{id}                       → { nombre, duenoUid, codigoVinculacion, creadoEn,
-                                         suscripcion?, ubicacion?, contacto? }
+                                         numDispositivos, suscripcion, ubicacion?, contacto? }
+    suscripcion                      → { estado, plan, vigenteHasta, inicioPrueba?, origen? }
 comercios/{id}/miembros/{uid}        → { rol: "dueno"|"trabajador", nombre, puedeCapturar }
 comercios/{id}/pagos/{pagoId}        → { billeteraId, billeteraNombre, pagador,
                                          monto, timestamp, origenUid, recibidoEn }
@@ -17,8 +18,70 @@ comercios/{id}/pagosMembresia/{id}   → { monto, metodo, periodoDesde, periodoH
                                          cobradoPor, creadoEn, nota?, comprobanteUrl? }
 ```
 
-`suscripcion` = `{ plan, estado, vigenteHasta, origen }`. La escribe **solo un
-operador**: si el cliente pudiera activarse el plan, no habría negocio.
+### Contrato de `suscripcion` (fuente de verdad del plan y la prueba)
+
+```
+suscripcion: {
+  estado: "prueba" | "activa" | "vencida",      // string
+  plan:   "gratis" | "caserito" | "patron",     // string (id del plan)
+  inicioPrueba: <millis>,   // number (epoch ms), OPCIONAL — informativo
+  vigenteHasta: <millis>,   // number (epoch ms) — FUENTE DE VERDAD del vencimiento
+  origen: "manual" | "pasarela" | "sistema",    // OPCIONAL — procedencia
+}
+```
+
+- **`vigenteHasta` manda.** No hay Cloud Function que voltee el estado al vencer:
+  el plan se degrada **solo por fecha**. El plan EFECTIVO (el que realmente
+  cuenta ahora) es el `plan` **solo si** `estado ∈ {prueba, activa}` **y**
+  `vigenteHasta >= ahora`; en cualquier otro caso cae a **Gratis (1 teléfono)**.
+  Esta lógica vive idéntica en tres lugares: `planEfectivo()` en
+  `firestore.rules` (hace cumplir el tope de dispositivos del lado servidor),
+  `ComercioRepo.planDe()` en la app Android, y el panel.
+- **`origen` e `inicioPrueba` son opcionales.** La app Android siembra la prueba
+  SIN `origen` (solo `estado`, `plan`, `inicioPrueba`, `vigenteHasta`); las
+  Functions y el panel sí ponen `origen`. Las reglas validan `origen` e
+  `inicioPrueba` solo si están presentes, así un update posterior del operador
+  sobre una suscripción sembrada por la app no se rechaza.
+
+### Prueba gratis de 30 días (dónde nace)
+
+Todo comercio nuevo nace con una prueba de 30 días con fecha de finalización
+explícita. Se siembra en el **primer** punto que exista:
+
+- **App Android** (caso normal): al crear el comercio escribe la `suscripcion`
+  con `estado:"prueba"`, `plan:"caserito"`, `inicioPrueba: ahora`,
+  `vigenteHasta: ahora + 30 días`. Las reglas la aceptan como **semilla de
+  prueba acotada** (`suscripcionPruebaSemilla`): solo `estado:"prueba"`, solo
+  plan `caserito`/`gratis`, y `vigenteHasta` a lo sumo ~31 días en el futuro. El
+  cliente NO puede auto-regalarse `activa`, `patron`, ni una prueba de años.
+- **Cloud Function `trialAlCrearComercio`** (respaldo): si un comercio llega a
+  crearse SIN `suscripcion` (alta por servidor, migración), la Function siembra
+  el mismo trial de 30 días con el Admin SDK (`origen:"sistema"`). Si ya trae
+  `suscripcion`, **no la pisa**.
+
+### Qué controla el panel del operador (vive en `panel/`, no en `backend/`)
+
+El panel es una carpeta aparte (`panel/`), fuera de este backend. Para controlar
+las pruebas, el panel lee y edita el mismo contrato de `suscripcion` de arriba:
+
+- **Ver:** fecha de vencimiento (`vigenteHasta`), estado (`prueba`/`activa`/
+  `vencida`) y **días restantes** (`vigenteHasta − ahora`). Ya implementado en
+  `panel/src/componentes/FichaComercio.tsx` y `panel/src/lib/comercios.ts`.
+- **Editar/extender:** cambiar `estado`, `plan` y `vigenteHasta` (extender la
+  prueba, promover a pagado, cortar el plan). Ya implementado en
+  `panel/src/lib/membresia.ts` (`ajustarSuscripcion`, `cobrarYActivar`,
+  `darPrueba`, `cortarPlan`) y sus formularios. Las reglas exigen que estos
+  updates de `suscripcion` los haga un **operador** (`suscripcionValida`).
+- ⚠️ Nota de contrato (panel, fuera de scope de este backend): el tipo
+  `Suscripcion` en `panel/src/lib/comercios.ts` declara `origen` como
+  `"manual" | "pasarela"` y **no** contempla `"sistema"` ni `inicioPrueba`.
+  Como el panel solo LEE esos campos, no rompe en runtime, pero conviene ampliar
+  el tipo a `"manual" | "pasarela" | "sistema"` y sumar `inicioPrueba?: number`
+  para que coincida con lo que siembran la app y las Functions.
+
+La `suscripcion` la escribe **solo un operador** (ruta de update) o la propia app
+como semilla de prueba acotada al crear: si el cliente pudiera activarse un plan
+pagado, no habría negocio.
 
 - `pagoId` es determinista (`uid-timestamp-centavos`) → subir dos veces la misma
   notificación no duplica el pago. **Las reglas exigen que el id cuadre con el
@@ -53,6 +116,23 @@ Lo que queda fuera del alcance de las reglas: el dueño podría, con un APK
 modificado, inventar pagos **en su propio negocio**. No es una amenaza (es su
 caja y su plata); la amenaza real es el cliente con la captura falsa y el
 trabajador que quiere cuadrar un faltante, y ambas están cubiertas.
+
+## Tope de dispositivos por plan (baranda de servidor)
+
+PagoYa cobra por nº de teléfonos vinculados a un comercio. El tope se hace
+cumplir en las reglas (el límite del cliente Android es evadible):
+
+- Topes canónicos (`maxDispositivosDePlan` en `firestore.rules`): gratis=1,
+  caserito=3, patron=10. Sin suscripción → gratis (1). Espejo en el cliente:
+  `app-android/.../core/Plan.kt`.
+- Contador denormalizado `comercios/{id}.numDispositivos` (= nº de docs en
+  `miembros`, el dueño incluido). Nace en 1 al crear el comercio. Unirse suma +1
+  y salir resta -1, **en el mismo lote atómico** que crea/borra el miembro; las
+  reglas exigen esa coherencia y que el +1 no pase del tope del plan. La carrera
+  se descarta porque el ±1 es un update sobre el mismo doc del comercio, que
+  Firestore serializa.
+- Detalle, migración de comercios legacy y pendientes: ver
+  `backend/PENDIENTE-LIMITE-DISPOSITIVOS.md`.
 
 ## Anti-fraude de membresías
 

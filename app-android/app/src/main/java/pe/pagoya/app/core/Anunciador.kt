@@ -132,6 +132,36 @@ object Anunciador {
     }
 
     /**
+     * Alerta de PÁNICO: el comerciante la dispara a mano delante de un cliente
+     * que muestra un "pantallazo falso" para presionarlo. Suena SIEMPRE a
+     * volumen máximo (ignora la preferencia "Voz fuerte": es disuasiva, tiene
+     * que oírse) y va sin el sello "¡PagoYa!" — no es un pago, es un aviso.
+     *
+     * Debounce simple: si ya está sonando una alerta, no se vuelve a disparar,
+     * así un doble toque no la encima consigo misma.
+     */
+    fun anunciarPanico(context: Context, frase: String) {
+        val appContext = context.applicationContext
+        if (tts == null || !_listo.value) {
+            inicializar(appContext)
+            return
+        }
+        // Debounce: mientras habla, ignorar toques repetidos.
+        if (tts?.isSpeaking == true) return
+        subirVolumen(appContext)
+        // QUEUE_FLUSH: la alerta manda, corta cualquier cosa en cola.
+        tts?.speak(
+            frase,
+            TextToSpeech.QUEUE_FLUSH,
+            null,
+            "pagoya-panico-${contador.incrementAndGet()}",
+        )
+    }
+
+    /** true si el motor está anunciando algo ahora mismo (para el debounce). */
+    fun estaHablando(): Boolean = tts?.isSpeaking == true
+
+    /**
      * Quita el "¡Pago Ya!" del inicio de la plantilla cuando el sello grabado
      * ya lo dijo. Las plantillas viven en Remote Config, así que el recorte se
      * hace aquí y no en el parser.

@@ -57,11 +57,18 @@
 
 html { scroll-behavior: smooth; }
 
+/* La cabecera es sticky: sin esto, al saltar a una sección desde el menú el
+   título queda escondido debajo del toldo. */
+[id] { scroll-margin-top: 92px; }
+
+/* Legibilidad: el comprador de PagoYa tiene entre 35 y 60 años y después de
+   los 45 la presbicia es lo normal. El cuerpo sube a 18px y ningún texto que
+   haya que LEER baja de 16px; solo las notas al pie y las etiquetas. */
 body {
   margin: 0;
   font-family: var(--cuerpo);
-  font-size: 1.0625rem;
-  line-height: 1.7;
+  font-size: 1.125rem;
+  line-height: 1.68;
   color: var(--texto);
   background: var(--crema-claro);
   -webkit-text-size-adjust: 100%;
@@ -91,7 +98,7 @@ p { margin: 0 0 1em; }
 
 /* Cabecera de sección: a la izquierda, con nota al margen (nada centrado-simétrico) */
 .sec-cab { max-width: 720px; margin: 0 0 46px; text-align: left; }
-.sec-cab p { color: var(--texto-suave); font-size: 1.07rem; }
+.sec-cab p { color: var(--texto-suave); font-size: 1.12rem; }
 
 /* Accesibilidad */
 :focus-visible { outline: 3px solid var(--naranja); outline-offset: 3px; border-radius: 4px; }
@@ -158,7 +165,13 @@ p { margin: 0 0 1em; }
   transition: transform .13s ease, box-shadow .13s ease;
   -webkit-tap-highlight-color: transparent;
 }
-.btn:hover { transform: translate(-1px, -1px) rotate(-.4deg); box-shadow: 5px 5px 0 var(--azul); }
+/* El hover va SIEMPRE dentro de (hover: hover): en una pantalla táctil no hay
+   cursor, y el navegador deja el :hover pegado después de tocar. Sin esta
+   guarda, el botón se queda "levantado" hasta que toques otra cosa. */
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { transform: translate(-1px, -1px) rotate(-.4deg); box-shadow: 5px 5px 0 var(--azul); }
+}
+/* :active sí funciona al tocar: es el hundido al presionar. */
 .btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--azul); }
 
 .btn-naranja { background: var(--naranja); color: var(--blanco); }
@@ -196,10 +209,17 @@ p { margin: 0 0 1em; }
 }
 .logo svg { width: 36px; height: 36px; }
 .logo b { color: var(--naranja); font-weight: 800; }
+.logo .logo-icono { display: block; width: 36px; height: 36px; }
+/* Wordmark oficial ("Pago" azul + "Ya" naranja): solo sobre fondos claros.
+   En el pie (fondo azul noche) se queda el texto blanco de siempre. */
+.logo .logo-wordmark { display: block; width: auto; height: 30px; }
 
+/* Siete enlaces + logo + botón no entran antes de ~1000px; debajo manda la
+   hamburguesa, que ya cubre bien ese caso. El gap es elástico porque con
+   "Guías" sumada la fila queda justa a 1000px exactos. */
 .nav-anclas { display: none; }
-@media (min-width: 880px) {
-  .nav-anclas { display: flex; gap: 24px; }
+@media (min-width: 1000px) {
+  .nav-anclas { display: flex; gap: clamp(13px, 1.7vw, 20px); }
   .nav-anclas a {
     font-family: var(--display);
     font-weight: 700;
@@ -208,6 +228,72 @@ p { margin: 0 0 1em; }
     color: var(--azul);
   }
   .nav-anclas a:hover { color: var(--naranja-osc); }
+}
+
+/* ---------- Menú móvil ---------- */
+/* En la home el botón de WhatsApp sale del encabezado en móvil: logo +
+   "Escríbenos" + hamburguesa no entran en 320px. El CTA vive dentro del menú,
+   más grande, y además ya está el botón flotante. */
+.cabecera--con-nav .cab-cta { display: none; }
+@media (min-width: 1000px) {
+  .cabecera--con-nav .cab-cta { display: inline-flex; }
+}
+
+.hamburguesa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  flex: 0 0 auto;
+  background: var(--blanco);
+  border: var(--borde);
+  border-radius: 12px;
+  box-shadow: 3px 3px 0 var(--azul);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hamburguesa span {
+  display: block;
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--azul);
+  transition: transform .18s ease, opacity .18s ease;
+}
+.hamburguesa[aria-expanded="true"] span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+.hamburguesa[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.hamburguesa[aria-expanded="true"] span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+.hamburguesa:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--azul); }
+@media (min-width: 1000px) { .hamburguesa { display: none; } }
+
+.menu-movil {
+  border-top: 2px dashed rgba(26, 43, 74, .2);
+  background: var(--crema-claro);
+  padding: 10px 0 18px;
+  max-height: calc(100vh - 80px);
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
+}
+.menu-movil .wrap { display: grid; gap: 2px; }
+.menu-movil a:not(.btn) {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.12rem;
+  color: var(--azul);
+  text-decoration: none;
+  padding: 15px 4px;
+  border-bottom: 2px dashed rgba(26, 43, 74, .14);
+}
+.menu-movil a:not(.btn):active { color: var(--naranja-osc); }
+.menu-movil .btn { margin-top: 16px; }
+@media (min-width: 1000px) { .menu-movil { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hamburguesa span { transition: none; }
 }
 
 /* El toldo: franja rayada con festón, como puesto de mercado */
@@ -241,6 +327,10 @@ p { margin: 0 0 1em; }
 .hero {
   position: relative;
   padding: 72px 0 84px;
+  /* `clip` llegó en Chrome 90 (2021) y nuestro público usa Androids desde 2017:
+     ahí cae a `visible` y el sol empuja la página. `hidden` primero como
+     respaldo; los navegadores modernos se quedan con `clip`. */
+  overflow-x: hidden;
   overflow-x: clip;
   background-image: var(--ruido);
 }
@@ -273,40 +363,69 @@ p { margin: 0 0 1em; }
   border-radius: 10px 18px 6px 14px / 14px 8px 16px 8px;
 }
 
+/* Una sola idea, no tres. Lo demás lo cuenta la página más abajo. */
 .hero-bajada {
-  font-size: 1.16rem;
-  max-width: 33em;
-  margin-bottom: 1.7em;
+  font-size: clamp(1.15rem, 4vw, 1.34rem);
+  line-height: 1.55;
+  max-width: 24em;
+  margin-bottom: 1.1em;
 }
 .hero-bajada strong { color: var(--azul); }
+
+/* El argumento más fuerte de la marca deja de ser el final de un párrafo y
+   pasa a ser un objeto propio: se lee aunque no leas nada más. */
+.hero-regla {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 1.6em;
+  padding: .7rem 1.15rem;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(1.12rem, 4.2vw, 1.4rem);
+  line-height: 1.2;
+  color: var(--azul);
+  background: var(--amarillo);
+  border: var(--borde);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 var(--azul);
+  transform: rotate(-.8deg);
+}
+.hero-regla svg { width: 26px; height: 26px; flex: 0 0 26px; }
+
 .hero-botones { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
 
 .hero-sellos {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 20px;
-  margin: 26px 0 0;
+  gap: 12px 22px;
+  margin: 28px 0 0;
   padding: 0;
   list-style: none;
 }
 .hero-sellos li {
   display: inline-flex;
   align-items: center;
-  gap: .45rem;
-  font-size: .9rem;
+  gap: .5rem;
+  font-size: 1.02rem;
   font-weight: 600;
   color: var(--azul);
 }
-.hero-sellos svg { width: 18px; height: 18px; color: var(--verde-wsp); flex: 0 0 18px; }
+.hero-sellos svg { width: 20px; height: 20px; color: var(--verde-wsp); flex: 0 0 20px; }
 
 /* ---------- Mockup del teléfono con sol radiante ---------- */
+/* En móvil los chips van DEBAJO del teléfono, en flujo normal: flotando
+   encima tapaban justo la notificación y el anuncio, que es lo único que el
+   mockup existe para mostrar. Recién con espacio de sobra vuelven a flotar. */
 .mockup { position: relative; display: grid; justify-items: center; gap: 18px; }
-.mockup-marco { position: relative; }
+.mockup-marco { position: relative; display: grid; justify-items: center; gap: 12px; }
 
 .sol {
   position: absolute;
   z-index: -1;
-  inset: -18% -30%;
+  inset: -14% -16%;
   background: repeating-conic-gradient(
     from 8deg,
     rgba(255, 107, 26, .16) 0deg 10deg,
@@ -451,7 +570,7 @@ p { margin: 0 0 1em; }
 
 /* Etiquetas colgadas alrededor del teléfono */
 .chip {
-  position: absolute;
+  position: static;
   z-index: 2;
   display: flex;
   align-items: center;
@@ -464,15 +583,20 @@ p { margin: 0 0 1em; }
   font-size: .84rem;
   font-weight: 600;
   color: var(--azul);
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
 }
 .chip svg { width: 20px; height: 20px; color: var(--naranja); flex: 0 0 20px; }
 .chip small { display: block; font-weight: 400; color: var(--texto-suave); font-size: .74rem; line-height: 1.2; }
-.chip--casa { top: 16%; right: -10px; transform: rotate(2.2deg); }
-.chip--gente { bottom: 8%; left: -8px; transform: rotate(-2deg); }
+.chip--casa { transform: rotate(1.2deg); }
+.chip--gente { transform: rotate(-1.2deg); }
+
+/* Solo cuando la columna del mockup tiene margen real vuelven a flotar */
 @media (min-width: 1060px) {
-  .chip--casa { right: -48px; }
-  .chip--gente { left: -54px; }
+  .mockup-marco { display: block; }
+  .chip { position: absolute; max-width: 168px; }
+  .chip--casa { top: 12%; right: -62px; transform: rotate(2.2deg); }
+  .chip--gente { bottom: 6%; left: -68px; transform: rotate(-2deg); }
 }
 
 .mockup-pie { display: grid; justify-items: center; gap: 6px; }
@@ -568,8 +692,8 @@ p { margin: 0 0 1em; }
 .quees-lista .quees-icono svg { width: 24px; height: 24px; }
 .quees-lista li:nth-child(odd) .quees-icono { transform: rotate(3deg); }
 .quees-lista li:nth-child(even) .quees-icono { transform: rotate(-4deg); }
-.quees-lista strong { display: block; font-family: var(--display); color: var(--azul); font-size: 1.06rem; }
-.quees-lista p { margin: 0; font-size: .97rem; }
+.quees-lista strong { display: block; font-family: var(--display); color: var(--azul); font-size: 1.12rem; }
+.quees-lista p { margin: 0; font-size: 1.04rem; }
 
 .quees-regla { margin-top: 28px; font-family: var(--display); font-weight: 700; font-size: 1.12rem; color: var(--azul); }
 .quees-regla .marcador { white-space: normal; }
@@ -613,9 +737,12 @@ p { margin: 0 0 1em; }
 .boleta-cab strong { display: block; font-family: var(--display); font-weight: 800; font-size: 1.15rem; color: var(--azul); }
 .boleta-cab span { font-size: .82rem; color: var(--texto-suave); }
 .boleta-filas { list-style: none; margin: 0; padding: 14px 0; display: grid; gap: 10px; border-bottom: 2px dashed rgba(26, 43, 74, .25); }
-.boleta-fila { display: flex; align-items: baseline; gap: 10px; font-size: .93rem; color: var(--texto); }
+/* Cuatro columnas en una boleta de 224px (pantallas de 320px) no entran: los
+   items flex no encogen por debajo de su contenido y arrastraban scroll
+   horizontal a toda la página. Se deja envolver. */
+.boleta-fila { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 9px; font-size: .93rem; color: var(--texto); }
 .boleta-fila .hora { flex: 0 0 3.2em; font-variant-numeric: tabular-nums; color: var(--texto-suave); font-size: .85rem; }
-.boleta-fila .detalle { flex: 1; }
+.boleta-fila .detalle { flex: 1 1 3em; min-width: 0; }
 .boleta-fila .monto { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--azul); }
 .boleta-fila .sono {
   flex: 0 0 auto;
@@ -630,6 +757,22 @@ p { margin: 0 0 1em; }
   gap: 3px;
 }
 .boleta-fila .sono svg { width: 13px; height: 13px; }
+
+/* Los "sonó" se van marcando uno por uno cuando la boleta entra en pantalla:
+   es el mensaje de la sección contado con movimiento, no decoración. */
+.js .boleta-zona .boleta-fila .sono { opacity: 0; }
+.js .boleta-zona.visible .boleta-fila .sono {
+  opacity: 1;
+  animation: sono-marca .42s cubic-bezier(.2, .8, .3, 1.4) backwards;
+}
+.js .boleta-zona.visible .boleta-fila:nth-child(1) .sono { animation-delay: .35s; }
+.js .boleta-zona.visible .boleta-fila:nth-child(2) .sono { animation-delay: .52s; }
+.js .boleta-zona.visible .boleta-fila:nth-child(3) .sono { animation-delay: .69s; }
+.js .boleta-zona.visible .boleta-fila:nth-child(4) .sono { animation-delay: .86s; }
+@keyframes sono-marca {
+  from { opacity: 0; transform: scale(.55) rotate(-14deg); }
+  to { opacity: 1; transform: none; }
+}
 .boleta-total { display: flex; justify-content: space-between; align-items: baseline; padding-top: 14px; }
 .boleta-total span { font-size: .88rem; color: var(--texto-suave); }
 .boleta-total strong { font-family: var(--display); font-weight: 800; font-size: 1.7rem; color: var(--azul); }
@@ -683,7 +826,7 @@ p { margin: 0 0 1em; }
   transform: rotate(.7deg);
 }
 .tarjeta-si h3, .tarjeta-no h3 { font-size: 1.08rem; margin-bottom: .6em; }
-.lista-check, .lista-x { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; font-size: .97rem; }
+.lista-check, .lista-x { list-style: none; margin: 0; padding: 0; display: grid; gap: 11px; font-size: 1.04rem; }
 .lista-check li, .lista-x li { position: relative; padding-left: 28px; }
 .lista-check li::before {
   content: "";
@@ -734,7 +877,7 @@ p { margin: 0 0 1em; }
   margin-bottom: .55em;
 }
 .historia .cita b { color: #FF9A5C; }
-.historia p { margin: 0; font-size: .98rem; color: #BFCADF; }
+.historia p { margin: 0; font-size: 1.05rem; color: #C7D1E4; }
 
 .remate {
   text-align: center;
@@ -756,8 +899,8 @@ p { margin: 0 0 1em; }
   padding: 24px 24px 22px;
 }
 .escudo svg { width: 34px; height: 34px; color: var(--naranja); margin-bottom: 12px; }
-.escudo h3 { font-size: 1.06rem; margin-bottom: .35em; }
-.escudo p { margin: 0; font-size: .95rem; color: #BFCADF; }
+.escudo h3 { font-size: 1.14rem; margin-bottom: .35em; }
+.escudo p { margin: 0; font-size: 1.03rem; color: #C7D1E4; }
 
 /* ---------- Cómo funciona ---------- */
 .fondo-blanco { background: var(--blanco); }
@@ -802,12 +945,13 @@ p { margin: 0 0 1em; }
   box-shadow: 3px 3px 0 var(--azul);
 }
 .pasos svg { width: 42px; height: 42px; color: var(--azul); margin-bottom: 12px; }
-.pasos h3 { margin-bottom: .35em; font-size: 1.15rem; }
-.pasos p { margin: 0; font-size: .96rem; }
+.pasos h3 { margin-bottom: .35em; font-size: 1.22rem; }
+.pasos p { margin: 0; font-size: 1.04rem; }
 .pasos p + p { margin-top: .7em; }
 
 /* Modo remoto: diagrama */
 .remoto {
+  position: relative;
   margin-top: 68px;
   background: var(--crema);
   border: var(--borde);
@@ -816,6 +960,20 @@ p { margin: 0 0 1em; }
   padding: 40px 26px;
 }
 @media (min-width: 900px) { .remoto { padding: 50px 54px; } }
+/* La mascota (el parlantito) asomada en la esquina de la tarjeta. En celular
+   va chiquita para no tapar el texto; en escritorio se asoma por el borde. */
+.remoto-mascota {
+  position: absolute;
+  top: -34px;
+  right: 14px;
+  width: 92px;
+  height: auto;
+  transform: rotate(5deg);
+  filter: drop-shadow(3px 4px 0 rgba(26, 43, 74, .15));
+}
+@media (min-width: 900px) {
+  .remoto-mascota { width: 150px; top: -52px; right: 44px; }
+}
 .remoto h3 { font-size: clamp(1.3rem, 3.4vw, 1.7rem); }
 .remoto > p { max-width: 44em; }
 .diagrama {
@@ -845,38 +1003,86 @@ p { margin: 0 0 1em; }
   font-weight: 800;
   font-size: 1.6rem;
   transform: rotate(90deg);
+  opacity: .55;
+  /* Solo se anima la opacidad, nunca el transform: en móvil la flecha está
+     rotada 90° y una animación de transform la enderezaría.
+     Y solo tres pasadas al aparecer: muestra el recorrido del pago y para.
+     Un latido infinito al costado del texto no deja leer. */
+  animation: flecha-viaja 1.8s ease-in-out 3;
+}
+.flecha:nth-child(4) { animation-delay: .3s; }
+@keyframes flecha-viaja {
+  0%, 60%, 100% { opacity: .55; }
+  25%, 40% { opacity: 1; }
 }
 @media (min-width: 860px) { .flecha { transform: none; padding: 0 6px; } }
 
-/* ---------- Billeteras ---------- */
-.billeteras { display: grid; gap: 20px; }
-@media (min-width: 720px) { .billeteras { grid-template-columns: 1fr 1fr; } }
-.billetera {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
+/* ---------- Compatibilidad ---------- */
+/* El mecanismo: es el diferenciador real frente a un parlante amarrado a una
+   sola empresa de cobro, así que se cuenta antes que la lista. */
+.compat-clave {
   background: var(--blanco);
   border: var(--borde);
   border-radius: var(--radio);
-  box-shadow: 5px 5px 0 rgba(26, 43, 74, .2);
-  padding: 24px 26px;
+  box-shadow: 6px 6px 0 rgba(26, 43, 74, .2);
+  padding: 30px 30px 26px;
+  margin-bottom: 30px;
+  max-width: 62em;
 }
-.billetera .icono {
-  flex: 0 0 52px;
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
+.compat-clave h3 { font-size: clamp(1.2rem, 3.6vw, 1.5rem); margin-bottom: .4em; }
+.compat-clave p { font-size: 1.06rem; }
+.compat-clave p:last-child { margin-bottom: 0; }
+.compat-regla {
+  display: inline-block;
+  margin-top: .6em;
+  padding: .55rem 1rem;
   background: var(--amarillo);
-  border: 2px solid var(--azul);
+  border: var(--borde);
+  border-radius: 12px;
+  box-shadow: 3px 3px 0 var(--azul);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.08rem;
   color: var(--azul);
-  transform: rotate(-3deg);
+  transform: rotate(-.7deg);
 }
-.billetera .icono svg { width: 28px; height: 28px; }
-.billetera h3 { font-size: 1.12rem; margin-bottom: .2em; }
-.billetera p { margin: 0; font-size: .95rem; }
-.billeteras-nota { margin-top: 22px; font-size: .93rem; color: var(--texto-suave); max-width: 52em; }
+
+.compat-lista { display: grid; gap: 18px; }
+@media (min-width: 720px) { .compat-lista { grid-template-columns: 1fr 1fr; } }
+.compat-item {
+  position: relative;
+  background: var(--blanco);
+  border: var(--borde-fino);
+  border-radius: var(--radio);
+  padding: 26px 26px 24px;
+}
+.compat-item--listo { border: var(--borde); box-shadow: 5px 5px 0 rgba(26, 43, 74, .18); }
+.compat-item h3 { font-size: 1.2rem; margin: 10px 0 .25em; }
+.compat-item p { margin: 0; font-size: 1.02rem; }
+.compat-estado {
+  display: inline-block;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: .76rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: .3rem .8rem;
+  border-radius: 999px;
+  background: var(--verde-wsp);
+  color: var(--blanco);
+  border: 2px solid var(--azul);
+  transform: rotate(-1.5deg);
+}
+.compat-estado--cola { background: var(--amarillo); color: var(--azul); }
+
+.compat-cierre { margin-top: 30px; max-width: 56em; }
+.compat-cierre p { font-size: 1.06rem; }
+.compat-remate {
+  font-family: var(--display);
+  font-weight: 700;
+  color: var(--azul);
+}
+.compat-cierre .btn { margin-top: 8px; }
 
 /* ---------- Requisitos ---------- */
 .requisitos { display: grid; gap: 18px; }
@@ -889,8 +1095,8 @@ p { margin: 0 0 1em; }
   padding: 24px 24px 22px;
 }
 .requisito svg { width: 34px; height: 34px; color: var(--naranja); margin-bottom: 12px; }
-.requisito h3 { font-size: 1.03rem; margin-bottom: .3em; }
-.requisito p { margin: 0; font-size: .93rem; }
+.requisito h3 { font-size: 1.1rem; margin-bottom: .3em; }
+.requisito p { margin: 0; font-size: 1.02rem; }
 
 /* ---------- Diferenciales ---------- */
 .difs { display: grid; gap: 22px; }
@@ -918,7 +1124,7 @@ p { margin: 0 0 1em; }
 }
 .dif .dif-icono svg { width: 28px; height: 28px; }
 .dif h3 { margin-bottom: .3em; }
-.dif p { margin: 0; font-size: .98rem; }
+.dif p { margin: 0; font-size: 1.05rem; }
 
 /* ---------- Comparación honesta ---------- */
 .comparacion { display: grid; gap: 24px; align-items: stretch; }
@@ -1010,8 +1216,8 @@ p { margin: 0 0 1em; }
   padding: 18px 0 0;
   border-top: 2px dashed rgba(26, 43, 74, .3);
   display: grid;
-  gap: 10px;
-  font-size: .97rem;
+  gap: 11px;
+  font-size: 1.04rem;
 }
 .plan ul li { padding-left: 28px; position: relative; }
 .plan ul li::before {
@@ -1049,6 +1255,15 @@ p { margin: 0 0 1em; }
   z-index: 1;
 }
 .sticker--azul { background: var(--azul); color: var(--blanco); transform: rotate(-3deg); }
+/* Un solo guiño cuando la sección aparece, y se calla.
+   Antes se movía cada 3.5 s para siempre: eso es secuestrar la atención de
+   alguien que está tratando de leer los precios. Se saluda una vez y ya. */
+.js .plan--favorito.visible .sticker { animation: sticker-guina 1.1s ease-in-out .5s 1 backwards; }
+@keyframes sticker-guina {
+  0%, 100% { transform: rotate(3deg); }
+  35% { transform: rotate(-4deg) scale(1.06); }
+  70% { transform: rotate(5deg) scale(1.02); }
+}
 .planes-nota {
   margin-top: 30px;
   font-size: .93rem;
@@ -1058,13 +1273,16 @@ p { margin: 0 0 1em; }
 
 /* ---------- FAQ ---------- */
 .faq { max-width: 800px; margin: 0; display: grid; gap: 12px; }
+/* Borde SIEMPRE de 2.5px: antes pasaba de 2px a 2.5px al abrir y eso movía
+   media línea toda la lista. Al abrir solo cambia el color. */
 .faq details {
   background: var(--blanco);
-  border: var(--borde-fino);
+  border: 2.5px solid rgba(26, 43, 74, .16);
   border-radius: 14px;
   overflow: hidden;
+  transition: border-color .22s ease, box-shadow .22s ease;
 }
-.faq details[open] { border: var(--borde); box-shadow: 4px 4px 0 rgba(26, 43, 74, .18); }
+.faq details[open] { border-color: var(--azul); box-shadow: 4px 4px 0 rgba(26, 43, 74, .18); }
 .faq summary {
   list-style: none;
   cursor: pointer;
@@ -1072,10 +1290,10 @@ p { margin: 0 0 1em; }
   justify-content: space-between;
   align-items: center;
   gap: 14px;
-  padding: 17px 20px;
+  padding: 18px 20px;
   font-family: var(--display);
   font-weight: 700;
-  font-size: 1.03rem;
+  font-size: 1.1rem;
   color: var(--azul);
 }
 .faq summary::-webkit-details-marker { display: none; }
@@ -1097,12 +1315,30 @@ p { margin: 0 0 1em; }
   transition: transform .18s ease;
 }
 .faq details[open] summary::after { transform: rotate(45deg); }
-.faq details > div { padding: 0 20px 18px; font-size: .97rem; }
+
+/* Apertura suave.
+   Ojo: en <details> el contenido está en display:none mientras está cerrado,
+   y las `transition` no corren al pasar de display:none a visible. Por eso va
+   con `animation`, que sí arranca cuando el elemento aparece.
+   `grid-template-rows: 0fr → 1fr` hace crecer el alto sin números mágicos; en
+   navegadores que no lo animan queda el fundido, que ya se siente bien. */
+.faq details > div {
+  display: grid;
+  padding: 0 20px 18px;
+  font-size: 1.05rem;
+}
+.faq details > div > * { min-height: 0; }
+.faq details[open] > div { animation: faq-abrir .3s cubic-bezier(.2, .7, .3, 1); }
+@keyframes faq-abrir {
+  from { grid-template-rows: 0fr; opacity: 0; transform: translateY(-6px); }
+  to { grid-template-rows: 1fr; opacity: 1; transform: translateY(0); }
+}
 .faq details > div p:last-child { margin-bottom: 0; }
 
 /* ---------- CTA final ---------- */
 .cta-final {
   position: relative;
+  overflow: hidden;
   overflow: clip;
   background-color: var(--naranja);
   background-image: var(--ruido);
@@ -1138,7 +1374,7 @@ p { margin: 0 0 1em; }
 }
 .pie .logo { color: var(--blanco); margin-bottom: 10px; }
 .pie-grid { display: grid; gap: 36px; }
-@media (min-width: 800px) { .pie-grid { grid-template-columns: 1.4fr 1fr 1fr; gap: 48px; } }
+@media (min-width: 800px) { .pie-grid { grid-template-columns: 1.4fr repeat(4, 1fr); gap: 40px; } }
 .pie h3 { color: var(--blanco); font-size: 1rem; margin-bottom: .7em; }
 .pie ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
 .pie a { color: #D4DCEC; text-decoration: none; }
@@ -1170,7 +1406,6 @@ p { margin: 0 0 1em; }
   box-shadow: 4px 4px 0 rgba(14, 25, 48, .45);
   transition: transform .15s ease;
 }
-.wsp-flotante:hover { transform: scale(1.07) rotate(-4deg); }
 .wsp-flotante svg { width: 31px; height: 31px; color: var(--blanco); }
 
 /* ---------- Páginas legales ---------- */
@@ -1212,11 +1447,279 @@ p { margin: 0 0 1em; }
 }
 .miga a:hover { color: var(--naranja-osc); }
 
+/* ============================================================
+   GUÍAS (/guias/ y cada artículo)
+   ------------------------------------------------------------
+   Reusan el contenedor .legal —misma medida de línea cómoda para
+   leer— y añaden lo propio de un artículo: migas, destacados,
+   tabla comparativa, caja de conversión y enlaces internos.
+   Esos enlaces internos no son decoración: son la forma de que
+   Google descubra y valore las guías entre sí.
+   ============================================================ */
+.articulo h2 { margin-top: 2.2em; }
+.articulo p, .articulo li { max-width: 68ch; }
+.articulo > ul, .articulo > ol { margin-bottom: 1.4em; }
+
+/* Migas de pan */
+.migas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 0 6px;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: .92rem;
+  color: var(--texto-suave);
+}
+.migas a { color: var(--azul); text-decoration: none; }
+.migas a:hover { color: var(--naranja-osc); }
+.migas [aria-current="page"] { color: var(--texto-suave); font-weight: 700; }
+
+/* Frase que resume la sección: la que se quiere recordar */
+.articulo .destacado {
+  border-left: 5px solid var(--naranja);
+  background: var(--crema);
+  border-radius: 0 var(--radio) var(--radio) 0;
+  padding: 16px 20px;
+  margin: 1.6em 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.12rem;
+  color: var(--azul);
+  line-height: 1.4;
+  max-width: none;
+}
+
+/* Tabla comparativa: en celular scrollea ella sola, nunca la página */
+.tabla-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1.4em 0 .6em;
+  border: var(--borde);
+  border-radius: var(--radio);
+  background: var(--blanco);
+}
+.tabla-scroll table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 1rem; }
+.tabla-scroll th, .tabla-scroll td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: var(--borde-fino);
+  vertical-align: top;
+}
+.tabla-scroll thead th {
+  font-family: var(--display);
+  font-weight: 800;
+  color: var(--blanco);
+  background: var(--azul);
+  border-bottom: none;
+}
+.tabla-scroll thead th:last-child { background: var(--naranja); }
+.tabla-scroll tbody th {
+  font-family: var(--display);
+  font-weight: 700;
+  color: var(--azul);
+  background: var(--crema-claro);
+  width: 34%;
+}
+.tabla-scroll td:last-child { font-weight: 700; color: var(--naranja-osc); }
+.tabla-scroll tbody tr:last-child th, .tabla-scroll tbody tr:last-child td { border-bottom: none; }
+.articulo .nota-tabla { font-size: .93rem; color: var(--texto-suave); margin-bottom: 2em; }
+
+/* Caja de conversión al cierre del artículo */
+.caja-cta {
+  margin: 3em 0 0;
+  padding: 30px 26px;
+  background: var(--azul);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-dura);
+  text-align: center;
+}
+.caja-cta h2 { color: var(--blanco); margin-top: 0; font-size: 1.6rem; }
+.caja-cta p { color: rgba(255, 255, 255, .88); max-width: 46ch; margin-inline: auto; }
+.caja-cta .btn { margin-top: 6px; box-shadow: 4px 4px 0 var(--azul-noche); }
+.caja-cta small { display: block; margin-top: 14px; color: rgba(255, 255, 255, .62); font-size: .9rem; }
+
+/* Enlaces internos entre guías.
+   Los selectores llevan `.articulo` delante a propósito: `.legal ul` y
+   `.legal li` ya definen viñetas y márgenes de prosa, y con un solo nombre
+   de clase le ganarían por especificidad a estas listas. */
+.relacionadas { margin-top: 3em; }
+.relacionadas h2 { margin-bottom: .8em; }
+.articulo .relacionadas ul { list-style: none; padding: 0; display: grid; gap: 14px; }
+.articulo .relacionadas li {
+  background: var(--blanco);
+  border: var(--borde-fino);
+  border-radius: var(--radio);
+  padding: 16px 20px;
+  margin: 0;
+  max-width: none;
+}
+.relacionadas li a {
+  display: block;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.12rem;
+  color: var(--azul);
+  text-decoration: none;
+  line-height: 1.25;
+}
+.relacionadas li a:hover { color: var(--naranja-osc); }
+.relacionadas li span { display: block; margin-top: 5px; font-size: .98rem; color: var(--texto-suave); }
+
+/* Índice de guías (/guias/) */
+.articulo .lista-guias { list-style: none; padding: 0; display: grid; gap: 20px; margin: 2em 0 0; }
+.articulo .lista-guias li {
+  background: var(--blanco);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-dura);
+  padding: 22px 24px;
+  margin: 0;
+  max-width: none;
+}
+.lista-guias h2 { margin: 0 0 .35em; font-size: 1.3rem; }
+.lista-guias h2 a { color: var(--azul); text-decoration: none; }
+.lista-guias h2 a:hover { color: var(--naranja-osc); }
+.lista-guias p { margin-bottom: .7em; color: var(--texto-suave); font-size: 1rem; }
+.enlace-seguir { font-family: var(--display); font-weight: 700; text-decoration: none; }
+/* .legal a subraya todos los enlaces de prosa: estos dos no son prosa. */
+.legal .enlace-seguir, .legal .btn { text-decoration: none; }
+
+/* Bloque de guías dentro de la home */
+.guias-home { list-style: none; padding: 0; margin: 0; display: grid; gap: 20px; }
+@media (min-width: 760px) { .guias-home { grid-template-columns: repeat(3, 1fr); } }
+.guias-home li {
+  background: var(--crema-claro);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-dura);
+  padding: 22px 22px 20px;
+  display: flex;
+  flex-direction: column;
+}
+.guias-home h3 { margin-bottom: .4em; font-size: 1.14rem; line-height: 1.2; }
+.guias-home h3 a { color: var(--azul); text-decoration: none; }
+.guias-home h3 a:hover { color: var(--naranja-osc); }
+.guias-home p { color: var(--texto-suave); font-size: 1rem; flex: 1; }
+.guias-home .enlace-seguir { margin-top: 4px; }
+
+/* ============================================================
+   HOVER: "saltar hacia adelante"
+   ------------------------------------------------------------
+   El truco es la sombra dura. Se mueve la tarjeta arriba-izquierda
+   y a la vez se agranda la sombra: el ojo lee que se despegó del
+   papel. Es el mismo gesto que ya tenían los botones.
+
+   Se usa la propiedad `translate` (no `transform`) a propósito:
+   así se compone con el `transform: rotate(...)` que cada tarjeta
+   ya tiene, sin tener que repetir el ángulo en cada regla. Donde
+   no se soporte, simplemente no salta.
+
+   Todo dentro de (hover: hover): en táctil no aplica nada.
+   ============================================================ */
+@media (hover: hover) and (pointer: fine) {
+  /* SOLO se levanta lo que se puede tocar. Una tarjeta de texto que salta
+     promete un clic que no existe: confunde, y con doce tarjetas moviéndose
+     el mouse convierte la página en fuegos artificiales. */
+  .plan {
+    transition: translate .24s cubic-bezier(.25, .8, .35, 1),
+                box-shadow .24s cubic-bezier(.25, .8, .35, 1);
+  }
+  .plan:hover { translate: -2px -2px; box-shadow: 8px 8px 0 rgba(26, 43, 74, .24); }
+  .plan--favorito:hover { translate: -2px -2px; box-shadow: 9px 9px 0 var(--naranja); }
+
+  /* Las tarjetas de guía sí son clicables enteras: pueden saltar */
+  .lista-guias li, .guias-home li {
+    transition: translate .24s cubic-bezier(.25, .8, .35, 1),
+                box-shadow .24s cubic-bezier(.25, .8, .35, 1);
+  }
+  .lista-guias li:hover, .guias-home li:hover {
+    translate: -2px -2px;
+    box-shadow: 8px 8px 0 rgba(26, 43, 74, .24);
+  }
+  .relacionadas li { transition: border-color .2s ease, background-color .2s ease; }
+  .articulo .relacionadas li:hover { border-color: var(--naranja); background: var(--crema-claro); }
+
+  /* Lo demás avisa sin moverse: nada empuja al ojo */
+  .faq summary { transition: background-color .22s ease; }
+  .faq summary:hover { background: var(--crema); }
+
+  .cifra strong { transition: text-shadow .3s ease; }
+  .cifra:hover strong { text-shadow: 0 0 20px rgba(255, 201, 60, .5); }
+
+  .wsp-flotante:hover { transform: scale(1.05) rotate(-3deg); }
+}
+
+/* ============================================================
+   FORMULARIO DE CONSULTAS (/consultas)
+   ------------------------------------------------------------
+   Sitio estático: no hay backend. El form solo arma el mensaje
+   y lo abre en WhatsApp o correo. Estilo alineado a la prosa
+   .legal para que calce con el resto de páginas de contenido.
+   ============================================================ */
+.form-consulta {
+  display: grid;
+  gap: 16px;
+  max-width: 620px;
+  margin: 1.6em 0 0.4em;
+}
+.form-consulta label {
+  display: grid;
+  gap: 6px;
+  font-family: var(--display);
+  font-weight: 700;
+  color: var(--azul);
+}
+.form-consulta .opcional {
+  font-weight: 400;
+  color: var(--texto-suave);
+  font-family: inherit;
+}
+.form-consulta input,
+.form-consulta textarea {
+  font: inherit;
+  font-weight: 400;
+  color: var(--azul);
+  background: var(--blanco);
+  border: var(--borde);
+  border-radius: 14px;
+  padding: 12px 14px;
+  width: 100%;
+}
+.form-consulta textarea { resize: vertical; }
+.form-consulta input::placeholder,
+.form-consulta textarea::placeholder { color: var(--texto-suave); }
+.form-consulta input:focus,
+.form-consulta textarea:focus {
+  outline: none;
+  box-shadow: 4px 4px 0 rgba(255, 107, 26, .35);
+}
+.form-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+.form-botones .btn { border: none; cursor: pointer; }
+.form-nota {
+  color: var(--texto-suave);
+  font-size: .95rem;
+  margin-top: 2px;
+}
+
 /* ---------- Movimiento reducido ---------- */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .ondas i, .sol, .letrero-tira { animation: none; }
+  .ondas i, .sol, .letrero-tira, .flecha,
+  .plan--favorito .sticker { animation: none; }
   .ondas i { transform: scaleY(.55); }
+  .flecha { opacity: 1; }
   .js .reveal { opacity: 1; transform: none; transition: none; }
-  .btn, .wsp-flotante { transition: none; }
+  .btn, .wsp-flotante, .faq details, .hamburguesa span,
+  .plan, .faq summary, .cifra strong { transition: none; }
+  /* El contenido de las preguntas aparece de golpe, pero aparece */
+  .faq details[open] > div { animation: none; }
+  .js .boleta-zona .boleta-fila .sono { opacity: 1; animation: none; }
 }

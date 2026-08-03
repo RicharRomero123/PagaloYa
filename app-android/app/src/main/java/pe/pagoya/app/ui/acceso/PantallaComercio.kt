@@ -1,5 +1,9 @@
 package pe.pagoya.app.ui.acceso
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,13 +15,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -29,18 +39,27 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import compose.icons.TablerIcons
+import compose.icons.tablericons.ArrowLeft
+import compose.icons.tablericons.BuildingStore
+import compose.icons.tablericons.Headphones
 import kotlinx.coroutines.launch
+import pe.pagoya.app.core.Enlaces
+import pe.pagoya.app.core.Plan
 import pe.pagoya.app.nube.ComercioRepo
+import pe.pagoya.app.nube.LimiteDispositivos
 import pe.pagoya.app.ui.tema.AzulNoche
 import pe.pagoya.app.ui.tema.Blanco
 import pe.pagoya.app.ui.tema.Borde
 import pe.pagoya.app.ui.tema.BotonPagoYa
 import pe.pagoya.app.ui.tema.BotonPlano
 import pe.pagoya.app.ui.tema.Crema
+import pe.pagoya.app.ui.tema.DialogoSalirCuenta
 import pe.pagoya.app.ui.tema.NaranjaPagoYa
 import pe.pagoya.app.ui.tema.NaranjaSuave
 import pe.pagoya.app.ui.tema.RojoAlerta
@@ -54,15 +73,46 @@ private enum class Papel { NINGUNO, DUENO, TRABAJADOR }
  * Es una decisión con peso: el teléfono del dueño es el único que captura los
  * pagos, así que se pregunta de frente y sin ambigüedad, una tarjeta grande
  * por opción, en vez de mostrar los dos formularios a la vez.
+ *
+ * Es el primer paso después de entrar: atrás aquí significa "no era mi
+ * cuenta" — cerrar sesión con confirmación y volver al acceso.
  */
 @Composable
-fun PantallaComercio(alListo: () -> Unit) {
+fun PantallaComercio(alCerrarSesion: () -> Unit, alListo: () -> Unit) {
     val alcance = rememberCoroutineScope()
     var papel by remember { mutableStateOf(Papel.NINGUNO) }
     var nombreNegocio by remember { mutableStateOf("") }
     var codigo by remember { mutableStateOf("") }
     var cargando by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var confirmarSalida by remember { mutableStateOf(false) }
+    // Cuando el comercio llegó a su tope de teléfonos: se muestra un diálogo
+    // con el CTA a WhatsApp (el upgrade se cierra por conversación, no aquí).
+    var planLleno by remember { mutableStateOf<Plan?>(null) }
+    val contexto = LocalContext.current
+
+    BackHandler { confirmarSalida = true }
+
+    planLleno?.let { plan ->
+        DialogoLimiteDispositivos(
+            plan = plan,
+            alContactar = {
+                planLleno = null
+                abrirWhatsappUpgrade(contexto, plan)
+            },
+            alCerrar = { planLleno = null },
+        )
+    }
+
+    if (confirmarSalida) {
+        DialogoSalirCuenta(
+            alConfirmar = {
+                confirmarSalida = false
+                alCerrarSesion()
+            },
+            alCancelar = { confirmarSalida = false },
+        )
+    }
 
     val coloresCampo = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = NaranjaPagoYa,
@@ -74,10 +124,21 @@ fun PantallaComercio(alListo: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(Crema)
+            .statusBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
     ) {
-        Spacer(Modifier.height(24.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = { confirmarSalida = true }) {
+                Icon(TablerIcons.ArrowLeft, contentDescription = "Volver", tint = AzulNoche)
+            }
+        }
+        Spacer(Modifier.height(12.dp))
         Text(
             "¡Ya casi, casero!",
             style = MaterialTheme.typography.headlineLarge,
@@ -91,7 +152,7 @@ fun PantallaComercio(alListo: () -> Unit) {
         Spacer(Modifier.height(24.dp))
 
         TarjetaPapel(
-            emoji = "🧑‍💼",
+            icono = TablerIcons.BuildingStore,
             titulo = "Es mi negocio",
             texto = "Este teléfono tiene el Yape del negocio y va a capturar los pagos.",
             elegida = papel == Papel.DUENO,
@@ -99,7 +160,7 @@ fun PantallaComercio(alListo: () -> Unit) {
         )
         Spacer(Modifier.height(12.dp))
         TarjetaPapel(
-            emoji = "🎧",
+            icono = TablerIcons.Headphones,
             titulo = "Trabajo aquí",
             texto = "Quiero escuchar y anunciar los pagos que caen al Yape del dueño.",
             elegida = papel == Papel.TRABAJADOR,
@@ -174,7 +235,10 @@ fun PantallaComercio(alListo: () -> Unit) {
                         alcance.launch {
                             ComercioRepo.unirseConCodigo(codigo)
                                 .onSuccess { alListo() }
-                                .onFailure { error = it.message ?: "Código no válido." }
+                                .onFailure {
+                                    if (it is LimiteDispositivos) planLleno = it.plan
+                                    else error = it.message ?: "Código no válido."
+                                }
                             cargando = false
                         }
                     },
@@ -198,7 +262,7 @@ fun PantallaComercio(alListo: () -> Unit) {
 
 @Composable
 private fun TarjetaPapel(
-    emoji: String,
+    icono: ImageVector,
     titulo: String,
     texto: String,
     elegida: Boolean,
@@ -219,7 +283,12 @@ private fun TarjetaPapel(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(emoji, fontSize = 30.sp)
+            Icon(
+                icono,
+                contentDescription = null,
+                tint = if (elegida) NaranjaPagoYa else AzulNoche,
+                modifier = Modifier.size(32.dp),
+            )
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(
@@ -235,4 +304,68 @@ private fun TarjetaPapel(
             }
         }
     }
+}
+
+/**
+ * El comercio ya llegó a su tope de teléfonos. No hay botón de "pagar" — el
+ * upgrade se cierra por WhatsApp (el cobro ocurre fuera de la app).
+ */
+@Composable
+private fun DialogoLimiteDispositivos(
+    plan: Plan,
+    alContactar: () -> Unit,
+    alCerrar: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = alCerrar,
+        containerColor = Blanco,
+        title = {
+            Text(
+                "Tu plan está lleno, casero",
+                style = MaterialTheme.typography.titleLarge,
+                color = AzulNoche,
+            )
+        },
+        text = {
+            val siguiente = when (plan) {
+                Plan.GRATIS -> "Caserito (hasta 3 teléfonos)"
+                Plan.CASERITO -> "Patrón (hasta 10 teléfonos)"
+                Plan.PATRON -> "un plan a tu medida"
+            }
+            Text(
+                "El plan ${plan.etiqueta} llega hasta ${plan.maxDispositivos} " +
+                    "${if (plan.maxDispositivos == 1) "teléfono" else "teléfonos"}. " +
+                    "Para sumar más, pásate al $siguiente. Escríbenos y te lo activamos al toque.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextoMedio,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = alContactar) {
+                Text(
+                    "Escríbenos por WhatsApp",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = NaranjaPagoYa,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = alCerrar) {
+                Text(
+                    "Ahora no",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = AzulNoche,
+                )
+            }
+        },
+    )
+}
+
+/** Abre WhatsApp de ventas con el mensaje del plan que se quiere. */
+private fun abrirWhatsappUpgrade(contexto: Context, planActual: Plan) {
+    val mensaje = "¡Hola! Uso PagoYa (plan ${planActual.etiqueta}) y quiero sumar " +
+        "más teléfonos a mi negocio. ¿Cómo hago para subir de plan?"
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(Enlaces.whatsappVentas(mensaje)))
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { contexto.startActivity(intent) }
 }

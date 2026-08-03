@@ -1,6 +1,7 @@
 package pe.pagoya.app.ui.onboarding
 
 import android.Manifest
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -12,8 +13,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,14 +33,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import compose.icons.TablerIcons
+import compose.icons.tablericons.ArrowLeft
+import compose.icons.tablericons.Bulb
 import pe.pagoya.app.core.ProteccionMarca
 import pe.pagoya.app.ui.tema.AzulNoche
 import pe.pagoya.app.ui.tema.BotonPagoYa
 import pe.pagoya.app.ui.tema.BotonSecundario
 import pe.pagoya.app.ui.tema.Cargando
-import pe.pagoya.app.ui.tema.CirculoEmoji
+import pe.pagoya.app.ui.tema.CirculoIcono
 import pe.pagoya.app.ui.tema.Crema
 import pe.pagoya.app.ui.tema.Humo
+import pe.pagoya.app.ui.tema.NaranjaPagoYa
 import pe.pagoya.app.ui.tema.NaranjaSuave
 import pe.pagoya.app.ui.tema.PuntosProgreso
 import pe.pagoya.app.ui.tema.RojoAlerta
@@ -48,12 +58,16 @@ import pe.pagoya.app.ui.tema.TextoMedio
  *
  * @param captura true si es el teléfono con el Yape del negocio (pide los
  *                cuatro permisos); false si es un teléfono de escucha.
+ * @param alVolver retrocede al paso anterior del flujo (bienvenida u hogar,
+ *                 según de dónde se llegó). Atrás del sistema hace lo mismo.
  */
 @Composable
-fun AsistentePermisos(captura: Boolean, alTerminar: () -> Unit) {
+fun AsistentePermisos(captura: Boolean, alVolver: () -> Unit, alTerminar: () -> Unit) {
     val contexto = LocalContext.current
     val estado = recordarPermisos(captura)
     var reclamo by remember { mutableStateOf<String?>(null) }
+
+    BackHandler(onBack = alVolver)
 
     val pedirAvisos = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -76,6 +90,7 @@ fun AsistentePermisos(captura: Boolean, alTerminar: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(Crema)
+            .statusBarsPadding()
             .padding(horizontal = 24.dp),
     ) {
         Spacer(Modifier.height(20.dp))
@@ -84,11 +99,20 @@ fun AsistentePermisos(captura: Boolean, alTerminar: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                "Activemos tu PagoYa",
-                style = MaterialTheme.typography.titleMedium,
-                color = TextoMedio,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = alVolver) {
+                    Icon(
+                        TablerIcons.ArrowLeft,
+                        contentDescription = "Volver",
+                        tint = AzulNoche,
+                    )
+                }
+                Text(
+                    "Activemos tu PagoYa",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = TextoMedio,
+                )
+            }
             Text(
                 "Paso ${estado.concedidos + 1} de ${estado.requeridos.size}",
                 style = MaterialTheme.typography.labelSmall,
@@ -110,7 +134,7 @@ fun AsistentePermisos(captura: Boolean, alTerminar: () -> Unit) {
             verticalArrangement = Arrangement.Center,
         ) {
             Spacer(Modifier.height(28.dp))
-            CirculoEmoji(texto.emoji, fondo = NaranjaSuave, tamano = 140.dp)
+            CirculoIcono(texto.icono, fondo = NaranjaSuave, tamano = 140.dp)
             Spacer(Modifier.height(28.dp))
             Text(
                 texto.titulo,
@@ -142,11 +166,20 @@ fun AsistentePermisos(captura: Boolean, alTerminar: () -> Unit) {
             }
 
             TarjetaPagoYa(color = Humo) {
-                Text(
-                    "💡 ${texto.porQue}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextoMedio,
-                )
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(
+                        TablerIcons.Bulb,
+                        contentDescription = null,
+                        tint = NaranjaPagoYa,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        texto.porQue,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextoMedio,
+                    )
+                }
             }
             Spacer(Modifier.height(20.dp))
         }

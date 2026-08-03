@@ -50,9 +50,13 @@ android {
             // firmada con la clave de debug.
             signingConfig = if (hayFirma) signingConfigs.getByName("release")
             else signingConfigs.getByName("debug")
-            // R8 apagado a propósito por ahora: Firebase y el parser usan
-            // reflexión y ofuscar sin probarlo a fondo rompe cosas en silencio.
-            isMinifyEnabled = false
+            // R8 activado: poda la librería de íconos (entraba completa) y baja
+            // bastante el bundle. Es seguro aquí porque el código NO deserializa
+            // por reflexión (Firestore se lee por acceso manual a mapas) y las
+            // reglas están en proguard-rules.pro. Shrink de RECURSOS lo dejamos
+            // apagado por ahora (menos riesgo con widget/notificación); se puede
+            // activar luego probándolo.
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -75,11 +79,23 @@ dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.09.03")
     implementation(composeBom)
     implementation("androidx.core:core-ktx:1.13.1")
+    // Vigilante que revive servicio y listener aunque el sistema mate el proceso
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material:material-icons-core")
+    // Íconos de trazo fino (look SF Symbols / iOS): Tabler vía compose-icons.
+    // Se eligió Tabler porque es el único set outline del grupo con cobertura
+    // completa de nuestros glifos (volumen, megáfono, escudo, recibo, tienda…);
+    // Lucide y Phosphor no existen publicados en br.com.devsrsouza.compose.icons.
+    // OJO: con R8/minify apagado (ver buildTypes.release) la librería entra
+    // completa al APK y pesa varios MB.
+    // TODO: habilitar isMinifyEnabled (probando a fondo la reflexión de
+    // Firebase/parser) antes del release final para que solo queden los
+    // íconos usados.
+    implementation("br.com.devsrsouza.compose.icons:tabler-icons:1.1.1")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
@@ -89,6 +105,11 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-config")
+    // Push de campañas del operador (ofertas, recordatorio de cierre): la app se
+    // suscribe a topics y recibe los mensajes que se envían desde la consola.
+    implementation("com.google.firebase:firebase-messaging")
+    // Cloud Functions callable (ej. canjearReferido "Casero trae Casero").
+    implementation("com.google.firebase:firebase-functions")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
 
     // Anti-fake de raíz: App Check certifica que quien escribe en Firestore es

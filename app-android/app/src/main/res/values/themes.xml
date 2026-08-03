@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Fondo crema desde el primer frame para que no haya flash blanco al abrir.
-         Iconos oscuros en la barra de estado porque el fondo es claro. -->
+    <!-- Edge-to-edge estilo iPhone: barra de estado TRANSPARENTE (el DEGRADADO
+         naranja vertical de la BarraSuperior se pinta por debajo, fundiéndose
+         con ella; la parte clara queda arriba) e iconos en claro (blanco) para
+         que se lean sobre el naranja. enableEdgeToEdge() en MainActivity
+         refuerza esto en runtime; aquí se fija para el primer frame antes de
+         Compose. windowBackground naranja para que el primer frame combine con
+         el degradado y no haya flash crema arriba. -->
     <style name="Theme.PagoYa" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:statusBarColor">@color/crema</item>
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowBackground">@color/crema</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">@color/naranja_pagoya</item>
+    </style>
+
+    <!-- Splash: se ve solo durante el arranque en frío; MainActivity vuelve a
+         Theme.PagoYa con setTheme() antes de dibujar Compose. -->
+    <style name="Theme.PagoYa.Splash">
+        <item name="android:statusBarColor">@color/naranja_pagoya</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">@drawable/splash_pagoya</item>
     </style>
 </resources>

@@ -1,2 +1,13 @@
 node_modules/
 *.log
+
+# Imágenes y bocetos de trabajo sueltos en la RAÍZ del repo (anclados con "/",
+# no afectan los assets de app-android/, landing/, etc.). Los diseños definitivos
+# van dentro de su módulo, no tirados en la raíz.
+/*.png
+/*.jpg
+/*.jpeg
+/*.svg
+
+# Artefactos de build de TypeScript (panel)
+*.tsbuildinfo

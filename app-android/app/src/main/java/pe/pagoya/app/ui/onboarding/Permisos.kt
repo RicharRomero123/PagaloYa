@@ -14,11 +14,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import compose.icons.TablerIcons
+import compose.icons.tablericons.Ambulance
+import compose.icons.tablericons.BatteryCharging
+import compose.icons.tablericons.Bell
+import compose.icons.tablericons.Shield
+import compose.icons.tablericons.Speakerphone
 import pe.pagoya.app.core.Guardian
 import pe.pagoya.app.core.ProteccionMarca
 
@@ -36,11 +43,12 @@ enum class Permiso {
     ESCUCHAR_NOTIFICACIONES,
     AVISOS_PAGOYA,
     BATERIA,
+    REVIVIR_YAPE,
     BLINDAR_YAPE,
 }
 
 data class TextoPermiso(
-    val emoji: String,
+    val icono: ImageVector,
     val titulo: String,
     val explicacion: String,
     val porQue: String,
@@ -68,10 +76,13 @@ object Permisos {
 
     fun yapeBlindado(contexto: Context): Boolean = ProteccionMarca.yaProtegido(contexto)
 
+    fun puedeRevivirYape(contexto: Context): Boolean = Guardian.puedeRevivir(contexto)
+
     fun concedido(contexto: Context, permiso: Permiso): Boolean = when (permiso) {
         Permiso.ESCUCHAR_NOTIFICACIONES -> escuchaNotificaciones(contexto)
         Permiso.AVISOS_PAGOYA -> avisosPagoYa(contexto)
         Permiso.BATERIA -> bateriaLibre(contexto)
+        Permiso.REVIVIR_YAPE -> puedeRevivirYape(contexto)
         Permiso.BLINDAR_YAPE -> yapeBlindado(contexto)
     }
 
@@ -80,8 +91,9 @@ object Permisos {
         if (captura) add(Permiso.ESCUCHAR_NOTIFICACIONES)
         if (Build.VERSION.SDK_INT >= 33) add(Permiso.AVISOS_PAGOYA)
         add(Permiso.BATERIA)
-        // Blindar Yape solo tiene sentido donde está instalado
+        // Revivir y blindar Yape solo tienen sentido donde está instalado
         if (captura && Guardian.estadoYape(contexto) != Guardian.EstadoBilletera.NO_INSTALADA) {
+            add(Permiso.REVIVIR_YAPE)
             add(Permiso.BLINDAR_YAPE)
         }
     }
@@ -94,7 +106,7 @@ object Permisos {
 
     fun texto(contexto: Context, permiso: Permiso): TextoPermiso = when (permiso) {
         Permiso.ESCUCHAR_NOTIFICACIONES -> TextoPermiso(
-            emoji = "🔔",
+            icono = TablerIcons.Bell,
             titulo = "Déjanos escuchar tus yapeos",
             explicacion = "Solo leemos las notificaciones de tus billeteras. " +
                 "Ni tus chats, ni tus fotos, ni nada más. Palabra de casero.",
@@ -102,7 +114,7 @@ object Permisos {
             textoBoton = "Activar ahora",
         )
         Permiso.AVISOS_PAGOYA -> TextoPermiso(
-            emoji = "📣",
+            icono = TablerIcons.Speakerphone,
             titulo = "Deja que PagoYa te avise",
             explicacion = "Es el avisito fijo que te muestra que estamos encendidos " +
                 "y escuchando tus pagos.",
@@ -110,17 +122,27 @@ object Permisos {
             textoBoton = "Permitir avisos",
         )
         Permiso.BATERIA -> TextoPermiso(
-            emoji = "🔋",
+            icono = TablerIcons.BatteryCharging,
             titulo = "Que la batería no nos apague",
             explicacion = "Le decimos a tu teléfono que no duerma a PagoYa " +
                 "para ahorrar batería.",
             porQue = "Si el teléfono nos duerme, una venta puede no sonar.",
             textoBoton = "Sin restricción",
         )
+        Permiso.REVIVIR_YAPE -> TextoPermiso(
+            icono = TablerIcons.Ambulance,
+            titulo = "Déjanos revivir tu Yape",
+            explicacion = "Algunos teléfonos apagan el Yape solito para ahorrar " +
+                "batería, y ahí las ventas no suenan. Con este permiso, PagoYa " +
+                "lo prende de nuevo automáticamente, sin que tú hagas nada.",
+            porQue = "Es lo que hace que no tengas que vigilar el teléfono: " +
+                "si tu Yape se muere, lo resucitamos al toque.",
+            textoBoton = "Permitir",
+        )
         Permiso.BLINDAR_YAPE -> {
             val guia = ProteccionMarca.guiaParaEsteTelefono()
             TextoPermiso(
-                emoji = "🛡️",
+                icono = TablerIcons.Shield,
                 titulo = guia.titulo,
                 explicacion = "Tu ${guia.marca} puede dormir al Yape solito, " +
                     "y ahí las ventas dejan de sonar aunque PagoYa esté bien.",
@@ -144,6 +166,12 @@ object Permisos {
             Permiso.BATERIA -> contexto.startActivity(
                 Intent(
                     Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    Uri.parse("package:${contexto.packageName}")
+                )
+            )
+            Permiso.REVIVIR_YAPE -> contexto.startActivity(
+                Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                     Uri.parse("package:${contexto.packageName}")
                 )
             )

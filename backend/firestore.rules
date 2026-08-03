@@ -57,6 +57,24 @@ service cloud.firestore {
         && d.activo is bool;
     }
 
+    // Una POSTULACIÓN para entrar al equipo interno. Un aspirante la crea con su
+    // propio uid y estado "pendiente" — nunca se auto-asigna "aceptada" ni toca
+    // su estado luego. La solicitud NO otorga ningún permiso: el dueño la revisa
+    // y, en un paso APARTE, crea operadores/{uid} (única puerta al acceso). El
+    // shape se valida estricto para que no cuele campos ni infle el documento.
+    function solicitudOperadorValida(uid) {
+      let d = request.resource.data;
+      return d.keys().hasAll(['uid', 'email', 'nombre', 'estado', 'creadoEn'])
+        && d.keys().hasOnly(['uid', 'email', 'nombre', 'notaRol', 'estado', 'creadoEn'])
+        && d.uid == uid
+        && d.uid == request.auth.uid
+        && d.email is string && d.email.size() <= 120
+        && d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 60
+        && (!('notaRol' in d) || (d.notaRol is string && d.notaRol.size() <= 140))
+        && d.estado == 'pendiente'
+        && d.creadoEn == request.time;
+    }
+
     function cambiaSolo(campos) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(campos);
     }
@@ -65,14 +83,90 @@ service cloud.firestore {
       return campo in request.resource.data.diff(resource.data).affectedKeys();
     }
 
-    // La membresía la escribe SOLO un operador. Si el cliente pudiera activarse
-    // el plan solo, no habría negocio.
+    // La membresía la escribe SOLO un operador (ruta de update de abajo). Si el
+    // cliente pudiera activarse el plan solo, no habría negocio.
+    //
+    // Contrato de `suscripcion` (idéntico al que siembra la app Android y lee el
+    // panel):
+    //   { estado, plan, vigenteHasta, inicioPrueba?, origen? }
+    // - estado ∈ {prueba, activa, vencida}   (string)
+    // - plan   ∈ {gratis, caserito, patron}  (string, id del plan)
+    // - vigenteHasta: millis (int) — FUENTE DE VERDAD del vencimiento
+    // - inicioPrueba: millis (int), opcional — solo informativo (la app lo pone
+    //   al sembrar el trial; el panel lo muestra)
+    // - origen ∈ {manual, pasarela, sistema}, OPCIONAL. La app NO lo escribe al
+    //   sembrar el trial; el operador/pasarela/Function sí. Se valida solo si
+    //   está presente para no romper una suscripción sembrada por la app cuando
+    //   el operador la edite después.
     function suscripcionValida() {
       let s = request.resource.data.suscripcion;
-      return s.plan in ['gratis', 'caserito', 'patron']
+      return s.keys().hasOnly(['plan', 'estado', 'vigenteHasta', 'inicioPrueba', 'origen'])
+        && s.plan in ['gratis', 'caserito', 'patron']
         && s.estado in ['prueba', 'activa', 'vencida']
-        && s.origen in ['manual', 'pasarela']
+        // 'sistema' = escrito por una Cloud Function con el Admin SDK (trial de
+        // 30 días al crear el comercio, premio de referido). Las Functions
+        // saltan estas reglas, pero permitir 'sistema' aquí evita que un update
+        // POSTERIOR del operador (que conserve origen:'sistema') sea rechazado.
+        && (!('origen' in s) || s.origen in ['manual', 'pasarela', 'sistema'])
+        && (!('inicioPrueba' in s) || s.inicioPrueba is int)
         && s.vigenteHasta is int;
+    }
+
+    // Semilla de PRUEBA que la app Android escribe AL CREAR el comercio (no un
+    // operador). Es la única `suscripcion` que un cliente puede fijar por sí
+    // mismo, y está acotada para que nadie se auto-regale un plan pagado eterno:
+    //   · estado forzado a 'prueba' (nunca 'activa'),
+    //   · plan solo 'caserito' o 'gratis' (jamás 'patron' por su cuenta),
+    //   · shape cerrado (mismo contrato que arriba),
+    //   · vigenteHasta a lo sumo ~31 días en el futuro (30 días de trial + 1 de
+    //     holgura por reloj del teléfono): no puede fabricar una prueba de años.
+    // Al vencer, planEfectivo() la degrada sola a gratis por fecha, sin servidor.
+    function suscripcionPruebaSemilla() {
+      let s = request.resource.data.suscripcion;
+      return s.keys().hasOnly(['plan', 'estado', 'vigenteHasta', 'inicioPrueba'])
+        && s.estado == 'prueba'
+        && s.plan in ['caserito', 'gratis']
+        && s.vigenteHasta is int
+        && s.vigenteHasta <= request.time.toMillis() + 31 * 24 * 60 * 60 * 1000
+        && (!('inicioPrueba' in s) || s.inicioPrueba is int);
+    }
+
+    // ── Tope de dispositivos por plan (fuente canónica en el servidor) ─────────
+    // PagoYa cobra por número de teléfonos vinculados a un comercio. El límite
+    // NO puede vivir solo en el cliente (un APK modificado lo evadiría): estas
+    // reglas lo hacen cumplir del lado servidor.
+    //
+    // "Dispositivos vinculados" = número de docs en comercios/{id}/miembros
+    // (el dueño cuenta). Como en Security Rules no existe count() sobre una
+    // subcolección, se mantiene un contador denormalizado
+    // comercios/{id}.numDispositivos que el propio lote de create/delete del
+    // miembro actualiza de forma atómica y verificable (ver más abajo).
+    //
+    // Planes: gratis=1, caserito=3, patron=10. Sin suscripción → gratis (1).
+    function maxDispositivosDePlan(plan) {
+      return plan == 'patron' ? 10
+           : (plan == 'caserito' ? 3 : 1);
+    }
+
+    // Plan EFECTIVO de una suscripción: el que realmente cuenta AHORA. Sin Cloud
+    // Functions (plan Spark) no hay proceso que voltee el estado al vencer la
+    // prueba de 30 días, así que la FECHA misma degrada: un plan solo vale si su
+    // estado es 'prueba' o 'activa' Y `vigenteHasta` (millis) todavía no pasó.
+    // Cualquier otro caso (vencida, sin estado, sin fecha, fecha pasada) cae a
+    // 'gratis' → 1 teléfono. Así el tope se ajusta solo, sin servidor de por
+    // medio, y no queda ninguna suscripción "fantasma" dando cupos de más.
+    function planEfectivo(susc) {
+      return (susc.get('estado', 'vencida') in ['prueba', 'activa']
+              && susc.get('vigenteHasta', 0) >= request.time.toMillis())
+           ? susc.get('plan', 'gratis')
+           : 'gratis';
+    }
+
+    // Tope del comercio TAL COMO ESTÁ AHORA (usa resource.data del comercio).
+    // Si no tiene suscripción, o venció, o el plan no es reconocido → gratis (1).
+    function maxDispositivos(comercioId) {
+      let c = get(/databases/$(database)/documents/comercios/$(comercioId)).data;
+      return maxDispositivosDePlan(planEfectivo(c.get('suscripcion', {})));
     }
 
     // Un cobro de membresía es contabilidad: se crea y no se toca nunca más.
@@ -98,6 +192,35 @@ service cloud.firestore {
     function puedeCapturar(comercioId) {
       return esMiembro(comercioId)
         && miembro(comercioId).get('puedeCapturar', miembro(comercioId).rol == 'dueno') == true;
+    }
+
+    // Latido de telemetría: cada teléfono reporta su propia salud (listener
+    // vivo, Yape detenida, permisos) para que el panel detecte teléfonos
+    // sordos. Solo estado técnico — nunca montos ni datos de pagadores.
+    function latidoValido() {
+      let d = request.resource.data;
+      let campos = ['nombre', 'capturando', 'listenerConectado', 'permisoEscucha',
+                    'ultimaNotifBilletera', 'yape', 'puedeRevivir', 'bateriaLibre',
+                    'marca', 'modelo', 'versionApp', 'ultimoLatido'];
+      // 'fcmToken' es OPCIONAL: la app lo escribe en su propio latido para que la
+      // Cloud Function fanoutPago sepa a qué teléfono despertar. Sigue siendo
+      // estricto (hasOnly) — se valida solo si está presente.
+      let opcionales = ['fcmToken'];
+      return d.keys().hasAll(campos)
+        && d.keys().hasOnly(campos.concat(opcionales))
+        && (!('fcmToken' in d) || (d.fcmToken is string && d.fcmToken.size() <= 200))
+        && d.nombre is string && d.nombre.size() <= 60
+        && d.capturando is bool
+        && d.listenerConectado is bool
+        && d.permisoEscucha is bool
+        && d.puedeRevivir is bool
+        && d.bateriaLibre is bool
+        && d.ultimaNotifBilletera is int
+        && d.yape in ['ok', 'detenida', 'no_instalada']
+        && d.marca is string && d.marca.size() <= 40
+        && d.modelo is string && d.modelo.size() <= 60
+        && d.versionApp is string && d.versionApp.size() <= 20
+        && d.ultimoLatido == request.time;
     }
 
     // Un pago solo es válido si:
@@ -157,11 +280,105 @@ service cloud.firestore {
         && request.auth.uid != uid;
     }
 
+    // Postulaciones al equipo interno (paso previo a operadores/{uid}).
+    //
+    //   · El aspirante SOLO puede crear SU propia solicitud (id == su uid) y
+    //     nace forzosamente en estado "pendiente": no puede autoasignarse
+    //     "aceptada". Crear la solicitud no le da NINGÚN permiso — sigue siendo
+    //     un usuario raso hasta que exista su doc operadores/{uid}, que solo un
+    //     esDuenoPagoYa() crea (bloque de arriba, intacto).
+    //   · Solo un operador resuelve la solicitud (estado → aceptada|rechazada);
+    //     el postulante NO puede tocar su propio estado ni reabrirla a otra cosa.
+    //   · uid/email/creadoEn son inmutables tras el create.
+    //   · El postulante SÍ puede retirar (delete) su propia solicitud MIENTRAS
+    //     siga "pendiente": es un dato suyo, no da acceso y así minimizamos
+    //     retención de datos personales (Ley 29733) sin abrir ningún hueco —
+    //     borrar una solicitud jamás concede privilegios. El operador también
+    //     borra, para limpiar las ya resueltas.
+    match /solicitudesOperador/{uid} {
+      allow get: if autenticado() && (request.auth.uid == uid || esOperador());
+      allow list: if autenticado() && esOperador();
+
+      allow create: if autenticado()
+        && request.auth.uid == uid
+        && solicitudOperadorValida(uid);
+
+      // Dos caminos de update, ambos tocan SOLO el campo estado (identidad y
+      // creadoEn quedan intactos):
+      //   · Un operador resuelve la solicitud → aceptada|rechazada.
+      //   · El PROPIO postulante RE-POSTULA tras un rechazo: rechazada→pendiente.
+      //     El panel usa setDoc para postular; si ya existe un doc "rechazada",
+      //     ese setDoc es técnicamente un update, y esta rama lo permite. El
+      //     postulante NUNCA puede pasar a "aceptada": no se auto-asciende.
+      allow update: if autenticado()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado'])
+        && (
+          (esOperador() && request.resource.data.estado in ['aceptada', 'rechazada'])
+          || (request.auth.uid == uid
+              && resource.data.estado == 'rechazada'
+              && request.resource.data.estado == 'pendiente')
+        );
+
+      // El operador limpia cualquiera; el postulante solo retira la SUYA si aún
+      // está pendiente (nunca puede tocar estado por otra vía).
+      allow delete: if autenticado()
+        && (esOperador()
+            || (request.auth.uid == uid && resource.data.estado == 'pendiente'));
+    }
+
     // Perfil propio: a qué comercio pertenezco
     match /usuarios/{uid} {
       allow read: if autenticado() && request.auth.uid == uid;
       allow write: if autenticado() && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['comercioId']);
+    }
+
+    // Configuración editable del producto desde el panel del operador, SIN
+    // rebuildear el APK. Hoy: enlaces (WhatsApp de ventas, redes). El shape es
+    // flexible a propósito (hasOnly con una lista amplia de redes conocidas)
+    // para sumar una red nueva desde el panel sin tocar estas reglas.
+    //
+    // LECTURA: solo autenticado(), NO público. La app SIEMPRE está autenticada
+    // (Firebase Auth por teléfono) antes de mostrar el WhatsApp/redes, así que
+    // exigir auth no le cuesta nada al cliente legítimo y, en cambio, evita que
+    // cualquier anónimo raspe estos enlaces de negocio o los use para inflar
+    // lecturas del proyecto en el plan Spark. Menos superficie, mismo UX.
+    //
+    // ESCRITURA: solo esOperador(). Los enlaces del producto son del equipo
+    // PagoYa; ningún comerciante ni trabajador los toca.
+    function enlacesValidos() {
+      let d = request.resource.data;
+      // Redes conocidas hoy + espacio para crecer sin tocar reglas.
+      let permitidos = ['whatsappVentas', 'instagram', 'tiktok', 'facebook',
+                        'web', 'correoSoporte', 'youtube', 'telefono',
+                        'actualizadoEn'];
+      return d.keys().hasOnly(permitidos)
+        // Todos los valores presentes son strings acotados (evita basura y
+        // documentos gigantes). No se exige NINGÚN campo puntual: el panel
+        // puede guardar solo las redes que tenga.
+        && (!('whatsappVentas' in d) || (d.whatsappVentas is string && d.whatsappVentas.size() <= 20))
+        && (!('instagram' in d)      || (d.instagram is string && d.instagram.size() <= 200))
+        && (!('tiktok' in d)         || (d.tiktok is string && d.tiktok.size() <= 200))
+        && (!('facebook' in d)       || (d.facebook is string && d.facebook.size() <= 200))
+        && (!('web' in d)            || (d.web is string && d.web.size() <= 200))
+        && (!('correoSoporte' in d)  || (d.correoSoporte is string && d.correoSoporte.size() <= 120))
+        && (!('youtube' in d)        || (d.youtube is string && d.youtube.size() <= 200))
+        && (!('telefono' in d)       || (d.telefono is string && d.telefono.size() <= 20));
+    }
+
+    match /config/{doc} {
+      allow read: if autenticado();
+      allow create, update: if autenticado() && esOperador() && enlacesValidos();
+      allow delete: if false;
+    }
+
+    // Historial de campañas push enviadas desde el panel (Function enviarCampana
+    // con el Admin SDK es la ÚNICA que escribe aquí: server key nunca en el
+    // navegador). Es auditoría/contabilidad de qué se mandó, a qué topic, quién
+    // y cuándo. El operador lo lee/lista en el panel; ningún cliente escribe.
+    match /campanas/{id} {
+      allow read: if autenticado() && esOperador();
+      allow write: if false;
     }
 
     // Códigos de vinculación: solo lectura puntual (get) con el código exacto.
@@ -182,17 +399,50 @@ service cloud.firestore {
       // El panel de operador necesita listar todos los comercios; un
       // comerciante jamás.
       allow list: if autenticado() && esOperador();
-      // Nadie nace con membresía: la suscripción solo la escribe un operador.
+      // El comercio nace con numDispositivos == 1 (su dueño): es la semilla del
+      // contador que hace cumplir el tope del plan del lado servidor.
+      //
+      // SUSCRIPCIÓN AL CREAR: la app siembra una PRUEBA de 30 días (estado
+      // 'prueba', plan 'caserito', vigenteHasta = ahora + 30 días). Se permite,
+      // pero SOLO como semilla de prueba acotada (suscripcionPruebaSemilla): no
+      // puede nacer 'activa' ni con un 'patron' auto-regalado ni con vigencia de
+      // años. Un plan PAGADO real solo lo fija un operador por la vía de update.
+      // Si el comercio nace sin `suscripcion`, la Function trialAlCrearComercio
+      // la siembra del lado servidor (misma prueba de 30 días).
       allow create: if autenticado()
         && request.resource.data.duenoUid == request.auth.uid
-        && !request.resource.data.keys().hasAny(['suscripcion']);
+        && request.resource.data.get('numDispositivos', 0) == 1
+        && (!request.resource.data.keys().hasAny(['suscripcion'])
+            || suscripcionPruebaSemilla());
       // El dueño solo puede renombrar su comercio. Ni regalarlo, ni cambiar su
       // ubicación, ni —sobre todo— tocarse el plan.
+      //
+      // Además, un miembro que se une o se va toca ÚNICAMENTE el contador
+      // numDispositivos (±1), en el mismo lote atómico que crea/borra su doc de
+      // miembro. Ese lote es la única forma de mover el contador desde el
+      // cliente, y va acotado:
+      //   · al unirse: +1, y el resultado no puede pasar del tope del plan.
+      //   · al salir:  -1, y nunca por debajo de 1 (el dueño siempre queda).
+      // Como es un update sobre el MISMO documento del comercio, Firestore lo
+      // serializa: dos altas simultáneas no pueden ambas incrementar 2→3, una
+      // reintenta y vuelve a chocar con el tope. Así no hay carrera que burle
+      // el límite.
       allow update: if autenticado() && (
-        (resource.data.duenoUid == request.auth.uid && cambiaSolo(['nombre']))
+        // El dueño renombra su comercio y/o prende-apaga la privacidad de caja
+        // (si su gente ve los totales). Nada más: ni el plan, ni el dueño, ni la
+        // ubicación se tocan por esta vía.
+        (resource.data.duenoUid == request.auth.uid
+          && cambiaSolo(['nombre', 'trabajadorVeCaja'])
+          && (!cambia('trabajadorVeCaja') || request.resource.data.trabajadorVeCaja is bool))
         || (esOperador()
             && cambiaSolo(['suscripcion', 'ubicacion', 'contacto'])
             && (!cambia('suscripcion') || suscripcionValida()))
+        || (cambiaSolo(['numDispositivos'])
+            && request.resource.data.numDispositivos == resource.data.get('numDispositivos', 1) + 1
+            && request.resource.data.numDispositivos <= maxDispositivosDePlan(planEfectivo(resource.data.get('suscripcion', {}))))
+        || (cambiaSolo(['numDispositivos'])
+            && request.resource.data.numDispositivos == resource.data.get('numDispositivos', 1) - 1
+            && request.resource.data.numDispositivos >= 1)
       );
       allow delete: if autenticado()
         && resource.data.duenoUid == request.auth.uid;
@@ -211,13 +461,23 @@ service cloud.firestore {
         // comercio (tras esta misma operación) lo tiene como duenoUid —
         // getAfter permite validar el lote comercio+miembro que crea la app.
         // Un trabajador NUNCA puede auto-habilitarse la captura de pagos.
+        //
+        // TOPE DEL PLAN (baranda de servidor): un trabajador solo entra si el
+        // MISMO lote subió comercios/{id}.numDispositivos en exactamente 1
+        // respecto a como estaba. Como la regla del comercio (arriba) ya impide
+        // que ese +1 pase del tope del plan, un APK modificado no puede colar
+        // teléfonos gratis: o incrementa el contador dentro del cupo, o el lote
+        // entero es rechazado. El dueño (primer miembro) se exceptúa porque el
+        // contador nace en 1 al crear el comercio, en su propio lote inicial.
         allow create: if autenticado()
           && request.auth.uid == uid
           && request.resource.data.keys().hasOnly(['rol', 'nombre', 'puedeCapturar'])
           && request.resource.data.nombre is string
           && (
             (request.resource.data.rol == 'trabajador'
-              && request.resource.data.get('puedeCapturar', false) == false)
+              && request.resource.data.get('puedeCapturar', false) == false
+              && getAfter(/databases/$(database)/documents/comercios/$(comercioId)).data.numDispositivos
+                 == get(/databases/$(database)/documents/comercios/$(comercioId)).data.get('numDispositivos', 1) + 1)
             || (request.resource.data.rol == 'dueno'
                 && getAfter(/databases/$(database)/documents/comercios/$(comercioId)).data.duenoUid == request.auth.uid)
           );
@@ -227,7 +487,41 @@ service cloud.firestore {
           && esDueno(comercioId)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puedeCapturar'])
           && request.resource.data.puedeCapturar is bool;
-        // Salir del comercio (uno mismo) o el dueño saca a alguien
+        // Quién puede sacar a un miembro:
+        //   · uno mismo (salir del comercio),
+        //   · el dueño (saca a cualquiera de su gente),
+        //   · un operador del panel, PERO solo a un TRABAJADOR — nunca al dueño,
+        //     porque borrar al dueño desmantela el comercio. Si al doc le falta
+        //     `rol` se trata como dueño (fail-safe) y el operador no lo toca.
+        //
+        // TOPE DEL PLAN: al irse un miembro hay que devolver el cupo, así que el
+        // MISMO lote debe bajar numDispositivos en 1 (piso 1: el dueño siempre
+        // queda). Excepción: si el comercio desaparece en este mismo lote (el
+        // dueño elimina TODO su negocio), ya no hay contador que ajustar y no se
+        // exige el decremento. Esto vale para las tres vías, incluida la del
+        // operador: el panel borra el miembro Y baja el contador en un mismo
+        // WriteBatch, o la regla lo rechaza.
+        allow delete: if autenticado()
+          && (
+            request.auth.uid == uid
+            || esDueno(comercioId)
+            || (esOperador() && resource.data.get('rol', 'dueno') == 'trabajador')
+          )
+          && (
+            !existsAfter(/databases/$(database)/documents/comercios/$(comercioId))
+            || getAfter(/databases/$(database)/documents/comercios/$(comercioId)).data.numDispositivos
+               == get(/databases/$(database)/documents/comercios/$(comercioId)).data.get('numDispositivos', 1) - 1
+          );
+      }
+
+      // Salud de los teléfonos del comercio. Cada uno escribe SOLO su latido;
+      // el dueño puede limpiar el de un miembro que se fue.
+      match /dispositivos/{uid} {
+        allow read: if autenticado() && (esMiembro(comercioId) || esOperador());
+        allow create, update: if autenticado()
+          && request.auth.uid == uid
+          && esMiembro(comercioId)
+          && latidoValido();
         allow delete: if autenticado()
           && (request.auth.uid == uid || esDueno(comercioId));
       }
@@ -244,6 +538,13 @@ service cloud.firestore {
         // Los pagos no se editan ni se borran: son el registro anti-fake
         allow update, delete: if false;
       }
+    }
+
+    // Semáforo global del panel: el operador lee TODOS los dispositivos de
+    // todos los comercios en una sola consulta de grupo (collectionGroup),
+    // en vez de una consulta por comercio. Solo lectura y solo operadores.
+    match /{ruta=**}/dispositivos/{uid} {
+      allow read: if autenticado() && esOperador();
     }
   }
 }

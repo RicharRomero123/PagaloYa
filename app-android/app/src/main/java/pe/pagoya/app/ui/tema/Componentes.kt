@@ -1,37 +1,54 @@
 package pe.pagoya.app.ui.tema
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import compose.icons.TablerIcons
+import compose.icons.tablericons.AlertOctagon
+import compose.icons.tablericons.AlertTriangle
+import compose.icons.tablericons.CircleCheck
+import compose.icons.tablericons.Shield
+import pe.pagoya.app.R
 import pe.pagoya.app.core.Pago
+import pe.pagoya.app.core.PreferenciasApariencia
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -55,6 +72,9 @@ fun BotonPagoYa(
     habilitado: Boolean = true,
     cargando: Boolean = false,
     color: Color = MaterialTheme.colorScheme.primary,
+    icono: ImageVector? = null,
+    /** true para logos multicolor (ej. el G de Google) que no deben teñirse. */
+    iconoSinTinte: Boolean = false,
 ) {
     Button(
         onClick = alPulsar,
@@ -77,6 +97,15 @@ fun BotonPagoYa(
                 modifier = Modifier.size(22.dp),
             )
         } else {
+            icono?.let {
+                Icon(
+                    it,
+                    contentDescription = null,
+                    tint = if (iconoSinTinte) Color.Unspecified else LocalContentColor.current,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+            }
             Text(texto, style = MaterialTheme.typography.labelLarge)
         }
     }
@@ -88,6 +117,7 @@ fun BotonSecundario(
     alPulsar: () -> Unit,
     modifier: Modifier = Modifier,
     habilitado: Boolean = true,
+    icono: ImageVector? = null,
 ) {
     OutlinedButton(
         onClick = alPulsar,
@@ -99,6 +129,10 @@ fun BotonSecundario(
         border = BorderStroke(1.5.dp, Borde),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = AzulNoche),
     ) {
+        icono?.let {
+            Icon(it, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+        }
         Text(texto, style = MaterialTheme.typography.labelLarge)
     }
 }
@@ -157,14 +191,14 @@ fun Aviso(
     alPulsar: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    val (fondo, tinte, emoji) = when (tipo) {
-        TipoAviso.OK -> Triple(VerdeSuave, VerdeOk, "✅")
-        TipoAviso.AVISO -> Triple(AmbarSuave, AmbarAviso, "🛡️")
-        TipoAviso.ALERTA -> Triple(RojoSuave, RojoAlerta, "⚠️")
+    val (fondo, tinte, icono) = when (tipo) {
+        TipoAviso.OK -> Triple(VerdeSuave, VerdeOk, TablerIcons.CircleCheck)
+        TipoAviso.AVISO -> Triple(AmbarSuave, AmbarAviso, TablerIcons.Shield)
+        TipoAviso.ALERTA -> Triple(RojoSuave, RojoAlerta, TablerIcons.AlertTriangle)
     }
     TarjetaPagoYa(modifier = modifier, color = fondo) {
         Row(verticalAlignment = Alignment.Top) {
-            Text(emoji, fontSize = 20.sp)
+            Icon(icono, contentDescription = null, tint = tinte, modifier = Modifier.size(22.dp))
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(titulo, style = MaterialTheme.typography.titleMedium, color = tinte)
@@ -181,13 +215,14 @@ fun Aviso(
     }
 }
 
-/** Ilustración barata y cálida: un emoji grande dentro de un círculo de color. */
+/** Ilustración barata y cálida: un ícono grande dentro de un círculo de color. */
 @Composable
-fun CirculoEmoji(
-    emoji: String,
+fun CirculoIcono(
+    icono: ImageVector,
     modifier: Modifier = Modifier,
     fondo: Color = NaranjaSuave,
-    tamano: androidx.compose.ui.unit.Dp = 120.dp,
+    tinte: Color = NaranjaPagoYa,
+    tamano: Dp = 120.dp,
 ) {
     Box(
         modifier = modifier
@@ -196,7 +231,74 @@ fun CirculoEmoji(
             .background(fondo),
         contentAlignment = Alignment.Center,
     ) {
-        Text(emoji, fontSize = (tamano.value * 0.42f).sp, textAlign = TextAlign.Center)
+        Icon(
+            icono,
+            contentDescription = null,
+            tint = tinte,
+            modifier = Modifier.size(tamano * 0.45f),
+        )
+    }
+}
+
+/**
+ * Distintivo circular de la billetera de un pago, con su color y su inicial.
+ *
+ * Uso descriptivo permitido: identificar de qué billetera llegó la plata,
+ * como hace cualquier estado de cuenta. OJO marca: NUNCA incrustar el logo
+ * oficial de Yape/Plin en el APK ni usar sus colores en la marca PagoYa —
+ * aquí el color solo etiqueta la transacción.
+ */
+@Composable
+fun BilleteraBadge(billeteraId: String, nombre: String, modifier: Modifier = Modifier) {
+    val id = billeteraId.lowercase(Locale.ROOT)
+    // Ajuste de Apariencia: el comerciante puede apagar el logo. Reactivo, así
+    // la lista cambia al instante sin reabrir la app.
+    val mostrarIcono by PreferenciasApariencia.mostrarIconoBilletera.collectAsState()
+    // Logo real de la billetera (SOLO dentro de la app, en la lista de pagos;
+    // ver CLAUDE.md regla 3). Si el ajuste está apagado, cae al círculo de color.
+    val logo = if (!mostrarIcono) null else when (id) {
+        "yape" -> R.drawable.ic_yape
+        "plin" -> R.drawable.ic_plin
+        else -> null
+    }
+    if (logo != null) {
+        // Fondo blanco detrás: el PNG de Plin es transparente, así se ve limpio;
+        // el de Yape es opaco y cubre el blanco.
+        Box(
+            modifier = modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(Blanco),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(logo),
+                contentDescription = nombre,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        }
+        return
+    }
+    // Sin logo (ajuste apagado o billetera desconocida): círculo con la inicial.
+    // Conserva los colores de marca para seguir distinguiendo la billetera.
+    val fondo = when (id) {
+        "yape" -> Color(0xFF742284)
+        "plin" -> Color(0xFF00B9AD)
+        else -> AzulNoche
+    }
+    Box(
+        modifier = modifier
+            .size(42.dp)
+            .clip(CircleShape)
+            .background(fondo),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            inicialDe(nombre),
+            style = MaterialTheme.typography.titleMedium,
+            color = Blanco,
+        )
     }
 }
 
@@ -218,7 +320,7 @@ fun AvatarInicial(nombre: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** Fila de un pago en el historial. */
+/** Fila de un pago en el historial: badge de la billetera + pagador + monto. */
 @Composable
 fun FilaPago(pago: Pago, modifier: Modifier = Modifier) {
     Row(
@@ -227,7 +329,7 @@ fun FilaPago(pago: Pago, modifier: Modifier = Modifier) {
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        AvatarInicial(pago.pagador)
+        BilleteraBadge(pago.billeteraId, pago.billeteraNombre)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(
@@ -270,10 +372,99 @@ fun PuntosProgreso(total: Int, actual: Int, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Confirmación ligera antes de cerrar sesión — evita salidas por accidente
+ * con el gesto de atrás. La cuenta no se borra, solo se cierra la sesión.
+ */
+@Composable
+fun DialogoSalirCuenta(alConfirmar: () -> Unit, alCancelar: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = alCancelar,
+        containerColor = Blanco,
+        title = {
+            Text(
+                "¿Sales de tu cuenta?",
+                style = MaterialTheme.typography.titleLarge,
+                color = AzulNoche,
+            )
+        },
+        text = {
+            Text(
+                "Tu cuenta queda guardada. Entras de nuevo cuando quieras.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextoMedio,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = alConfirmar) {
+                Text("Salir", style = MaterialTheme.typography.labelLarge, color = RojoAlerta)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = alCancelar) {
+                Text("Quedarme", style = MaterialTheme.typography.labelLarge, color = AzulNoche)
+            }
+        },
+    )
+}
+
 @Composable
 fun Cargando(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator(color = NaranjaPagoYa)
+    }
+}
+
+/**
+ * Botón de pánico (spec 3.2). Lo aprieta quien atiende el mostrador —cualquier
+ * rol— cuando un cliente le muestra un "pantallazo falso" para presionarlo:
+ * anuncia a VOLUMEN MÁXIMO un mensaje disuasivo y vibra fuerte, para que se oiga
+ * en todo el local. Es manual, nunca automático. Vive en Configuración → Anti
+ * fake. Debounce mientras habla (lo cuida el propio Anunciador).
+ */
+@Composable
+fun BotonPanico(modifier: Modifier = Modifier) {
+    val contexto = androidx.compose.ui.platform.LocalContext.current
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.large)
+            .background(
+                androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(RojoAlerta, Color(0xFF8E1616))
+                )
+            )
+            .clickable {
+                if (pe.pagoya.app.core.Anunciador.estaHablando()) return@clickable
+                pe.pagoya.app.core.Vibraciones.fuerte(contexto)
+                pe.pagoya.app.core.Anunciador.anunciarPanico(
+                    contexto,
+                    "¡Ojo, casero! Ese pago NO entró. Si no sonó el PagoYa, no te pagaron.",
+                )
+            }
+            .padding(horizontal = 18.dp, vertical = 18.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                TablerIcons.AlertOctagon,
+                contentDescription = null,
+                tint = Blanco,
+                modifier = Modifier.size(30.dp),
+            )
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "¿Te muestran un pantallazo?",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Blanco,
+                )
+                Text(
+                    "Apriétalo: avisa en voz alta que ese pago no entró.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Blanco.copy(alpha = 0.9f),
+                )
+            }
+        }
     }
 }
 
@@ -291,6 +482,10 @@ fun horaCorta(timestamp: Long): String =
 fun fechaLarga(timestamp: Long): String =
     SimpleDateFormat("EEEE d 'de' MMMM", Locale("es", "PE")).format(Date(timestamp))
         .replaceFirstChar { it.uppercase(Locale("es", "PE")) }
+
+/** 1782960000000 → "27 jun 2026" — fecha corta para vencimiento de plan. */
+fun fechaCorta(timestamp: Long): String =
+    SimpleDateFormat("d MMM yyyy", Locale("es", "PE")).format(Date(timestamp))
 
 fun inicialDe(nombre: String): String =
     nombre.trim().firstOrNull()?.uppercase(Locale("es", "PE")) ?: "?"

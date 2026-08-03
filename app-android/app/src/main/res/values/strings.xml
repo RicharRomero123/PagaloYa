@@ -5,4 +5,6 @@
     <string name="notif_servicio_titulo">PagoYa está escuchando tus pagos 🔊</string>
     <string name="notif_servicio_texto">Si no suena, no te pagaron.</string>
     <string name="canal_servicio">Servicio PagoYa</string>
+    <string name="canal_avisos">Avisos de PagoYa</string>
+    <string name="canal_avisos_desc">Ofertas, novedades y recordatorios de tu caja.</string>
 </resources>

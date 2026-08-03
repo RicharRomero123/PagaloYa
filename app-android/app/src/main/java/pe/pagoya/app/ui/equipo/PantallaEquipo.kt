@@ -3,6 +3,7 @@ package pe.pagoya.app.ui.equipo
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,11 +14,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,17 +32,26 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import compose.icons.TablerIcons
+import compose.icons.tablericons.Bulb
+import compose.icons.tablericons.Gift
+import compose.icons.tablericons.Headphones
 import pe.pagoya.app.nube.ComercioRepo
+import pe.pagoya.app.nube.ReferidosRepo
 import pe.pagoya.app.ui.tema.AvatarInicial
+import kotlinx.coroutines.launch
 import pe.pagoya.app.ui.tema.AzulNoche
+import pe.pagoya.app.ui.tema.Blanco
 import pe.pagoya.app.ui.tema.Borde
 import pe.pagoya.app.ui.tema.BotonPagoYa
 import pe.pagoya.app.ui.tema.Crema
@@ -44,6 +60,7 @@ import pe.pagoya.app.ui.tema.Humo
 import pe.pagoya.app.ui.tema.NaranjaHondo
 import pe.pagoya.app.ui.tema.NaranjaPagoYa
 import pe.pagoya.app.ui.tema.NaranjaSuave
+import pe.pagoya.app.ui.tema.RojoAlerta
 import pe.pagoya.app.ui.tema.TarjetaPagoYa
 import pe.pagoya.app.ui.tema.TextoMedio
 import pe.pagoya.app.ui.tema.VerdeOk
@@ -58,6 +75,7 @@ import pe.pagoya.app.ui.tema.VerdeSuave
 @Composable
 fun PantallaEquipo() {
     val contexto = LocalContext.current
+    val alcance = rememberCoroutineScope()
     val comercio by ComercioRepo.comercio.collectAsState()
     var miembros by remember { mutableStateOf<List<ComercioRepo.Miembro>>(emptyList()) }
 
@@ -94,11 +112,20 @@ fun PantallaEquipo() {
         } else {
             item {
                 TarjetaPagoYa(color = VerdeSuave) {
-                    Text(
-                        "🎧 Estás en modo escucha",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = VerdeOk,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            TablerIcons.Headphones,
+                            contentDescription = null,
+                            tint = VerdeOk,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Estás en modo escucha",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = VerdeOk,
+                        )
+                    }
                     Spacer(Modifier.height(4.dp))
                     Text(
                         "Este teléfono anuncia los pagos que caen al Yape del dueño. " +
@@ -107,6 +134,33 @@ fun PantallaEquipo() {
                         color = AzulNoche,
                     )
                 }
+            }
+        }
+
+        // "Casero trae Casero": solo el dueño y solo si aún no canjeó un código.
+        if (esDueno && comercio?.referidoCanjeado != true) {
+            item {
+                TarjetaReferido(
+                    alCanjear = { codigo -> ReferidosRepo.canjearReferido(codigo) },
+                    alExito = {
+                        // La Function cambió la vigencia y marcó el canje: recargar
+                        // el comercio para reflejarlo (y ocultar esta tarjeta).
+                        alcance.launch { ComercioRepo.recargar() }
+                    },
+                )
+            }
+        }
+
+        // Privacidad de caja: permiso criollo que solo el dueño maneja. Por
+        // defecto su gente ve la caja; aquí puede reservarse los totales.
+        if (esDueno) {
+            item {
+                TarjetaPrivacidadCaja(
+                    verCaja = comercio?.trabajadorVeCaja ?: true,
+                    alCambiar = { nuevo ->
+                        alcance.launch { ComercioRepo.fijarVerCajaTrabajador(nuevo) }
+                    },
+                )
             }
         }
 
@@ -124,11 +178,20 @@ fun PantallaEquipo() {
 
         item {
             TarjetaPagoYa(color = Humo) {
-                Text(
-                    "💡 Cómo funciona",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = AzulNoche,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        TablerIcons.Bulb,
+                        contentDescription = null,
+                        tint = NaranjaPagoYa,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Cómo funciona",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = AzulNoche,
+                    )
+                }
                 Spacer(Modifier.height(6.dp))
                 Text(
                     "El teléfono con el Yape del negocio es el único que captura. " +
@@ -180,6 +243,149 @@ private fun TarjetaCodigo(negocio: String, codigo: String, contexto: Context) {
             BotonPagoYa("Compartir por WhatsApp", alPulsar = {
                 compartirCodigo(contexto, negocio, codigo)
             })
+        }
+    }
+}
+
+/**
+ * "Casero trae Casero": el dueño mete el código de 6 dígitos del comercio que
+ * lo invitó y gana días de plan. El canje lo hace la Cloud Function; aquí solo
+ * la llamamos y mostramos su mensaje (ya viene en criollo).
+ *
+ * @param alCanjear invoca la Function y devuelve el mensaje de éxito.
+ * @param alExito se llama tras un canje bueno (para recargar el comercio).
+ */
+@Composable
+private fun TarjetaReferido(
+    alCanjear: suspend (String) -> Result<String>,
+    alExito: () -> Unit,
+) {
+    val alcance = rememberCoroutineScope()
+    var codigo by remember { mutableStateOf("") }
+    var cargando by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var exito by remember { mutableStateOf<String?>(null) }
+
+    val coloresCampo = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = NaranjaPagoYa,
+        unfocusedBorderColor = Borde,
+        focusedLabelColor = NaranjaPagoYa,
+    )
+
+    TarjetaPagoYa {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                TablerIcons.Gift,
+                contentDescription = null,
+                tint = NaranjaPagoYa,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                "¿Te invitó un casero?",
+                style = MaterialTheme.typography.titleMedium,
+                color = AzulNoche,
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "Mete el código que te pasó y ganas días de regalo. Solo se canjea una vez.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = TextoMedio,
+        )
+
+        if (exito != null) {
+            Spacer(Modifier.height(12.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(VerdeSuave)
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+            ) {
+                Text(
+                    exito!!,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = VerdeOk,
+                )
+            }
+        } else {
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = codigo,
+                onValueChange = { codigo = it.filter(Char::isDigit).take(6); error = null },
+                label = { Text("Código de tu casero") },
+                singleLine = true,
+                shape = MaterialTheme.shapes.small,
+                colors = coloresCampo,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (error != null) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    error!!,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = RojoAlerta,
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            BotonPagoYa(
+                texto = "Canjear",
+                cargando = cargando,
+                alPulsar = {
+                    if (codigo.length != 6) {
+                        error = "El código tiene 6 dígitos, casero."
+                        return@BotonPagoYa
+                    }
+                    cargando = true; error = null
+                    alcance.launch {
+                        alCanjear(codigo)
+                            .onSuccess { mensaje ->
+                                exito = mensaje
+                                alExito()
+                            }
+                            .onFailure { error = it.message ?: "No se pudo canjear el código." }
+                        cargando = false
+                    }
+                },
+            )
+        }
+    }
+}
+
+/**
+ * Toggle del dueño: ¿su gente ve la caja (total del día y métricas) o solo
+ * escucha los pagos? Viene ENCENDIDO por defecto — la privacidad es opt-in.
+ */
+@Composable
+private fun TarjetaPrivacidadCaja(verCaja: Boolean, alCambiar: (Boolean) -> Unit) {
+    TarjetaPagoYa {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Mi gente ve la caja",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = AzulNoche,
+                )
+                Text(
+                    if (verCaja)
+                        "Tus trabajadores ven el total del día y las cuentas."
+                    else
+                        "Tus trabajadores solo escuchan los pagos. Los totales los ves solo tú.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextoMedio,
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Switch(
+                checked = verCaja,
+                onCheckedChange = alCambiar,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Blanco,
+                    checkedTrackColor = NaranjaPagoYa,
+                ),
+            )
         }
     }
 }

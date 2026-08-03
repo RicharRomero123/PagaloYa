@@ -1,6 +1,7 @@
 import { getApps, initializeApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
+import { getFunctions, type Functions } from "firebase/functions";
 
 /**
  * Estos valores viajan dentro del bundle del navegador: no son un secreto.
@@ -21,3 +22,9 @@ const app: FirebaseApp = getApps()[0] ?? initializeApp(configuracion);
 
 export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
+/**
+ * Las Cloud Functions callable de PagoYa (p. ej. enviarCampana) se despliegan
+ * en us-central1. La región debe calzar con la del backend o la llamada falla
+ * con "not-found".
+ */
+export const functions: Functions = getFunctions(app, "us-central1");

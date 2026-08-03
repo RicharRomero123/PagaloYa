@@ -50,9 +50,13 @@ android {
             // firmada con la clave de debug.
             signingConfig = if (hayFirma) signingConfigs.getByName("release")
             else signingConfigs.getByName("debug")
-            // R8 apagado a propósito por ahora: Firebase y el parser usan
-            // reflexión y ofuscar sin probarlo a fondo rompe cosas en silencio.
-            isMinifyEnabled = false
+            // R8 activado: poda la librería de íconos (entraba completa) y baja
+            // bastante el bundle. Es seguro aquí porque el código NO deserializa
+            // por reflexión (Firestore se lee por acceso manual a mapas) y las
+            // reglas están en proguard-rules.pro. Shrink de RECURSOS lo dejamos
+            // apagado por ahora (menos riesgo con widget/notificación); se puede
+            // activar luego probándolo.
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

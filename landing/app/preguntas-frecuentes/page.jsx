@@ -41,11 +41,11 @@ const PREGUNTAS = [
   },
   {
     p: '¿Cuánto cuesta?',
-    r: 'Empiezas gratis. El plan Gratis anuncia por voz cada pago en 1 celular, con protección anti yape falso. El plan Caserito cuesta S/ 12.90 al mes y suma varios celulares conectados, el dueño escuchando desde su casa y la cuenta del día lista para cuadrar. El plan Patrón (próximamente) cuesta S/ 24.90 al mes e incluye un parlante PagoYa de mostrador prestado, sin pagar el equipo.',
+    r: 'Empiezas gratis. El plan Gratis anuncia por voz cada pago en 1 celular, el del negocio, con protección anti yape falso. El plan Caserito cuesta S/ 12.90 al mes y llega a 2 o 3 celulares conectados en total, con el dueño escuchando desde su casa y la cuenta del día lista para cuadrar. El plan Patrón (próximamente) cuesta S/ 24.90 al mes, conecta de 4 celulares a más e incluye un parlante PagoYa de mostrador prestado, sin pagar el equipo. En todos los planes el número de celulares incluye el del negocio.',
   },
   {
     p: '¿Cómo sumo a mi trabajador?',
-    r: 'Desde la app generas un código de 6 dígitos y se lo pasas a tu trabajador. Él instala PagoYa en su celular, mete el código y queda conectado a tu negocio: desde ese momento escucha los mismos pagos que tú, esté donde esté. Así todos confirman los cobros al toque, sin llamarte por cada venta. Sumar trabajadores es parte de los planes Caserito y Patrón.',
+    r: 'Desde la app generas un código de 6 dígitos y se lo pasas a tu trabajador. Él instala PagoYa en su celular, mete el código y queda conectado a tu negocio: desde ese momento escucha los mismos pagos que tú, esté donde esté. Así todos confirman los cobros al toque, sin llamarte por cada venta. Sumar trabajadores es parte de los planes Caserito (de 2 a 3 celulares en total) y Patrón (de 4 a más).',
   },
 ];
 

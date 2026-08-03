@@ -8,8 +8,12 @@ const SECCIONES = [
   { id: 'que-es', texto: 'Qué es' },
   { id: 'como-funciona', texto: 'Cómo funciona' },
   // "¿Funciona con mi billetera?" es la primera pregunta de todos: va en el menú.
+  // "Para quién" entra en lugar de "Comparar": con el mercado abierto a taxis,
+  // delivery y transporte, saber si aplica a TU caso pesa más que comparar.
+  // La sección de comparación sigue en la página, solo sale del menú (a 8
+  // enlaces la fila ya no entra junto al logo y el botón).
+  { id: 'para-quien', texto: 'Para quién' },
   { id: 'compatibilidad', texto: 'Compatibilidad' },
-  { id: 'comparacion', texto: 'Comparar' },
   { id: 'planes', texto: 'Planes' },
   { id: 'preguntas', texto: 'Preguntas' },
 ];

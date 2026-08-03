@@ -6,7 +6,12 @@ import Cifras from '../components/Cifras';
 import { IconoWsp } from '../components/Iconos';
 import { wsp, MENSAJE_GENERAL } from '../lib/enlaces';
 import { GUIAS } from '../lib/guias';
+import { segmentoDeTarjeta } from '../lib/segmentos';
 import { SITIO } from '../lib/seo';
+
+// Un segmento solo muestra enlace cuando ya tiene página propia (ver
+// lib/segmentos.js). Así se publican de a uno sin tocar esta sección.
+const segDelivery = segmentoDeTarjeta('delivery');
 
 export const metadata = {
   alternates: { canonical: '/' },
@@ -49,7 +54,7 @@ const datosFaq = {
     { '@type': 'Question', name: '¿Funciona con el celular bloqueado?', acceptedAnswer: { '@type': 'Answer', text: 'Sí. El anuncio suena aunque la pantalla esté apagada. En la instalación te ayudamos a configurar los permisos según la marca de tu celular para que nunca se detenga.' } },
     { '@type': 'Question', name: '¿Y si Yape cambia sus notificaciones?', acceptedAnswer: { '@type': 'Answer', text: 'PagoYa se actualiza solo desde nuestro servidor, sin que tengas que reinstalar nada. Si Yape cambia el texto de sus avisos, lo ajustamos por ti.' } },
     { '@type': 'Question', name: '¿Pueden falsificar el sonido de PagoYa?', acceptedAnswer: { '@type': 'Answer', text: 'El anuncio suena en tu equipo, no en el celular del cliente, y cada pago anunciado queda registrado en tu app. Si tu equipo no lo cantó y no aparece en tu historial, ese pago no cayó.' } },
-    { '@type': 'Question', name: '¿Cuántos teléfonos pueden escuchar los pagos?', acceptedAnswer: { '@type': 'Answer', text: 'Con el plan Gratis, 1 celular. Con Caserito y Patrón se conectan el celular del negocio, el del dueño y los de los trabajadores.' } },
+    { '@type': 'Question', name: '¿Cuántos teléfonos pueden escuchar los pagos?', acceptedAnswer: { '@type': 'Answer', text: 'Con el plan Gratis, 1 celular: el del negocio. Con el plan Caserito, de 2 a 3 celulares en total, contando el del negocio. Con el plan Patrón, de 4 a más. Si tienes varios locales o un equipo grande, escríbenos y lo armamos a tu medida.' } },
     { '@type': 'Question', name: '¿En qué se diferencia PagoYa de un QR parlante?', acceptedAnswer: { '@type': 'Answer', text: 'Los QR parlantes te obligan a cobrar con otra empresa y a pagar el aparato. PagoYa funciona con el Yape que ya tienes, empiezas gratis con tu propio celular y además avisa al dueño aunque no esté en la tienda.' } },
     { '@type': 'Question', name: '¿Qué pasa si se acaba mi plan?', acceptedAnswer: { '@type': 'Answer', text: 'No pierdes tu cuenta ni tu historial: tu negocio pasa al plan Gratis (1 celular con anuncio de voz) y reactivas tu plan cuando quieras.' } },
   ],
@@ -412,6 +417,121 @@ export default function Inicio() {
           </div>
         </section>
 
+        {/* ============ PARA QUIÉN ES ============
+             Va DESPUÉS de "cómo funciona" a propósito: recién cuando el
+             visitante entendió el mecanismo (una cuenta, varios oídos) tiene
+             sentido mostrarle en cuántas situaciones aplica. Antes, sería
+             una lista de rubros sin significado. Ver MERCADO.md. */}
+        <section className="seccion fondo-crema" id="para-quien">
+          <div className="wrap">
+            <div className="sec-cab reveal">
+              <span className="antetitulo">Para quién es</span>
+              <h2>Si el Yape está en un celular y tú estás en otro, es para ti</h2>
+              <p>
+                No hace falta tener una tienda. Basta con que quien cobra no sea
+                quien tiene la cuenta —o que no puedas andar sacando el celular
+                bueno mientras trabajas.
+              </p>
+            </div>
+
+            <ul className="publicos">
+              <li className="publico reveal">
+                <span className="publico-icono">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9" /><path d="M4.5 9v11h15V9" /><path d="M9.5 20v-6h5v6" /></svg>
+                </span>
+                <h3>Bodegas y puestos de mercado</h3>
+                <p className="publico-dolor">«Mi gente cobra, pero el Yape está en mi celular.»</p>
+                <p>
+                  Tus trabajadores confirman cada cobro sin llamarte, y tú
+                  escuchas las ventas desde tu casa. Ninguno entra a tu cuenta.
+                </p>
+              </li>
+
+              <li className="publico reveal reveal-tarde">
+                <span className="publico-icono">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3.5 16v-3l2-5h13l2 5v3" /><path d="M3.5 16h17" /><path d="M6 8.5h12" /><circle cx="7.5" cy="18" r="1.7" /><circle cx="16.5" cy="18" r="1.7" /></svg>
+                </span>
+                <h3>Taxistas y mototaxistas</h3>
+                <p className="publico-dolor">«El Yape es de mi esposa» · «No saco el celular bueno por los robos.»</p>
+                <p>
+                  El pasaje se anuncia en el celular que sí llevas, aunque la
+                  cuenta esté en el teléfono de tu esposa o del dueño del carro.
+                  Confirmas sin exponer nada.
+                </p>
+              </li>
+
+              <li className="publico reveal">
+                <span className="publico-icono">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="5.5" cy="17" r="3" /><circle cx="18.5" cy="17" r="3" /><path d="M8.5 17h5l3.5-6h-3" /><path d="M14 11l-2-3H9.5" /></svg>
+                </span>
+                <h3>Delivery, couriers y motorizados</h3>
+                <p className="publico-dolor">«Tomo captura del pago y se la mando al jefe por WhatsApp.»</p>
+                <p>
+                  Se acabó la captura. El motorizado escucha el pago del cliente
+                  al instante en su propio celular, sin tener tu cuenta y sin
+                  esperar que alguien le conteste.
+                </p>
+                {segDelivery && (
+                  <a className="enlace-seguir" href={segDelivery.ruta}>
+                    Cómo funciona en delivery →
+                  </a>
+                )}
+              </li>
+
+              <li className="publico reveal reveal-tarde">
+                <span className="publico-icono">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2.5" /><path d="M3 10.5h18" /><path d="M7.5 13.5h2M14.5 13.5h2" /><circle cx="7" cy="18.5" r="1.5" /><circle cx="17" cy="18.5" r="1.5" /></svg>
+                </span>
+                <h3>Combis, buses y cobradores</h3>
+                <p className="publico-dolor">«El cobrador no tiene el Yape de la unidad.»</p>
+                <p>
+                  El cobrador confirma el pasaje al toque, sin la cuenta del
+                  dueño en la mano y sin fiarse de la pantalla de un pasajero
+                  que se baja en la esquina.
+                </p>
+              </li>
+
+              <li className="publico reveal">
+                <span className="publico-icono">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6.5 3v7a2 2 0 0 0 4 0V3" /><path d="M8.5 10v11" /><path d="M17 3c-1.6 1.1-2.3 3-2.3 5.2 0 1.9.8 3 2.3 3v9.8" /></svg>
+                </span>
+                <h3>Restaurantes, boticas y ferreterías</h3>
+                <p className="publico-dolor">«Mis mozos cobran y yo estoy en la cocina.»</p>
+                <p>
+                  Cualquier local donde el personal cobra y el dueño no está
+                  mirando la caja. Cada venta suena, y en la noche la cuenta del
+                  día está lista.
+                </p>
+              </li>
+
+              <li className="publico publico--abierto reveal reveal-tarde">
+                <span className="publico-icono">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.5" /><path d="M3.5 19c.5-3 2.8-5 5.5-5s5 2 5.5 5" /><path d="M15.5 14.5c2.3.2 4 2 4.5 4.5" /></svg>
+                </span>
+                <h3>¿Y si tu caso no está acá?</h3>
+                <p className="publico-dolor">Peluquerías, talleres, lavanderías, ferias, academias…</p>
+                <p>
+                  Si alguien cobra por ti, o si tu Yape vive en un celular que no
+                  siempre tienes encima, PagoYa te sirve igual.
+                </p>
+                <a
+                  className="enlace-seguir js-wsp"
+                  data-donde="para-quien-abierto"
+                  href={wsp('Hola PagoYa, quiero saber si me sirve. Mi trabajo es: ')}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Cuéntanos tu caso →
+                </a>
+              </li>
+            </ul>
+
+            <p className="publico-remate reveal">
+              Tu Yape se queda donde está. <b>El aviso llega donde estés.</b>
+            </p>
+          </div>
+        </section>
+
         {/* ============ BILLETERAS Y REQUISITOS ============ */}
         <section className="seccion" id="compatibilidad">
           <div className="wrap">
@@ -516,6 +636,72 @@ export default function Inicio() {
           </div>
         </section>
 
+        {/* ============ POR QUÉ SIN COMISIÓN ============
+             El corazón del posicionamiento (ver CRECIMIENTO.md §1): PagoYa no
+             compite por cobrar, compite por avisar. Va justo aquí porque a esta
+             altura el visitante ya sabe qué es y para quién es, y la siguiente
+             pregunta que se hace es "¿y dónde está la trampa?". Las tres
+             promesas no son eslóganes: son consecuencias de no tocar el dinero,
+             y por eso se explican, no se afirman. */}
+        <section className="seccion sobre-azul" id="por-que-sin-comision">
+          <div className="wrap">
+            <div className="sec-cab reveal">
+              <span className="antetitulo antetitulo--claro">Sin letra chiquita</span>
+              <h2>¿Por qué no te cobramos comisión ni te pedimos RUC?</h2>
+              <p>
+                Porque tu plata nunca pasa por nosotros. Esa es toda la
+                explicación, y de ahí sale todo lo demás.
+              </p>
+            </div>
+
+            <div className="capas reveal">
+              <div className="capa capa--cobro">
+                <span className="capa-etiqueta">Por dónde entra tu plata</span>
+                <strong>Yape, Plin, efectivo, lo que tú uses</strong>
+                <p>
+                  Ellos mueven el dinero de verdad, y por mover dinero se cobra.
+                  Así funciona y está bien: es su negocio.
+                </p>
+              </div>
+              <div className="capa-flecha" aria-hidden="true">▲</div>
+              <div className="capa capa--pagoya">
+                <span className="capa-etiqueta">Que tú te enteres</span>
+                <strong>¿Me pagaron? ¿Cuánto? ¿Ya entró? ¿Quién lo escuchó?</strong>
+                <p>
+                  Ahí vive PagoYa. No movemos tu plata: solo avisamos. Y como no
+                  la tocamos, no hay nada que descontarte.
+                </p>
+              </div>
+            </div>
+
+            <ul className="promesas">
+              <li className="promesa reveal">
+                <h3>Sin comisión por venta</h3>
+                <p>
+                  Tu dinero nunca pasa por PagoYa, así que no hay ningún
+                  porcentaje que quitarte. Lo que te yapean llega completito.
+                </p>
+              </li>
+              <li className="promesa reveal reveal-tarde">
+                <h3>Sin RUC</h3>
+                <p>
+                  No emitimos comprobantes ni procesamos tus cobros, así que no
+                  hay nada que formalizar para poder usarnos.
+                </p>
+              </li>
+              <li className="promesa reveal">
+                <h3>Con la cuenta que ya tienes</h3>
+                <p>
+                  No te mudas de billetera ni de procesador, no cambias tu QR y
+                  no abres cuentas nuevas. Sigues cobrando igualito.
+                </p>
+              </li>
+            </ul>
+
+            <p className="remate reveal">Cobra como quieras. <b>Entérate siempre.</b></p>
+          </div>
+        </section>
+
         {/* ============ DIFERENCIALES ============ */}
         <section className="seccion fondo-blanco" id="diferenciales">
           <div className="wrap">
@@ -587,6 +773,21 @@ export default function Inicio() {
                   <li>Te lleva la cuenta del día, lista para cuadrar</li>
                 </ul>
               </article>
+              {/* Yape Empresa es hoy el competidor más directo: hace lo mismo
+                  (varios celulares viendo el pago) pero desde la capa de cobro,
+                  con RUC y comisión. Omitirlo se leería como mala fe. */}
+              <article className="opcion reveal">
+                <h3>Yape Empresa</h3>
+                <p className="opcion-sub">El perfil de negocio de Yape, con ayudantes</p>
+                <ul className="lista-x">
+                  <li>Te piden RUC: si todavía no estás formalizado, no puedes usarlo</li>
+                  <li>Te cobran una comisión de tus ventas por cobrar con su perfil de negocio</li>
+                  <li>Solo ve lo que entra por Yape: el Plin y el efectivo quedan fuera</li>
+                </ul>
+                <ul className="lista-check" style={{ marginTop: '10px' }}>
+                  <li>Buena opción si ya facturas con RUC y todo tu cobro es por Yape</li>
+                </ul>
+              </article>
               <article className="opcion reveal">
                 <h3>QR con parlante de un procesador</h3>
                 <p className="opcion-sub">Por ejemplo, el QR parlante de Izipay</p>
@@ -602,8 +803,11 @@ export default function Inicio() {
             </div>
             <p className="comparacion-nota reveal">
               Y cuando salga nuestro plan Patrón, el parlante de mostrador PagoYa viene
-              incluido en la membresía, sin pagar el equipo y sin cambiar tu Yape.
-              Datos referenciales a julio de 2026; las marcas mencionadas pertenecen a sus titulares.
+              incluido en la membresía, sin pagar el equipo y sin cambiar tu Yape.{' '}
+              <a href="/yape-comision-negocios/">¿Cuánto cobra Yape a los negocios?</a> Lo
+              explicamos derecho en esta guía. Datos referenciales a agosto de 2026;
+              condiciones y precios de terceros pueden cambiar, verifícalos en su fuente
+              oficial. Las marcas mencionadas pertenecen a sus respectivos titulares.
             </p>
           </div>
         </section>
@@ -621,8 +825,12 @@ export default function Inicio() {
                 <h3 className="plan-nombre">Gratis</h3>
                 <p className="plan-precio">S/ 0</p>
                 <p className="plan-para">Para probar hoy mismo</p>
+                {/* La escalera de dispositivos cuenta SIEMPRE el celular del
+                    negocio: 1 → 2-3 → 4 o más. Si en un sitio se cuentan los
+                    "adicionales" y en otro el total, se arma la confusión que
+                    después llega por WhatsApp. */}
                 <ul>
-                  <li>1 celular</li>
+                  <li>1 celular: el del negocio</li>
                   <li>Anuncio de voz de cada pago</li>
                   <li>Protección anti yape falso</li>
                 </ul>
@@ -638,7 +846,7 @@ export default function Inicio() {
                 <p className="plan-para">Para negocios con equipo</p>
                 <ul>
                   <li>Todo lo del plan Gratis</li>
-                  <li>Varios celulares conectados</li>
+                  <li><strong>De 2 a 3 celulares</strong> conectados</li>
                   <li>El dueño escucha desde su casa</li>
                   <li>La cuenta del día lista para cuadrar</li>
                 </ul>
@@ -654,6 +862,7 @@ export default function Inicio() {
                 <p className="plan-para">Para el mostrador que manda</p>
                 <ul>
                   <li>Todo lo del plan Caserito</li>
+                  <li><strong>De 4 celulares a más</strong> conectados</li>
                   <li>Parlante PagoYa de mostrador incluido</li>
                   <li>Sin pagar el equipo: S/ 0 de entrada</li>
                   <li>Siempre encendido, suena fuerte</li>
@@ -772,10 +981,15 @@ export default function Inicio() {
                 <summary>¿Cuántos teléfonos pueden escuchar los pagos?</summary>
                 <div>
                   <p>
-                    Con el plan Gratis, 1 celular (el del negocio). Con Caserito y Patrón
-                    conectas además el celular del dueño y los de tus trabajadores, cada uno
-                    con su propia cuenta y sin acceso a tu Yape. ¿Tienes un negocio grande o
-                    varios locales? Escríbenos y lo armamos a tu medida.
+                    Con el plan <strong>Gratis</strong>, 1 celular: el del negocio. Con{' '}
+                    <strong>Caserito</strong>, de 2 a 3 celulares en total —el del negocio
+                    más el tuyo o el de un trabajador—. Con <strong>Patrón</strong>, de 4 a
+                    más. En todos los casos el número incluye el celular del negocio.
+                  </p>
+                  <p>
+                    Cada persona entra con su propia cuenta y ninguna tiene acceso a tu
+                    Yape: solo escuchan el aviso. ¿Tienes un equipo grande o varios locales?
+                    Escríbenos y lo armamos a tu medida.
                   </p>
                 </div>
               </details>

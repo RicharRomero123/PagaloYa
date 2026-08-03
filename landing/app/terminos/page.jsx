@@ -73,9 +73,15 @@ export default function Terminos() {
         <h2>4. Planes y pagos</h2>
         <ul>
           <li><strong>Plan Gratis:</strong> anuncio de voz de cada pago en 1 celular, con protección anti yape falso. Sin costo.</li>
-          <li><strong>Plan Caserito (S/ 12.90 al mes):</strong> suma varios celulares conectados, dueño escuchando a distancia, historial y cierre de caja.</li>
-          <li><strong>Plan Patrón (S/ 24.90 al mes, próximamente):</strong> todo lo del plan Caserito más un parlante PagoYa de mostrador en préstamo (comodato) mientras tu plan esté activo.</li>
+          <li><strong>Plan Caserito (S/ 12.90 al mes):</strong> de 2 a 3 celulares conectados, dueño escuchando a distancia, historial y cierre de caja.</li>
+          <li><strong>Plan Patrón (S/ 24.90 al mes, próximamente):</strong> de 4 celulares a más, todo lo del plan Caserito y un parlante PagoYa de mostrador en préstamo (comodato) mientras tu plan esté activo.</li>
         </ul>
+        <p>
+          El número de celulares de cada plan <strong>incluye el celular del negocio</strong>,
+          es decir, aquel donde se reciben las notificaciones de pago, y no solo los
+          equipos adicionales. Si necesitas conectar más equipos de los que permite tu
+          plan, escríbenos y lo acordamos contigo.
+        </p>
         <p>
           Los precios están expresados en soles peruanos (PEN) e incluyen los
           impuestos aplicables. Podemos actualizar los precios avisándote con

@@ -1,6 +1,7 @@
 import { IconoLogo } from './Iconos';
 import { wsp } from '../lib/enlaces';
 import { GUIAS } from '../lib/guias';
+import { SEGMENTOS } from '../lib/segmentos';
 
 /** Footer completo (home) o compacto (páginas legales). */
 export default function Pie({ compacto = false }) {
@@ -38,10 +39,13 @@ export default function Pie({ compacto = false }) {
         {/* Enlazar las guías desde todas las páginas es lo que hace que Google
             las descubra y las considere parte del sitio, no páginas sueltas. */}
         <div>
-          <h3>Guías</h3>
+          <h3>Guías y casos</h3>
           <ul>
             {GUIAS.map((g) => (
               <li key={g.ruta}><a href={g.ruta}>{g.corto}</a></li>
+            ))}
+            {SEGMENTOS.map((s) => (
+              <li key={s.ruta}><a href={s.ruta}>{s.corto}</a></li>
             ))}
             <li><a href="/guias/">Todas las guías</a></li>
           </ul>

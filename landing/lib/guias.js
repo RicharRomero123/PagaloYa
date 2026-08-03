@@ -22,6 +22,15 @@ export const GUIAS = [
     publicado: '2026-07-31',
   },
   {
+    ruta: '/yape-comision-negocios/',
+    titulo: '¿Yape cobra comisión a los negocios?',
+    corto: '¿Yape cobra comisión a los negocios?',
+    descripcion:
+      'Qué cobra Yape a un negocio y qué no: cuándo se paga la comisión de Yape Empresa, desde qué monto te obliga a pasar al perfil de negocio, si necesitas RUC y qué opciones tienes si todavía no estás formalizado.',
+    gancho: 'Cuándo se paga, desde qué monto y qué pasa si no tienes RUC.',
+    publicado: '2026-08-03',
+  },
+  {
     ruta: '/no-me-llegan-notificaciones-yape/',
     titulo: 'No me llegan las notificaciones de Yape: cómo arreglarlo',
     corto: 'No me llegan las notificaciones de Yape',

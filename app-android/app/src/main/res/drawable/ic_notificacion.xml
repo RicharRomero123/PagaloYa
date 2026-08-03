@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Ícono PEQUEÑO de notificación de PagoYa: silueta MONOCROMÁTICA blanca sobre
+  transparente (Android lo pinta de un solo color con el tinte de .setColor()).
+  Es la marca PagoYa — el parlantito criollo (soundbox) con su carita y las
+  ondas de sonido — reducida a silueta plana para que lea bien en 24dp.
+  Nada de degradados ni color: solo blanco sólido (#FFFFFFFF) y transparencia.
+  La carita y la rejilla se logran con evenOdd: los huecos quedan transparentes.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FFFFFFFF">
+
+    <!-- Cuerpo del parlantito con carita recortada (evenOdd = huecos transparentes):
+         primer subpath = caja; subpaths siguientes = ojos y sonrisa en negativo -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M5.5,4.5
+            l6.5,0
+            a1.6,1.6 0 0 1 1.6,1.6
+            l0,11.8
+            a1.6,1.6 0 0 1 -1.6,1.6
+            l-6.5,0
+            a1.6,1.6 0 0 1 -1.6,-1.6
+            l0,-11.8
+            a1.6,1.6 0 0 1 1.6,-1.6
+            z
+            M7.1,8.2 m-0.75,0 a0.75,0.75 0 1 0 1.5,0 a0.75,0.75 0 1 0 -1.5,0 z
+            M10.9,8.2 m-0.75,0 a0.75,0.75 0 1 0 1.5,0 a0.75,0.75 0 1 0 -1.5,0 z
+            M6.7,10.6 a2.3,2.3 0 0 0 4.6,0 l-0.95,0 a1.35,1.35 0 0 1 -2.7,0 z" />
+
+    <!-- Onda de sonido interior (el "suena" de la marca) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M15.4,7.9
+            a5.2,5.2 0 0 1 0,8.2
+            l1.15,1.15
+            a6.7,6.7 0 0 0 0,-10.5
+            z" />
+    <!-- Onda de sonido exterior -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M18.2,5.1
+            a9.2,9.2 0 0 1 0,13.8
+            l1.15,1.15
+            a10.8,10.8 0 0 0 0,-16.1
+            z" />
+</vector>

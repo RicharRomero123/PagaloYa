@@ -1,6 +1,7 @@
 package pe.pagoya.app.core
 
 import android.content.Context
+import pe.pagoya.app.servicio.WidgetPagos
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONArray
@@ -45,11 +46,21 @@ object RegistroPagos {
         "${p.timestamp}-${Math.round(p.monto * 100)}-${p.billeteraId}-${p.pagador}"
 
     fun cargar(context: Context) {
+        _pagos.value = leerDesdePrefs(context)
+    }
+
+    /**
+     * Lee y parsea los pagos guardados directamente del SharedPreferences, sin
+     * tocar el StateFlow en memoria. Reutilizable desde OTROS contextos/procesos
+     * (p. ej. el App Widget, que corre fuera de la app y no puede confiar en el
+     * estado en memoria). Ordena por timestamp desc. Tolera JSON corrupto.
+     */
+    fun leerDesdePrefs(context: Context): List<Pago> {
         val crudo = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(CLAVE, null) ?: return
-        runCatching {
+            .getString(CLAVE, null) ?: return emptyList()
+        return runCatching {
             val arreglo = JSONArray(crudo)
-            _pagos.value = (0 until arreglo.length()).map { i ->
+            (0 until arreglo.length()).map { i ->
                 val o = arreglo.getJSONObject(i)
                 Pago(
                     billeteraId = o.getString("billeteraId"),
@@ -58,9 +69,25 @@ object RegistroPagos {
                     monto = o.getDouble("monto"),
                     timestamp = o.getLong("timestamp"),
                 )
-            }
-        }
+            }.sortedByDescending { it.timestamp }
+        }.getOrDefault(emptyList())
     }
+
+    /**
+     * Total del día a partir de una lista ya leída (para el widget, que parsea
+     * los prefs por su cuenta y no puede usar el StateFlow en memoria).
+     */
+    fun totalDeHoy(pagos: List<Pago>): Double {
+        val inicioDia = inicioDelDia()
+        return pagos.filter { it.timestamp >= inicioDia }.sumOf { it.monto }
+    }
+
+    private fun inicioDelDia(): Long = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
 
     fun agregar(context: Context, pago: Pago) {
         val actualizados = (listOf(pago) + _pagos.value).take(MAX_GUARDADOS)
@@ -100,15 +127,10 @@ object RegistroPagos {
         }
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit().putString(CLAVE, arreglo.toString()).apply()
+        // El JSON ya está en disco: avisa al widget de inicio para que muestre
+        // el pago recién caído sin esperar al refresco periódico.
+        WidgetPagos.refrescar(context)
     }
 
-    fun totalDeHoy(): Double {
-        val inicioDia = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-        return _pagos.value.filter { it.timestamp >= inicioDia }.sumOf { it.monto }
-    }
+    fun totalDeHoy(): Double = totalDeHoy(_pagos.value)
 }

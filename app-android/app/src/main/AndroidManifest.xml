@@ -76,10 +76,25 @@
             </intent-filter>
         </service>
 
+        <!-- Widget de inicio "la bolsa": total de hoy + últimos 3 pagos -->
+        <receiver
+            android:name=".servicio.WidgetPagos"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_pagos_info" />
+        </receiver>
+
         <!-- Ícono y canal por defecto de las notificaciones de campaña -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/ic_altavoz" />
+            android:resource="@drawable/ic_notificacion" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/naranja_pagoya" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="pagoya_avisos" />

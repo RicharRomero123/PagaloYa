@@ -390,10 +390,14 @@ exports.enviarCampana = onCall(opciones, async (request) => {
   // viaje al cliente y se vea el motivo real (un throw normal se oculta como
   // INTERNAL; el message de un HttpsError sí se entrega).
   try {
+    // DATA-ONLY (no `notification`): la app arma la notificación y además
+    // guarda el aviso en su buzón (campanita). Con el foreground service vivo,
+    // llega a onMessageReceived aunque la app esté en segundo plano — igual que
+    // los pagos. Así el buzón captura TODAS las campañas, no solo en primer plano.
     await getMessaging().send({
       topic,
-      notification: { title: titulo, body: cuerpo },
-      android: { notification: { channelId: "pagoya_avisos" } },
+      data: { tipo: "campana", titulo, cuerpo },
+      android: { priority: "high" },
     });
   } catch (err) {
     logger.error("campana: FCM falló", {

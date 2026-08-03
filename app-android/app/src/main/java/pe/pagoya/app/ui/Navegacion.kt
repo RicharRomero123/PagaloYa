@@ -2,12 +2,16 @@ package pe.pagoya.app.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -17,30 +21,37 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import compose.icons.TablerIcons
+import compose.icons.tablericons.Bell
 import compose.icons.tablericons.Cash
 import compose.icons.tablericons.Home
 import compose.icons.tablericons.Settings
 import compose.icons.tablericons.Users
 import pe.pagoya.app.R
+import pe.pagoya.app.core.BandejaNotificaciones
 import pe.pagoya.app.ui.caja.PantallaCaja
 import pe.pagoya.app.ui.equipo.PantallaEquipo
 import pe.pagoya.app.ui.inicio.PantallaInicio
 import pe.pagoya.app.ui.mas.PantallaMas
+import pe.pagoya.app.ui.notificaciones.PantallaNotificaciones
 import pe.pagoya.app.ui.tema.AzulNoche
 import pe.pagoya.app.ui.tema.Blanco
+import pe.pagoya.app.ui.tema.Borde
 import pe.pagoya.app.ui.tema.Crema
 import pe.pagoya.app.ui.tema.NaranjaPagoYa
 import pe.pagoya.app.ui.tema.NaranjaSuave
+import pe.pagoya.app.ui.tema.RojoAlerta
 import pe.pagoya.app.ui.tema.TextoTenue
 
 /**
@@ -64,42 +75,108 @@ fun ShellPagoYa(
     alSalir: () -> Unit,
 ) {
     var pestana by rememberSaveable { mutableStateOf(Pestana.INICIO) }
+    var verNotificaciones by rememberSaveable { mutableStateOf(false) }
+    val noLeidas by BandejaNotificaciones.noLeidas.collectAsState()
 
-    Scaffold(
-        containerColor = Crema,
-        bottomBar = {
-            NavigationBar(containerColor = Blanco, tonalElevation = 0.dp) {
-                Pestana.entries.forEach { destino ->
-                    NavigationBarItem(
-                        selected = pestana == destino,
-                        onClick = { pestana = destino },
-                        icon = { Icon(destino.icono, contentDescription = destino.etiqueta) },
-                        label = {
-                            Text(destino.etiqueta, style = MaterialTheme.typography.labelSmall)
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = NaranjaPagoYa,
-                            selectedTextColor = NaranjaPagoYa,
-                            indicatorColor = NaranjaSuave,
-                            unselectedIconColor = TextoTenue,
-                            unselectedTextColor = TextoTenue,
-                        ),
+    Box(Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = Crema,
+            bottomBar = {
+                NavigationBar(containerColor = Blanco, tonalElevation = 0.dp) {
+                    Pestana.entries.forEach { destino ->
+                        NavigationBarItem(
+                            selected = pestana == destino,
+                            onClick = { pestana = destino },
+                            icon = { Icon(destino.icono, contentDescription = destino.etiqueta) },
+                            label = {
+                                Text(destino.etiqueta, style = MaterialTheme.typography.labelSmall)
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = NaranjaPagoYa,
+                                selectedTextColor = NaranjaPagoYa,
+                                indicatorColor = NaranjaSuave,
+                                unselectedIconColor = TextoTenue,
+                                unselectedTextColor = TextoTenue,
+                            ),
+                        )
+                    }
+                }
+            },
+        ) { relleno ->
+            Box(
+                Modifier
+                    .padding(relleno)
+                    .fillMaxSize()
+            ) {
+                when (pestana) {
+                    Pestana.INICIO -> PantallaInicio(
+                        alRevisarPermisos = alRevisarPermisos,
+                        alIrA = { pestana = it },
+                    )
+                    Pestana.CAJA -> PantallaCaja()
+                    Pestana.EQUIPO -> PantallaEquipo()
+                    Pestana.MAS -> PantallaMas(
+                        alRevisarPermisos = alRevisarPermisos,
+                        alSalir = alSalir,
                     )
                 }
-            }
-        },
-    ) { relleno ->
-        Box(Modifier.padding(relleno)) {
-            when (pestana) {
-                Pestana.INICIO -> PantallaInicio(
-                    alRevisarPermisos = alRevisarPermisos,
-                    alIrA = { pestana = it },
+                // Campanita de avisos, flotante arriba a la derecha en todas las
+                // pestañas (los títulos van a la izquierda, así que no chocan).
+                CampanitaAvisos(
+                    noLeidas = noLeidas,
+                    alPulsar = { verNotificaciones = true },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 8.dp, end = 12.dp),
                 )
-                Pestana.CAJA -> PantallaCaja()
-                Pestana.EQUIPO -> PantallaEquipo()
-                Pestana.MAS -> PantallaMas(
-                    alRevisarPermisos = alRevisarPermisos,
-                    alSalir = alSalir,
+            }
+        }
+
+        // Buzón a pantalla completa por encima de todo (incluida la barra).
+        if (verNotificaciones) {
+            PantallaNotificaciones(alVolver = { verNotificaciones = false })
+        }
+    }
+}
+
+/** Campanita con el contador de avisos sin leer (puntito rojo). */
+@Composable
+private fun CampanitaAvisos(
+    noLeidas: Int,
+    alPulsar: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.size(44.dp)) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .align(Alignment.Center)
+                .clip(CircleShape)
+                .background(Blanco)
+                .border(1.dp, Borde, CircleShape)
+                .clickable(onClick = alPulsar),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                TablerIcons.Bell,
+                contentDescription = "Avisos",
+                tint = AzulNoche,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        if (noLeidas > 0) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(18.dp)
+                    .clip(CircleShape)
+                    .background(RojoAlerta),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    if (noLeidas > 9) "9+" else "$noLeidas",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Blanco,
                 )
             }
         }

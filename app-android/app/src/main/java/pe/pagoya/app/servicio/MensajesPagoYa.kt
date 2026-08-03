@@ -12,6 +12,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import pe.pagoya.app.MainActivity
 import pe.pagoya.app.R
+import pe.pagoya.app.core.BandejaNotificaciones
 import pe.pagoya.app.core.Pago
 import pe.pagoya.app.core.Plan
 import pe.pagoya.app.nube.ComercioRepo
@@ -42,6 +43,11 @@ class MensajesPagoYa : FirebaseMessagingService() {
         val notif = mensaje.notification
         val titulo = notif?.title ?: datos["titulo"] ?: "PagoYa"
         val cuerpo = notif?.body ?: datos["cuerpo"] ?: return
+        // Guarda el aviso en el buzón (campanita) para que se pueda repasar
+        // después, aunque el comerciante barra la notificación del sistema.
+        BandejaNotificaciones.agregar(
+            applicationContext, titulo, cuerpo, System.currentTimeMillis(),
+        )
         mostrarCampana(this, titulo, cuerpo)
     }
 

@@ -4,6 +4,7 @@ import android.app.Application
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 import pe.pagoya.app.core.Anunciador
+import pe.pagoya.app.core.BandejaNotificaciones
 import pe.pagoya.app.core.BilleteraParser
 import pe.pagoya.app.core.Enlaces
 import pe.pagoya.app.core.PreferenciasApariencia
@@ -22,6 +23,7 @@ class PagoYaApp : Application() {
         BilleteraParser.cargar(this)
         RegistroPagos.cargar(this)
         PreferenciasApariencia.cargar(this)
+        BandejaNotificaciones.cargar(this)
         Anunciador.inicializar(this)
         // 2. Patrones desde la nube — si Yape cambia su texto, se corrige desde la
         //    consola (Remote Config, parámetro "billeteras_json") sin republicar APK

@@ -160,7 +160,7 @@ fun PantallaInicio(alRevisarPermisos: () -> Unit, alIrA: (Pestana) -> Unit = {})
                         verticalAlignment = Alignment.Top,
                     ) {
                         Text(
-                            "HOY CAYERON",
+                            "HOY GANASTE",
                             style = MaterialTheme.typography.labelMedium,
                             color = Blanco.copy(alpha = 0.85f),
                             modifier = Modifier.weight(1f),

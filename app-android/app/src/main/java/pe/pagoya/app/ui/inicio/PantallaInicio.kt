@@ -112,17 +112,30 @@ fun PantallaInicio(alRevisarPermisos: () -> Unit, alIrA: (Pestana) -> Unit = {})
         item {
             Column {
                 Text(
-                    comercio?.nombre ?: "Mi negocio",
+                    "Hola, ${comercio?.nombre ?: "casero"}",
                     style = MaterialTheme.typography.headlineMedium,
                     color = AzulNoche,
                 )
-                Text(
-                    if (comercio?.puedeCapturar == true)
-                        "Este teléfono captura los pagos"
-                    else "Modo escucha · anuncia lo que capture el dueño",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextoMedio,
-                )
+                Spacer(Modifier.height(2.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(
+                                if (comercio?.puedeCapturar == true) NaranjaPagoYa
+                                else AzulNoche
+                            ),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        if (comercio?.puedeCapturar == true)
+                            "Este teléfono captura los pagos"
+                        else "Modo escucha · suena lo que capture el dueño",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextoMedio,
+                    )
+                }
             }
         }
 

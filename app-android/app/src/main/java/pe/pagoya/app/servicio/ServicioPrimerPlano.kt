@@ -56,7 +56,7 @@ class ServicioPrimerPlano : Service() {
         val notificacion = Notification.Builder(this, CANAL_ID)
             .setContentTitle(getString(R.string.notif_servicio_titulo))
             .setContentText(getString(R.string.notif_servicio_texto))
-            .setSmallIcon(R.drawable.ic_notificacion)
+            .setSmallIcon(R.drawable.ic_notificacion_mascota)
             .setColor(0xFFFF6B1A.toInt())
             .setContentIntent(abrirApp)
             .setOngoing(true)

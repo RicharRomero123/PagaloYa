@@ -140,7 +140,7 @@ class MensajesPagoYa : FirebaseMessagingService() {
                 PendingIntent.FLAG_IMMUTABLE,
             )
             val notif = NotificationCompat.Builder(context, CANAL_AVISOS)
-                .setSmallIcon(R.drawable.ic_notificacion)
+                .setSmallIcon(R.drawable.ic_notificacion_mascota)
                 .setColor(0xFFFF6B1A.toInt())
                 .setContentTitle(titulo)
                 .setContentText(cuerpo)

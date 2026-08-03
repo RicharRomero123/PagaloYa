@@ -30,7 +30,7 @@ class WidgetPagos : AppWidgetProvider() {
         gestor: AppWidgetManager,
         ids: IntArray,
     ) {
-        ids.forEach { id -> pintar(context, gestor, id) }
+        ids.forEach { id -> runCatching { pintar(context, gestor, id) } }
     }
 
     companion object {

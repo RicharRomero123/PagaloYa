@@ -91,7 +91,7 @@
         <!-- Ícono y canal por defecto de las notificaciones de campaña -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/ic_notificacion" />
+            android:resource="@drawable/ic_notificacion_mascota" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/naranja_pagoya" />

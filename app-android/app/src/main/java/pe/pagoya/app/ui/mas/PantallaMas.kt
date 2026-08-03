@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,7 +37,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import compose.icons.TablerIcons
-import compose.icons.tablericons.BuildingStore
 import compose.icons.tablericons.ChevronRight
 import compose.icons.tablericons.CircleCheck
 import compose.icons.tablericons.Crown
@@ -115,54 +113,17 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Text("Ajustes", style = MaterialTheme.typography.headlineMedium, color = AzulNoche)
-        }
-
-        // ── Tu negocio: la cabecera del concepto ──
-        item {
-            TarjetaPagoYa {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(NaranjaSuave),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            TablerIcons.BuildingStore,
-                            contentDescription = null,
-                            tint = NaranjaPagoYa,
-                            modifier = Modifier.size(26.dp),
-                        )
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            comercio?.nombre ?: "Mi negocio",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = AzulNoche,
-                        )
-                        Text(
-                            if (comercio?.rol == "dueno") "Dueño · este teléfono captura"
-                            else "Trabajador · modo escucha",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextoMedio,
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(NaranjaSuave)
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                    ) {
-                        Text(
-                            "Plan Gratis",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = NaranjaHondo,
-                        )
-                    }
-                }
+            Column {
+                Text(
+                    "Configuración",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = AzulNoche,
+                )
+                Text(
+                    "La voz, la apariencia y tu plan.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextoMedio,
+                )
             }
         }
 
@@ -316,7 +277,7 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
         }
 
         // ── Ayuda y sesión ──
-        item { Etiqueta("Más", Modifier.padding(top = 8.dp)) }
+        item { Etiqueta("Ayuda", Modifier.padding(top = 8.dp)) }
         item {
             TarjetaPagoYa(relleno = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
                 FilaAjuste(

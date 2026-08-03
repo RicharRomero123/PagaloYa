@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,11 +42,13 @@ import compose.icons.tablericons.Settings
 import compose.icons.tablericons.Users
 import pe.pagoya.app.R
 import pe.pagoya.app.core.BandejaNotificaciones
+import pe.pagoya.app.nube.ComercioRepo
 import pe.pagoya.app.ui.caja.PantallaCaja
 import pe.pagoya.app.ui.equipo.PantallaEquipo
 import pe.pagoya.app.ui.inicio.PantallaInicio
 import pe.pagoya.app.ui.mas.PantallaMas
 import pe.pagoya.app.ui.notificaciones.PantallaNotificaciones
+import pe.pagoya.app.ui.perfil.PantallaPerfil
 import pe.pagoya.app.ui.tema.AzulNoche
 import pe.pagoya.app.ui.tema.Blanco
 import pe.pagoya.app.ui.tema.Borde
@@ -77,17 +80,22 @@ fun ShellPagoYa(
 ) {
     var pestana by rememberSaveable { mutableStateOf(Pestana.INICIO) }
     var verNotificaciones by rememberSaveable { mutableStateOf(false) }
+    var verPerfil by rememberSaveable { mutableStateOf(false) }
     val noLeidas by BandejaNotificaciones.noLeidas.collectAsState()
+    val comercio by ComercioRepo.comercio.collectAsState()
 
     Box(Modifier.fillMaxSize()) {
         Scaffold(
             containerColor = Crema,
             topBar = {
-                // Barra superior fija de la app: marca a la izquierda y campanita
-                // de avisos a la derecha, INTEGRADA en el header (ya no flotante
-                // encima de las pantallas). Igual en todas las pestañas.
+                // Barra superior fija de la app, INTEGRADA en el header (ya no
+                // flotante encima de las pantallas). Igual en todas las pestañas:
+                // avatar de perfil a la izquierda, marca al centro, campanita a
+                // la derecha.
                 BarraSuperior(
+                    inicialNegocio = (comercio?.nombre ?: "?").take(1).uppercase(),
                     noLeidas = noLeidas,
+                    alAbrirPerfil = { verPerfil = true },
                     alAbrirAvisos = { verNotificaciones = true },
                 )
             },
@@ -137,30 +145,60 @@ fun ShellPagoYa(
         if (verNotificaciones) {
             PantallaNotificaciones(alVolver = { verNotificaciones = false })
         }
+
+        // Perfil a pantalla completa por encima de todo.
+        if (verPerfil) {
+            PantallaPerfil(
+                alVolver = { verPerfil = false },
+                alRevisarPermisos = {
+                    verPerfil = false
+                    alRevisarPermisos()
+                },
+                alSalir = alSalir,
+            )
+        }
     }
 }
 
 /**
- * Barra superior de la app: la marca a la izquierda y la campanita de avisos a
- * la derecha. Va fija como header (topBar del Scaffold), no flotante, así se ve
- * integrada en todas las pantallas.
+ * Barra superior fija de la app (topBar del Scaffold, no flotante): avatar de
+ * perfil a la izquierda que abre el Perfil, la marca al centro y la campanita de
+ * avisos a la derecha. Igual en todas las pantallas.
  */
 @Composable
 private fun BarraSuperior(
+    inicialNegocio: String,
     noLeidas: Int,
+    alAbrirPerfil: () -> Unit,
     alAbrirAvisos: () -> Unit,
 ) {
     androidx.compose.foundation.layout.Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(Crema)
-            .padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 6.dp),
+            .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // Avatar de perfil (inicial del negocio) → abre el Perfil.
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(NaranjaPagoYa)
+                .clickable(onClick = alAbrirPerfil),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                inicialNegocio,
+                style = MaterialTheme.typography.titleMedium,
+                color = Blanco,
+            )
+        }
+        Spacer(Modifier.width(10.dp))
         Image(
             painterResource(R.drawable.wordmark_pagoya),
             contentDescription = "PagoYa",
-            modifier = Modifier.height(26.dp),
+            modifier = Modifier.height(24.dp),
             contentScale = ContentScale.Fit,
         )
         Spacer(Modifier.weight(1f))

@@ -35,12 +35,18 @@ class WidgetPagos : AppWidgetProvider() {
 
     companion object {
 
-        private const val CANT_FILAS = 3
-        private val FILAS = intArrayOf(R.id.fila_1, R.id.fila_2, R.id.fila_3)
-        private val FILAS_BILLETERA =
-            intArrayOf(R.id.fila_1_billetera, R.id.fila_2_billetera, R.id.fila_3_billetera)
-        private val FILAS_MONTO =
-            intArrayOf(R.id.fila_1_monto, R.id.fila_2_monto, R.id.fila_3_monto)
+        private const val CANT_FILAS = 5
+        private val FILAS = intArrayOf(
+            R.id.fila_1, R.id.fila_2, R.id.fila_3, R.id.fila_4, R.id.fila_5,
+        )
+        private val FILAS_BILLETERA = intArrayOf(
+            R.id.fila_1_billetera, R.id.fila_2_billetera, R.id.fila_3_billetera,
+            R.id.fila_4_billetera, R.id.fila_5_billetera,
+        )
+        private val FILAS_MONTO = intArrayOf(
+            R.id.fila_1_monto, R.id.fila_2_monto, R.id.fila_3_monto,
+            R.id.fila_4_monto, R.id.fila_5_monto,
+        )
 
         /**
          * Refresca todas las instancias del widget. Lo llama RegistroPagos al
@@ -64,7 +70,7 @@ class WidgetPagos : AppWidgetProvider() {
             val total = RegistroPagos.totalDeHoy(pagos)
             vistas.setTextViewText(
                 R.id.widget_total,
-                "Hoy S/ ${formatearMonto(total)}",
+                "S/ ${formatearMonto(total)}",
             )
 
             val recientes = pagos.take(CANT_FILAS)

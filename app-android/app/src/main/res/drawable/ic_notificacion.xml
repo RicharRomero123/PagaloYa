@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Ícono PEQUEÑO de notificación de PagoYa: silueta MONOCROMÁTICA blanca sobre
-  transparente (Android lo pinta de un solo color con el tinte de .setColor()).
-  Es la marca PagoYa — el parlantito criollo (soundbox) con su carita y las
-  ondas de sonido — reducida a silueta plana para que lea bien en 24dp.
-  Nada de degradados ni color: solo blanco sólido (#FFFFFFFF) y transparencia.
-  La carita y la rejilla se logran con evenOdd: los huecos quedan transparentes.
+  Ícono PEQUEÑO de notificación de PagoYa: silueta MONOCROMÁTICA de la mascota
+  (el parlantito) sobre transparente. Android lo pinta de UN solo color (por eso
+  el usuario lo ve en gris/blanco); un PNG a color se vería como un cuadro. Aquí
+  va la silueta plana del parlantito con su carita, la rejilla y las ondas de
+  sonido, que lee bien a 24dp. Solo blanco sólido (#FFFFFFFF) y transparencia
+  (evenOdd para recortar ojos, sonrisa y rejilla como huecos).
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
@@ -14,39 +14,41 @@
     android:viewportHeight="24"
     android:tint="#FFFFFFFF">
 
-    <!-- Cuerpo del parlantito con carita recortada (evenOdd = huecos transparentes):
-         primer subpath = caja; subpaths siguientes = ojos y sonrisa en negativo -->
+    <!-- Cuerpo del parlantito con carita y rejilla recortadas (evenOdd) -->
     <path
         android:fillColor="#FFFFFFFF"
         android:fillType="evenOdd"
-        android:pathData="M5.5,4.5
-            l6.5,0
-            a1.6,1.6 0 0 1 1.6,1.6
-            l0,11.8
-            a1.6,1.6 0 0 1 -1.6,1.6
-            l-6.5,0
-            a1.6,1.6 0 0 1 -1.6,-1.6
-            l0,-11.8
-            a1.6,1.6 0 0 1 1.6,-1.6
+        android:pathData="M4.4,4.4
+            l7.0,0
+            a1.8,1.8 0 0 1 1.8,1.8
+            l0,11.6
+            a1.8,1.8 0 0 1 -1.8,1.8
+            l-7.0,0
+            a1.8,1.8 0 0 1 -1.8,-1.8
+            l0,-11.6
+            a1.8,1.8 0 0 1 1.8,-1.8
             z
-            M7.1,8.2 m-0.75,0 a0.75,0.75 0 1 0 1.5,0 a0.75,0.75 0 1 0 -1.5,0 z
-            M10.9,8.2 m-0.75,0 a0.75,0.75 0 1 0 1.5,0 a0.75,0.75 0 1 0 -1.5,0 z
-            M6.7,10.6 a2.3,2.3 0 0 0 4.6,0 l-0.95,0 a1.35,1.35 0 0 1 -2.7,0 z" />
+            M6.5,8.4 m-0.8,0 a0.8,0.8 0 1 0 1.6,0 a0.8,0.8 0 1 0 -1.6,0 z
+            M10.7,8.4 m-0.8,0 a0.8,0.8 0 1 0 1.6,0 a0.8,0.8 0 1 0 -1.6,0 z
+            M6.0,10.7 a2.6,2.6 0 0 0 5.2,0 l-1.05,0 a1.55,1.55 0 0 1 -3.1,0 z
+            M6.1,13.9 a0.55,0.55 0 1 0 1.1,0 a0.55,0.55 0 1 0 -1.1,0 z
+            M8.05,13.9 a0.55,0.55 0 1 0 1.1,0 a0.55,0.55 0 1 0 -1.1,0 z
+            M10.0,13.9 a0.55,0.55 0 1 0 1.1,0 a0.55,0.55 0 1 0 -1.1,0 z" />
 
     <!-- Onda de sonido interior (el "suena" de la marca) -->
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M15.4,7.9
-            a5.2,5.2 0 0 1 0,8.2
+        android:pathData="M15.3,8.0
+            a5.0,5.0 0 0 1 0,8.0
             l1.15,1.15
-            a6.7,6.7 0 0 0 0,-10.5
+            a6.5,6.5 0 0 0 0,-10.3
             z" />
     <!-- Onda de sonido exterior -->
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M18.2,5.1
-            a9.2,9.2 0 0 1 0,13.8
+        android:pathData="M18.0,5.3
+            a8.9,8.9 0 0 1 0,13.4
             l1.15,1.15
-            a10.8,10.8 0 0 0 0,-16.1
+            a10.4,10.4 0 0 0 0,-15.7
             z" />
 </vector>

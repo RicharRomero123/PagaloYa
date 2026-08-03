@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Widget de inicio "la bolsa de PagoYa": total de hoy + últimos 3 pagos.
+  Widget de inicio "la bolsa de PagoYa": total de hoy + últimos 5 pagos.
   RemoteViews puro (sin librerías). Toca el widget → abre la app.
+  La mascota a color va en la cabecera (el widget sí admite PNG a color).
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_raiz"
@@ -11,7 +12,7 @@
     android:background="@drawable/fondo_widget"
     android:padding="14dp">
 
-    <!-- Cabecera: marca + total de hoy -->
+    <!-- Cabecera: mascota + marca + total de hoy -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -19,30 +20,68 @@
         android:gravity="center_vertical">
 
         <ImageView
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:src="@drawable/ic_notificacion"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/mascota_extraida"
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter"
             android:contentDescription="@string/app_name" />
 
-        <TextView
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="6dp"
-            android:text="@string/app_name"
-            android:textColor="@color/blanco"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            android:layout_marginStart="8dp"
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/widget_total"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/app_name"
+                android:textColor="@color/blanco"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tu caja de hoy"
+                android:textColor="#99FFFFFF"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Hoy S/ 0.00"
-            android:textColor="@color/naranja_pagoya"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            android:orientation="vertical"
+            android:gravity="end">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HOY"
+                android:textColor="#99FFFFFF"
+                android:textSize="9sp"
+                android:letterSpacing="0.1" />
+
+            <TextView
+                android:id="@+id/widget_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="S/ 0.00"
+                android:textColor="@color/naranja_pagoya"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </LinearLayout>
+
+    <!-- Separador -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="4dp"
+        android:background="#22FFFFFF" />
 
     <!-- Estado vacío -->
     <TextView
@@ -61,7 +100,7 @@
         android:id="@+id/fila_1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:background="@drawable/fondo_fila_pago"
@@ -147,6 +186,72 @@
 
         <TextView
             android:id="@+id/fila_3_monto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/naranja_pagoya"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Fila 4 -->
+    <LinearLayout
+        android:id="@+id/fila_4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/fondo_fila_pago"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="7dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/fila_4_billetera"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="@color/blanco"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/fila_4_monto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/naranja_pagoya"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Fila 5 -->
+    <LinearLayout
+        android:id="@+id/fila_5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/fondo_fila_pago"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="7dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/fila_5_billetera"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="@color/blanco"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/fila_5_monto"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"

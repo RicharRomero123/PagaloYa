@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -81,6 +82,15 @@ fun ShellPagoYa(
     Box(Modifier.fillMaxSize()) {
         Scaffold(
             containerColor = Crema,
+            topBar = {
+                // Barra superior fija de la app: marca a la izquierda y campanita
+                // de avisos a la derecha, INTEGRADA en el header (ya no flotante
+                // encima de las pantallas). Igual en todas las pestañas.
+                BarraSuperior(
+                    noLeidas = noLeidas,
+                    alAbrirAvisos = { verNotificaciones = true },
+                )
+            },
             bottomBar = {
                 NavigationBar(containerColor = Blanco, tonalElevation = 0.dp) {
                     Pestana.entries.forEach { destino ->
@@ -120,15 +130,6 @@ fun ShellPagoYa(
                         alSalir = alSalir,
                     )
                 }
-                // Campanita de avisos, flotante arriba a la derecha en todas las
-                // pestañas (los títulos van a la izquierda, así que no chocan).
-                CampanitaAvisos(
-                    noLeidas = noLeidas,
-                    alPulsar = { verNotificaciones = true },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 8.dp, end = 12.dp),
-                )
             }
         }
 
@@ -136,6 +137,37 @@ fun ShellPagoYa(
         if (verNotificaciones) {
             PantallaNotificaciones(alVolver = { verNotificaciones = false })
         }
+    }
+}
+
+/**
+ * Barra superior de la app: la marca a la izquierda y la campanita de avisos a
+ * la derecha. Va fija como header (topBar del Scaffold), no flotante, así se ve
+ * integrada en todas las pantallas.
+ */
+@Composable
+private fun BarraSuperior(
+    noLeidas: Int,
+    alAbrirAvisos: () -> Unit,
+) {
+    androidx.compose.foundation.layout.Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Crema)
+            .padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Image(
+            painterResource(R.drawable.wordmark_pagoya),
+            contentDescription = "PagoYa",
+            modifier = Modifier.height(26.dp),
+            contentScale = ContentScale.Fit,
+        )
+        Spacer(Modifier.weight(1f))
+        CampanitaAvisos(
+            noLeidas = noLeidas,
+            alPulsar = alAbrirAvisos,
+        )
     }
 }
 

@@ -1,9 +1,12 @@
 package pe.pagoya.app
 
 import android.content.Context
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -41,6 +44,16 @@ class MainActivity : ComponentActivity() {
         // El splash (Theme.PagoYa.Splash del manifest) solo vive durante el
         // arranque en frío; aquí se vuelve al tema normal antes de Compose.
         setTheme(R.style.Theme_PagoYa)
+        // Edge-to-edge estilo iPhone: la barra de estado queda TRANSPARENTE y el
+        // DEGRADADO naranja vertical (claro arriba → oscuro abajo) de la
+        // BarraSuperior se pinta por debajo de ella, sin corte ni línea. Iconos
+        // de la barra en claro (blanco) para que se lean sobre el naranja
+        // (SystemBarStyle.dark = iconos claros). La barra de navegación inferior
+        // sigue el sistema (auto).
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+        )
         super.onCreate(savedInstanceState)
         setContent { TemaPagoYa { RaizPagoYa(this) } }
     }

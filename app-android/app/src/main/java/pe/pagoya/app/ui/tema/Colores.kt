@@ -20,16 +20,17 @@ val AzulNoche = Color(0xFF1A2B4A)       // secundario: confianza, la plata
 val AzulNocheClaro = Color(0xFF2C4570)
 
 /**
- * Degradado naranja de marca (oscuro → claro), en diagonal. Es el "sello tech"
- * de la parte superior de la app (barra + cabecera). Se define una sola vez
- * aquí para que toda la app use exactamente el mismo.
+ * Degradado naranja de marca, VERTICAL: CLARO ARRIBA → OSCURO ABAJO. Es el
+ * "sello tech" de la parte superior de la app (barra + cabecera): la parte
+ * clara queda arriba, fundida con la barra de estado, y baja a naranja hondo.
+ * Se define una sola vez aquí para que toda la app use exactamente el mismo.
  */
 val DegradadoMarca: Brush
-    get() = Brush.linearGradient(listOf(NaranjaBrasa, NaranjaPagoYa, NaranjaClaro))
+    get() = Brush.verticalGradient(listOf(NaranjaClaro, NaranjaPagoYa, NaranjaBrasa))
 
-/** Degradado vertical (arriba oscuro → abajo claro) para cabeceras altas. */
+/** Alias del degradado vertical de marca (claro arriba → oscuro abajo). */
 val DegradadoMarcaVertical: Brush
-    get() = Brush.verticalGradient(listOf(NaranjaBrasa, NaranjaPagoYa))
+    get() = Brush.verticalGradient(listOf(NaranjaClaro, NaranjaBrasa))
 
 // Fondos
 val Crema = Color(0xFFFFF6EF)

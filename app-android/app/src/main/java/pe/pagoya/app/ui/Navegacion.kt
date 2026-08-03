@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -91,11 +92,16 @@ fun ShellPagoYa(
 
     Box(Modifier.fillMaxSize()) {
         Scaffold(
-            containerColor = Crema,
+            // Blanco de fondo para que las esquinas inferiores redondeadas del
+            // contenido (crema) se recorten limpio contra el blanco de la barra
+            // de navegación, sin bordes duros.
+            containerColor = Blanco,
             topBar = {
-                // Barra superior fija con el DEGRADADO naranja de marca (look
-                // tech). Avatar de perfil a la izquierda; a la derecha, soporte
-                // (audífonos) y campanita. Igual en todas las pestañas.
+                // Barra superior fija con el DEGRADADO naranja de marca que se
+                // extiende edge-to-edge hasta cubrir la barra de estado (estilo
+                // iPhone): sin corte. Avatar de perfil a la izquierda; a la
+                // derecha, soporte (audífonos) y campanita. Igual en todas las
+                // pestañas.
                 BarraSuperior(
                     inicialNegocio = (comercio?.nombre ?: "?").take(1).uppercase(),
                     nombreNegocio = comercio?.nombre ?: "Mi negocio",
@@ -106,7 +112,16 @@ fun ShellPagoYa(
                 )
             },
             bottomBar = {
-                NavigationBar(containerColor = Blanco, tonalElevation = 0.dp) {
+                // Barra de navegación con esquinas SUPERIORES redondeadas: se
+                // clipa un Box para que el blanco de la barra se recorte contra
+                // el crema del contenido de arriba (look suave, sin borde duro).
+                NavigationBar(
+                    containerColor = Blanco,
+                    tonalElevation = 0.dp,
+                    modifier = Modifier.clip(
+                        RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                    ),
+                ) {
                     Pestana.entries.forEach { destino ->
                         NavigationBarItem(
                             selected = pestana == destino,
@@ -131,6 +146,10 @@ fun ShellPagoYa(
                 Modifier
                     .padding(relleno)
                     .fillMaxSize()
+                    // Esquinas inferiores redondeadas del contenido: suaviza el
+                    // corte con la barra de navegación (estilo tarjeta flotante).
+                    .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+                    .background(Crema)
             ) {
                 when (pestana) {
                     Pestana.INICIO -> PantallaInicio(
@@ -173,9 +192,11 @@ fun ShellPagoYa(
 
 /**
  * Barra superior fija de la app (topBar del Scaffold): fondo con el DEGRADADO
- * naranja de marca (look tech, oscuro→claro). Avatar de perfil a la izquierda
- * con el saludo; a la derecha, soporte (audífonos) y campanita de avisos.
- * Igual en todas las pantallas.
+ * naranja de marca (oscuro→claro) que se pinta por debajo de la barra de estado
+ * (transparente, edge-to-edge) para fundirse con ella estilo iPhone, sin corte.
+ * El windowInsetsPadding baja el contenido para que no lo tape el reloj/hora.
+ * Avatar de perfil a la izquierda con el saludo; a la derecha, soporte
+ * (audífonos) y campanita de avisos. Igual en todas las pantallas.
  */
 @Composable
 private fun BarraSuperior(

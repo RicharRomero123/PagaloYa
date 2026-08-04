@@ -50,6 +50,7 @@ import pe.pagoya.app.nube.ComercioRepo
 import pe.pagoya.app.ui.caja.PantallaCaja
 import pe.pagoya.app.ui.equipo.PantallaEquipo
 import pe.pagoya.app.ui.inicio.PantallaInicio
+import pe.pagoya.app.ui.blindaje.PantallaBlindaje
 import pe.pagoya.app.ui.mas.PantallaMas
 import pe.pagoya.app.ui.notificaciones.PantallaNotificaciones
 import pe.pagoya.app.ui.perfil.PantallaPerfil
@@ -87,6 +88,7 @@ fun ShellPagoYa(
     var verNotificaciones by rememberSaveable { mutableStateOf(false) }
     var verPerfil by rememberSaveable { mutableStateOf(false) }
     var verSoporte by rememberSaveable { mutableStateOf(false) }
+    var verBlindaje by rememberSaveable { mutableStateOf(false) }
     val noLeidas by BandejaNotificaciones.noLeidas.collectAsState()
     val comercio by ComercioRepo.comercio.collectAsState()
 
@@ -155,11 +157,13 @@ fun ShellPagoYa(
                     Pestana.INICIO -> PantallaInicio(
                         alRevisarPermisos = alRevisarPermisos,
                         alIrA = { pestana = it },
+                        alBlindar = { verBlindaje = true },
                     )
                     Pestana.CAJA -> PantallaCaja()
                     Pestana.EQUIPO -> PantallaEquipo()
                     Pestana.MAS -> PantallaMas(
                         alRevisarPermisos = alRevisarPermisos,
+                        alBlindar = { verBlindaje = true },
                         alSalir = alSalir,
                     )
                 }
@@ -186,6 +190,11 @@ fun ShellPagoYa(
         // Soporte a pantalla completa por encima de todo.
         if (verSoporte) {
             PantallaSoporte(alVolver = { verSoporte = false })
+        }
+
+        // Blindaje total (full protección) a pantalla completa por encima de todo.
+        if (verBlindaje) {
+            PantallaBlindaje(alVolver = { verBlindaje = false })
         }
     }
 }

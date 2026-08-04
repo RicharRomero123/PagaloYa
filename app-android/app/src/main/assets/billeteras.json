@@ -21,7 +21,7 @@
       "nombre": "Plin",
       "paquetes": ["pe.com.interbank.mobilebanking"],
       "patrones": [
-        "(?i)(.+?)\\s+te\\s+pline[oó]\\s+S\\/\\.?\\s*([0-9]+(?:[.,][0-9]{1,2})?)",
+        "(?i)(.+?)\\s+te\\s+(?:ha\\s+)?pline(?:[oó]|ado)\\s+S\\/\\.?\\s*([0-9]+(?:[.,][0-9]{1,2})?)",
         "(?i)recibiste\\s+un\\s+plin\\s+de\\s+(.+?)\\s+por\\s+S\\/\\.?\\s*([0-9]+(?:[.,][0-9]{1,2})?)"
       ],
       "vozPlantillaSinNombre": "¡Pago Ya! Pago Plin de {monto}",

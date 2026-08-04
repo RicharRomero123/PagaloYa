@@ -890,6 +890,62 @@ p { margin: 0 0 1em; }
 }
 .remate b { color: var(--amarillo); }
 
+/* ---------- Por qué sin comisión: las dos capas ----------
+   El argumento entero es espacial: hay una capa donde se mueve el dinero y
+   otra, encima, donde solo se avisa. Dibujarlo apilado con la flecha hacia
+   arriba hace el punto sin necesidad de explicarlo dos veces. */
+.capas { display: grid; gap: 10px; justify-items: stretch; margin-bottom: 40px; }
+.capa {
+  border-radius: var(--radio);
+  padding: 22px 24px;
+  border: 2px solid rgba(255, 255, 255, .14);
+  background: rgba(255, 255, 255, .05);
+}
+.capa-etiqueta {
+  display: block;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: .82rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #93A3C2;
+  margin-bottom: 6px;
+}
+.capa strong {
+  display: block;
+  font-family: var(--display);
+  font-size: 1.2rem;
+  line-height: 1.25;
+  color: var(--blanco);
+  margin-bottom: 8px;
+}
+.capa p { margin: 0; font-size: 1.02rem; color: #C7D1E4; }
+.capa--pagoya {
+  border-color: var(--naranja);
+  background: rgba(255, 107, 26, .1);
+}
+.capa--pagoya .capa-etiqueta { color: var(--amarillo); }
+.capa-flecha {
+  justify-self: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--naranja);
+}
+
+.promesas { list-style: none; margin: 0 0 40px; padding: 0; display: grid; gap: 18px; }
+@media (min-width: 860px) { .promesas { grid-template-columns: repeat(3, 1fr); } }
+.promesa {
+  background: var(--azul-osc);
+  border: 2px solid rgba(255, 255, 255, .16);
+  border-radius: var(--radio);
+  padding: 22px 24px 20px;
+}
+.promesa h3 { font-size: 1.14rem; margin-bottom: .35em; color: var(--amarillo); }
+.promesa p { margin: 0; font-size: 1.02rem; color: #C7D1E4; }
+
+/* Acá el remate cierra la sección: no lleva nada debajo. */
+#por-que-sin-comision .remate { margin-bottom: 0; }
+
 .escudos { display: grid; gap: 18px; }
 @media (min-width: 860px) { .escudos { grid-template-columns: repeat(3, 1fr); } }
 .escudo {
@@ -904,6 +960,79 @@ p { margin: 0 0 1em; }
 
 /* ---------- Cómo funciona ---------- */
 .fondo-blanco { background: var(--blanco); }
+
+/* ---------- Para quién es (banda propia) ----------
+   La página alterna crema-claro y blanco. "Para quién" cae entre dos secciones
+   que ya usan esos dos fondos, así que necesita un tercer tono: crema fuerte
+   con filetes, para que se lea como una banda aparte y no se funda con la
+   sección de compatibilidad que viene justo debajo. */
+.fondo-crema {
+  background-color: var(--crema);
+  background-image: var(--ruido);
+  border-top: var(--borde-fino);
+  border-bottom: var(--borde-fino);
+}
+
+.publicos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 20px;
+}
+@media (min-width: 700px) { .publicos { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1000px) { .publicos { grid-template-columns: repeat(3, 1fr); } }
+
+.publico {
+  background: var(--blanco);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-dura);
+  padding: 24px 24px 22px;
+}
+.publico h3 { margin-bottom: .45em; }
+/* La frase entrecomillada es la voz del casero, no la nuestra: va manuscrita,
+   como una anotación al margen. Es lo que hace que se reconozca en la tarjeta. */
+.publico-dolor {
+  font-family: var(--mano);
+  font-size: 1.24rem;
+  line-height: 1.3;
+  color: var(--naranja-osc);
+  margin-bottom: .6em;
+}
+.publico p:last-child { margin-bottom: 0; }
+.publico-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  background: var(--naranja-tinte);
+  color: var(--naranja-osc);
+}
+.publico-icono svg { width: 26px; height: 26px; }
+
+/* La tarjeta abierta ("¿y si tu caso no está acá?") no es un rubro más:
+   se marca punteada para que se lea como invitación, no como categoría. */
+.publico--abierto {
+  background: transparent;
+  border-style: dashed;
+  box-shadow: none;
+}
+.publico--abierto .publico-icono { background: rgba(26, 43, 74, .08); color: var(--azul); }
+.publico .enlace-seguir { display: inline-block; margin-top: 2px; }
+
+.publico-remate {
+  margin: 34px 0 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.15rem, 3vw, 1.5rem);
+  color: var(--azul);
+  line-height: 1.3;
+}
+.publico-remate b { color: var(--naranja-osc); }
 .pasos {
   list-style: none;
   counter-reset: paso;
@@ -1127,8 +1256,10 @@ p { margin: 0 0 1em; }
 .dif p { margin: 0; font-size: 1.05rem; }
 
 /* ---------- Comparación honesta ---------- */
+/* Cuatro opciones desde que Yape Empresa entró al cuadro: 2×2 en vez de una
+   fila de cuatro, que a 1120px dejaría columnas de 250px ilegibles. */
 .comparacion { display: grid; gap: 24px; align-items: stretch; }
-@media (min-width: 900px) { .comparacion { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 760px) { .comparacion { grid-template-columns: repeat(2, 1fr); } }
 .opcion {
   position: relative;
   display: flex;
@@ -1579,17 +1710,27 @@ p { margin: 0 0 1em; }
   margin: 0;
   max-width: none;
 }
-.lista-guias h2 { margin: 0 0 .35em; font-size: 1.3rem; }
-.lista-guias h2 a { color: var(--azul); text-decoration: none; }
-.lista-guias h2 a:hover { color: var(--naranja-osc); }
+/* El título de la tarjeta es h2 en /guias/ (cuelga del h1) y h3 en /ayuda/
+   (cuelga de un h2). Se ve igual en las dos. */
+.lista-guias h2, .lista-guias h3 { margin: 0 0 .35em; font-size: 1.3rem; }
+.lista-guias h2 a, .lista-guias h3 a { color: var(--azul); text-decoration: none; }
+.lista-guias h2 a:hover, .lista-guias h3 a:hover { color: var(--naranja-osc); }
 .lista-guias p { margin-bottom: .7em; color: var(--texto-suave); font-size: 1rem; }
 .enlace-seguir { font-family: var(--display); font-weight: 700; text-decoration: none; }
 /* .legal a subraya todos los enlaces de prosa: estos dos no son prosa. */
 .legal .enlace-seguir, .legal .btn { text-decoration: none; }
 
 /* Bloque de guías dentro de la home */
-.guias-home { list-style: none; padding: 0; margin: 0; display: grid; gap: 20px; }
-@media (min-width: 760px) { .guias-home { grid-template-columns: repeat(3, 1fr); } }
+/* auto-fit y no un número fijo de columnas: las guías crecen de a una y con
+   3 columnas fijas la cuarta quedaba huérfana en una fila sola. */
+.guias-home {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
 .guias-home li {
   background: var(--crema-claro);
   border: var(--borde);
@@ -1629,6 +1770,10 @@ p { margin: 0 0 1em; }
   }
   .plan:hover { translate: -2px -2px; box-shadow: 8px 8px 0 rgba(26, 43, 74, .24); }
   .plan--favorito:hover { translate: -2px -2px; box-shadow: 9px 9px 0 var(--naranja); }
+
+  /* La tarjeta abierta sí invita a escribir: se marca al pasar. */
+  .publico--abierto { transition: border-color .2s ease, background-color .2s ease; }
+  .publico--abierto:hover { border-color: var(--naranja); background: rgba(255, 255, 255, .6); }
 
   /* Las tarjetas de guía sí son clicables enteras: pueden saltar */
   .lista-guias li, .guias-home li {

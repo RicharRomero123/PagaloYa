@@ -20,6 +20,7 @@ landing/
 │   ├── yape-falso/page.jsx                      ← guía SEO
 │   ├── parlante-para-yape/page.jsx              ← guía SEO
 │   ├── no-me-llegan-notificaciones-yape/page.jsx ← guía SEO
+│   ├── para-delivery/page.jsx   ← página de segmento (ver MERCADO.md)
 │   ├── privacidad/page.jsx      ← política de privacidad (URL para Play Console)
 │   └── eliminar-datos/page.jsx  ← solicitud de eliminación de cuenta/datos
 ├── components/
@@ -30,7 +31,8 @@ landing/
 ├── lib/
 │   ├── enlaces.js               ← número de WhatsApp centralizado (ÚNICO lugar)
 │   ├── seo.js                   ← dominio, metadata, JSON-LD (ÚNICO lugar)
-│   └── guias.js                 ← catálogo de guías (pie, home, hub y relacionadas)
+│   ├── guias.js                 ← catálogo de guías (pie, home, hub y relacionadas)
+│   └── segmentos.js             ← catálogo de páginas por segmento (pie y #para-quien)
 ├── public/
 │   ├── assets/                  ← marca oficial: favicons (favicon-32, icon-192/512,
 │   │                              apple-touch-icon), icono-96, wordmark-pagoya,
@@ -52,6 +54,13 @@ landing/
 
 El enlazado interno (pie, bloque de la home, relacionadas) se actualiza solo
 desde `lib/guias.js`.
+
+## Agregar una página de segmento
+
+Igual que una guía, pero el catálogo es `lib/segmentos.js` y cada entrada lleva
+un campo `tarjeta` (`delivery`, `taxi`, `combi`…) que la enlaza con su tarjeta de
+la sección `#para-quien` de la home. Mientras un segmento no tenga página, su
+tarjeta simplemente no muestra enlace: no hay que tocar `app/page.jsx`.
 
 ## Comandos
 

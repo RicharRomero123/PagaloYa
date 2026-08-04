@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "74223891463-38835ubsjfa2uc8l0cgf35e1uba39c98.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "pe.pagoya.app",
+            "certificate_hash": "85de25ff0b367c92448968d29651825c8aa85401"
+          }
+        },
+        {
           "client_id": "74223891463-c9vi788itnmih4sb48mobalrlnavs5ng.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

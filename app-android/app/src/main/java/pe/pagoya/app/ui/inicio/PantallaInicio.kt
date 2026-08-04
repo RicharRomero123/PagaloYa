@@ -73,17 +73,25 @@ import pe.pagoya.app.ui.tema.soloNumero
  * @param alIrA salta a otra pestaña del armazón (acciones rápidas).
  */
 @Composable
-fun PantallaInicio(alRevisarPermisos: () -> Unit, alIrA: (Pestana) -> Unit = {}) {
+fun PantallaInicio(
+    alRevisarPermisos: () -> Unit,
+    alIrA: (Pestana) -> Unit = {},
+    alBlindar: () -> Unit = {},
+) {
     val contexto = LocalContext.current
     val comercio by ComercioRepo.comercio.collectAsState()
     val pagos by RegistroPagos.pagos.collectAsState()
     val permisos = recordarPermisos(captura = comercio?.puedeCapturar ?: false)
 
     var estadoYape by remember { mutableStateOf(Guardian.estadoYape(contexto)) }
+    var yapeSeDuerme by remember { mutableStateOf(Guardian.seDuermeSeguido(contexto)) }
     val ciclo = LocalLifecycleOwner.current
     DisposableEffect(ciclo) {
         val observador = LifecycleEventObserver { _, evento ->
-            if (evento == Lifecycle.Event.ON_RESUME) estadoYape = Guardian.estadoYape(contexto)
+            if (evento == Lifecycle.Event.ON_RESUME) {
+                estadoYape = Guardian.estadoYape(contexto)
+                yapeSeDuerme = Guardian.seDuermeSeguido(contexto)
+            }
         }
         ciclo.lifecycle.addObserver(observador)
         onDispose { ciclo.lifecycle.removeObserver(observador) }
@@ -140,6 +148,21 @@ fun PantallaInicio(alRevisarPermisos: () -> Unit, alIrA: (Pestana) -> Unit = {})
                     texto = "Sin esto tu caja puede quedarse muda justo cuando te pagan.",
                     textoBoton = "Terminar de activar",
                     alPulsar = alRevisarPermisos,
+                )
+            }
+        }
+
+        // ── Yape que se duerme seguido: revivirla es un parche; la cura es
+        // blindarla en el fabricante. Mostramos esto aunque ahora esté encendida. ──
+        if (estadoYape != Guardian.EstadoBilletera.DETENIDA && yapeSeDuerme) {
+            item {
+                Aviso(
+                    tipo = TipoAviso.AVISO,
+                    titulo = "Tu Yape se está durmiendo seguido",
+                    texto = "El teléfono lo apaga para ahorrar batería y ahí no suenan tus " +
+                        "ventas. Blíndalo una vez y deja de dormirse.",
+                    textoBoton = "Blindaje total",
+                    alPulsar = alBlindar,
                 )
             }
         }

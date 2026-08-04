@@ -42,6 +42,7 @@ import compose.icons.tablericons.ChevronRight
 import compose.icons.tablericons.CircleCheck
 import compose.icons.tablericons.Help
 import compose.icons.tablericons.Logout
+import compose.icons.tablericons.Shield
 import compose.icons.tablericons.Users
 import compose.icons.tablericons.Volume
 import compose.icons.tablericons.Wallet
@@ -83,7 +84,7 @@ import pe.pagoya.app.ui.tema.VerdeOk
  * Los PLANES ya NO viven aquí: se movieron al Perfil (identidad + plan juntos).
  */
 @Composable
-fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
+fun PantallaMas(alRevisarPermisos: () -> Unit, alBlindar: () -> Unit = {}, alSalir: () -> Unit) {
     val contexto = LocalContext.current
     val comercio by ComercioRepo.comercio.collectAsState()
     val permisos = recordarPermisos(captura = comercio?.puedeCapturar ?: false)
@@ -265,6 +266,26 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alSalir: () -> Unit) {
             )
         }
         item { BotonPanico() }
+
+        // ══════════ PROTECCIÓN (blindaje total) ══════════
+        item { EncabezadoSeccion(TablerIcons.Shield, "Protección") }
+        item {
+            TarjetaPagoYa {
+                Text(
+                    "Blindaje total",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = AzulNoche,
+                )
+                Text(
+                    "Pon todos los candados del teléfono para que nunca duerma a Yape " +
+                        "ni a PagoYa. Se levantan uno por uno desde los ajustes del sistema.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextoMedio,
+                )
+                Spacer(Modifier.height(12.dp))
+                BotonPagoYa("Blindar mi teléfono", icono = TablerIcons.Shield, alPulsar = alBlindar)
+            }
+        }
 
         // ══════════ PERMISOS ══════════
         item { EncabezadoSeccion(TablerIcons.CircleCheck, "Permisos") }

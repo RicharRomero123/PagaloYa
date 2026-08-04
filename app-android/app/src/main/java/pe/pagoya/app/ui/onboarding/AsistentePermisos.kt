@@ -37,6 +37,7 @@ import compose.icons.TablerIcons
 import compose.icons.tablericons.ArrowLeft
 import compose.icons.tablericons.Bulb
 import pe.pagoya.app.core.ProteccionMarca
+import pe.pagoya.app.ui.blindaje.PantallaBlindaje
 import pe.pagoya.app.ui.tema.AzulNoche
 import pe.pagoya.app.ui.tema.BotonPagoYa
 import pe.pagoya.app.ui.tema.BotonSecundario
@@ -80,6 +81,18 @@ fun AsistentePermisos(captura: Boolean, alVolver: () -> Unit, alTerminar: () -> 
     val permiso = estado.faltantes.firstOrNull()
     if (permiso == null) {
         Cargando(Modifier.fillMaxSize())
+        return
+    }
+
+    // El blindaje es su propio mundo (varios candados del sistema): en vez de la
+    // ficha genérica de un permiso, mostramos el Blindaje total como paso, con su
+    // botón de "continuar" que marca el paso hecho y avanza el asistente.
+    if (permiso == Permiso.BLINDAR_YAPE) {
+        PantallaBlindaje(
+            alVolver = alVolver,
+            enOnboarding = true,
+            alTerminar = { estado.refrescar() },
+        )
         return
     }
 

@@ -86,10 +86,17 @@ object Guardian {
                 val lanzada = abrirYape(context, desdeFondo = true)
                 delay(ESPERA_RESURRECCION)
                 if (estadoYape(context) != EstadoBilletera.DETENIDA) {
-                    anunciarConFreno(
-                        context,
+                    // Revivió, pero cada resurrección es una "recaída": si Yape se
+                    // apaga una y otra vez, el blindaje del fabricante NO está
+                    // puesto y revivir es solo un parche. Ahí subimos el tono.
+                    registrarRecaida(context)
+                    val mensaje = if (seDuermeSeguido(context)) {
+                        "Tu Yape se está apagando seguido. Entra a Blindar Yape en " +
+                            "los ajustes de PagoYa para que el teléfono deje de dormirlo."
+                    } else {
                         "Ojo: tu Yape se había apagado. Ya lo prendí de nuevo, sigue tranquilo."
-                    )
+                    }
+                    anunciarConFreno(context, mensaje)
                     return
                 }
                 if (!lanzada) return@repeat
@@ -114,5 +121,40 @@ object Guardian {
         if (ahora - ultimaAlerta < SILENCIO_ENTRE_ALERTAS) return
         ultimaAlerta = ahora
         Anunciador.anunciar(context, mensaje)
+    }
+
+    // ── Recaídas: Yape que se duerme una y otra vez ─────────────────────────
+    // Revivir a Yape cura el síntoma; la causa es que el blindaje del fabricante
+    // (inicio automático / "nunca dormir") no está puesto. Contamos las veces que
+    // toca revivirla en una ventana de 24 h para, pasado un umbral, empujar al
+    // comerciante a blindarla de verdad (banner + aviso hablado más firme).
+    private const val PREFS_RECAIDAS = "pagoya_guardian"
+    private const val CLAVE_RECAIDAS = "recaidas"
+    private const val CLAVE_VENTANA = "ventana_inicio"
+    private const val VENTANA_RECAIDAS = 24 * 60 * 60 * 1000L
+    private const val UMBRAL_CRONICO = 3
+
+    private fun registrarRecaida(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS_RECAIDAS, Context.MODE_PRIVATE)
+        val ahora = System.currentTimeMillis()
+        val inicio = prefs.getLong(CLAVE_VENTANA, 0L)
+        if (ahora - inicio > VENTANA_RECAIDAS) {
+            // Ventana vencida: reiniciamos el conteo con esta recaída.
+            prefs.edit().putLong(CLAVE_VENTANA, ahora).putInt(CLAVE_RECAIDAS, 1).apply()
+        } else {
+            prefs.edit().putInt(CLAVE_RECAIDAS, prefs.getInt(CLAVE_RECAIDAS, 0) + 1).apply()
+        }
+    }
+
+    /**
+     * ¿Yape se está durmiendo de forma crónica (varias veces en 24 h)? Señal de
+     * que falta el blindaje del fabricante. La UI la lee para mostrar el aviso de
+     * "Blinda tu Yape" incluso cuando en este instante Yape está encendida.
+     */
+    fun seDuermeSeguido(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_RECAIDAS, Context.MODE_PRIVATE)
+        val inicio = prefs.getLong(CLAVE_VENTANA, 0L)
+        if (System.currentTimeMillis() - inicio > VENTANA_RECAIDAS) return false
+        return prefs.getInt(CLAVE_RECAIDAS, 0) >= UMBRAL_CRONICO
     }
 }

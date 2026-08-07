@@ -10,6 +10,7 @@ import kotlinx.coroutines.tasks.await
 import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.Pago
 import pe.pagoya.app.core.Plan
+import pe.pagoya.app.core.PreferenciasBilleteras
 import pe.pagoya.app.core.RegistroPagos
 import kotlin.random.Random
 
@@ -409,6 +410,13 @@ object ComercioRepo {
         if (comercioId != actual) return false
         // Lo capturó este mismo teléfono: ya sonó local, no repetir.
         if (origenUid == uid) return false
+        // Gate de billeteras: este teléfono (modo escucha) apagó esta billetera.
+        // La ignoramos por completo — no suena ni entra al historial. La decisión
+        // es LOCAL: cada equipo del comercio elige qué billeteras escuchar.
+        if (!PreferenciasBilleteras.estaActiva(pago.billeteraId)) {
+            Log.d(TAG, "Pago remoto descartado: billetera ${pago.billeteraId} apagada en este equipo")
+            return false
+        }
         // Anti-duplicado: mismo pagoId no suena dos veces.
         if (!recordar(pagoId)) return false
 

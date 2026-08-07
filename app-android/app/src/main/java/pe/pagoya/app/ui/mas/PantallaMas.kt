@@ -91,6 +91,7 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alBlindar: () -> Unit = {}, alSal
     var vozFuerte by remember { mutableStateOf(Anunciador.vozFuerte(contexto)) }
     val mostrarIconoBilletera by PreferenciasApariencia.mostrarIconoBilletera.collectAsState()
     var enPantallaVoz by remember { mutableStateOf(false) }
+    var enPantallaBilleteras by remember { mutableStateOf(false) }
     var confirmarSalida by remember { mutableStateOf(false) }
 
     if (enPantallaVoz) {
@@ -98,6 +99,11 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alBlindar: () -> Unit = {}, alSal
             enPantallaVoz = false
             vozFuerte = Anunciador.vozFuerte(contexto)
         })
+        return
+    }
+
+    if (enPantallaBilleteras) {
+        PantallaBilleteras(alVolver = { enPantallaBilleteras = false })
         return
     }
 
@@ -218,6 +224,18 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alBlindar: () -> Unit = {}, alSal
                     Spacer(Modifier.width(8.dp))
                     BilleteraBadge("plin", "Plin")
                 }
+                Spacer(Modifier.height(14.dp))
+                BotonSecundario(
+                    "Billeteras que escucho",
+                    icono = TablerIcons.Wallet,
+                    alPulsar = { enPantallaBilleteras = true },
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Apaga las que no uses; por defecto escuchamos todas.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextoTenue,
+                )
             }
         }
 

@@ -62,6 +62,13 @@ object BilleteraParser {
         billeteras.find { paquete in it.paquetes }
 
     /**
+     * Catálogo de billeteras cargadas (assets o Remote Config), para que la UI
+     * de config las liste. Es una copia de solo lectura: la lista interna sigue
+     * siendo privada.
+     */
+    fun catalogo(): List<Billetera> = billeteras.toList()
+
+    /**
      * Intenta extraer un pago del texto de la notificación.
      * Se prueba contra el texto completo (título + texto + bigText concatenados).
      */

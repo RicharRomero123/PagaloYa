@@ -36,9 +36,19 @@ class MensajesPagoYa : FirebaseMessagingService() {
 
     override fun onMessageReceived(mensaje: RemoteMessage) {
         val datos = mensaje.data
-        if (datos["tipo"] == "pago") {
-            anunciarPagoRemoto(datos)
-            return
+        when (datos["tipo"]) {
+            "pago" -> {
+                anunciarPagoRemoto(datos)
+                return
+            }
+            "ciego" -> {
+                avisarCiego(datos)
+                return
+            }
+            "ciego_fin" -> {
+                avisarCiegoFin(datos)
+                return
+            }
         }
         val notif = mensaje.notification
         val titulo = notif?.title ?: datos["titulo"] ?: "PagoYa"
@@ -77,6 +87,30 @@ class MensajesPagoYa : FirebaseMessagingService() {
             origenUid = origenUid,
             pago = pago,
         )
+    }
+
+    /**
+     * Modo ciego por PUSH: la Cloud Function detectó que el capturador de ESTE
+     * comercio dejó de dar presencia y empuja `tipo=ciego` al dueño remoto (que
+     * puede estar lejos, con la app cerrada). Payload: comercioId, minutos.
+     *
+     * Anti-fake / dedupe: solo si el push es del comercio ACTUAL. VigiaCiego
+     * comparte el mismo periodo idempotente y el anti-spam de voz con la
+     * detección local, así que si ya estábamos ciegos por nuestra cuenta no se
+     * duplica el aviso.
+     */
+    private fun avisarCiego(datos: Map<String, String>) {
+        val comercioId = datos["comercioId"] ?: return
+        if (comercioId != ComercioRepo.comercio.value?.id) return
+        val minutos = datos["minutos"]?.toIntOrNull() ?: 1
+        VigiaCiego.recibirCiegoRemoto(applicationContext, minutos)
+    }
+
+    /** Push `tipo=ciego_fin`: el capturador revivió; limpiar banner y voz. */
+    private fun avisarCiegoFin(datos: Map<String, String>) {
+        val comercioId = datos["comercioId"] ?: return
+        if (comercioId != ComercioRepo.comercio.value?.id) return
+        VigiaCiego.recibirCiegoFinRemoto(applicationContext)
     }
 
     /**

@@ -48,6 +48,8 @@ import pe.pagoya.app.core.Pago
 import pe.pagoya.app.core.RegistroPagos
 import pe.pagoya.app.nube.ComercioRepo
 import pe.pagoya.app.servicio.RedGuardia
+import pe.pagoya.app.servicio.VigiaCiego
+import pe.pagoya.app.ui.tema.BannerCiego
 import pe.pagoya.app.ui.Pestana
 import pe.pagoya.app.ui.onboarding.recordarPermisos
 import pe.pagoya.app.ui.tema.Aviso
@@ -98,6 +100,7 @@ fun PantallaInicio(
     }
 
     val sinRed by RedGuardia.sinRed.collectAsState()
+    val ciego by VigiaCiego.estado.collectAsState()
 
     val deHoy = pagos.filter { esDeHoy(it.timestamp) }
     val totalHoy = deHoy.sumOf { it.monto }
@@ -111,6 +114,12 @@ fun PantallaInicio(
         ),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        // ── MODO CIEGO: lo más urgente. Va PRIMERO, por encima de todo, porque
+        // mientras esté ahí las ventas pueden no estar sonando en la caja. ──
+        if (ciego.ciego) {
+            item { BannerCiego(minutos = ciego.minutos) }
+        }
+
         // ── Modo sin red: banner persistente mientras no haya internet ──
         if (sinRed) {
             item {

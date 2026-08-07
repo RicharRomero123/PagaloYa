@@ -202,13 +202,18 @@ service cloud.firestore {
       let campos = ['nombre', 'capturando', 'listenerConectado', 'permisoEscucha',
                     'ultimaNotifBilletera', 'yape', 'puedeRevivir', 'bateriaLibre',
                     'marca', 'modelo', 'versionApp', 'ultimoLatido'];
-      // 'fcmToken' es OPCIONAL: la app lo escribe en su propio latido para que la
-      // Cloud Function fanoutPago sepa a qué teléfono despertar. Sigue siendo
-      // estricto (hasOnly) — se valida solo si está presente.
-      let opcionales = ['fcmToken'];
+      // 'fcmToken' y 'ultimaPresencia' son OPCIONALES:
+      //  · fcmToken: la app lo escribe en su propio latido para que la Cloud
+      //    Function fanoutPago sepa a qué teléfono despertar.
+      //  · ultimaPresencia: latido de PRESENCIA rápido (Modo ciego). El latido
+      //    completo también puede refrescarlo de paso; el update presencia-solo
+      //    (presenciaSoloValida) lo escribe cada ~90 s por separado.
+      // Sigue siendo estricto (hasOnly) — se validan solo si están presentes.
+      let opcionales = ['fcmToken', 'ultimaPresencia'];
       return d.keys().hasAll(campos)
         && d.keys().hasOnly(campos.concat(opcionales))
         && (!('fcmToken' in d) || (d.fcmToken is string && d.fcmToken.size() <= 200))
+        && (!('ultimaPresencia' in d) || d.ultimaPresencia == request.time)
         && d.nombre is string && d.nombre.size() <= 60
         && d.capturando is bool
         && d.listenerConectado is bool
@@ -221,6 +226,21 @@ service cloud.firestore {
         && d.modelo is string && d.modelo.size() <= 60
         && d.versionApp is string && d.versionApp.size() <= 20
         && d.ultimoLatido == request.time;
+    }
+
+    // Latido de PRESENCIA rápido (Modo ciego). El teléfono capturador escribe
+    // SOLO el campo `ultimaPresencia` cada ~90 s (set con merge) mientras
+    // capturando==true y está en horario de negocio. Es un update ligero,
+    // separado del latido completo (cada varios minutos), para que el vigía
+    // (Function vigilarCiego) note en < umbral_seg que el capturador se calló.
+    //
+    // Baranda: este update toca EXACTAMENTE el campo ultimaPresencia y su valor
+    // es el sello del servidor (request.time), no una fecha que el cliente pueda
+    // inventar hacia el futuro para fingir presencia. El doc ya debe existir (es
+    // un merge sobre el latido); no crea el dispositivo desde cero.
+    function presenciaSoloValida() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ultimaPresencia'])
+        && request.resource.data.ultimaPresencia == request.time;
     }
 
     // Un pago solo es válido si:
@@ -516,14 +536,43 @@ service cloud.firestore {
 
       // Salud de los teléfonos del comercio. Cada uno escribe SOLO su latido;
       // el dueño puede limpiar el de un miembro que se fue.
+      //
+      // LECTURA (esMiembro): un miembro lee los docs de dispositivos HERMANOS
+      // del mismo comercio. El vigía de la app (Modo ciego) usa esto para leer
+      // la `ultimaPresencia` del capturador sin ser el capturador. Ya estaba
+      // permitido; no se duplica.
+      //
+      // ESCRITURA — dos caminos, ambos sobre el propio uid del dispositivo:
+      //   1. Latido COMPLETO (create o update): latidoValido() — telemetría.
+      //   2. Latido de PRESENCIA solo (update con merge): presenciaSoloValida()
+      //      — el capturador refresca únicamente ultimaPresencia cada ~90 s.
+      //      Solo es válido como UPDATE (el doc ya existe por el latido); no
+      //      crea el dispositivo. Se evalúa presenciaSoloValida() solo cuando ya
+      //      existe resource (rama de update), así latidoValido sigue rigiendo
+      //      el create.
       match /dispositivos/{uid} {
         allow read: if autenticado() && (esMiembro(comercioId) || esOperador());
-        allow create, update: if autenticado()
+        allow create: if autenticado()
           && request.auth.uid == uid
           && esMiembro(comercioId)
           && latidoValido();
+        allow update: if autenticado()
+          && request.auth.uid == uid
+          && esMiembro(comercioId)
+          && (latidoValido() || presenciaSoloValida());
         allow delete: if autenticado()
           && (request.auth.uid == uid || esDueno(comercioId));
+      }
+
+      // Periodos ciegos (Modo ciego): registro de cuándo el capturador dejó de
+      // latir presencia y cuándo se recuperó. Lo escribe SOLO la Function
+      // vigilarCiego con el Admin SDK (salta estas reglas), igual que el
+      // fan-out. Es la base de la futura Garantía de Aviso, así que el dueño y
+      // el operador lo LEEN, pero ningún cliente lo escribe (nadie fabrica ni
+      // borra un periodo ciego para inflar/ocultar la garantía).
+      match /periodosCiegos/{deviceUid} {
+        allow read: if autenticado() && (esMiembro(comercioId) || esOperador());
+        allow write: if false;
       }
 
       match /pagos/{pagoId} {

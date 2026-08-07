@@ -8,6 +8,7 @@ import pe.pagoya.app.core.BandejaNotificaciones
 import pe.pagoya.app.core.BilleteraParser
 import pe.pagoya.app.core.Enlaces
 import pe.pagoya.app.core.PreferenciasApariencia
+import pe.pagoya.app.core.PreferenciasBilleteras
 import pe.pagoya.app.core.RegistroPagos
 import pe.pagoya.app.nube.AppCheckPagoYa
 import pe.pagoya.app.servicio.VigilanteWorker
@@ -23,6 +24,7 @@ class PagoYaApp : Application() {
         BilleteraParser.cargar(this)
         RegistroPagos.cargar(this)
         PreferenciasApariencia.cargar(this)
+        PreferenciasBilleteras.cargar(this)
         BandejaNotificaciones.cargar(this)
         Anunciador.inicializar(this)
         // 2. Patrones desde la nube — si Yape cambia su texto, se corrige desde la

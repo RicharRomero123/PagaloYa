@@ -20,15 +20,15 @@ val hayFirma = propsFirma.getProperty("storeFile") != null
 
 android {
     namespace = "pe.pagoya.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "pe.pagoya.app"
         // Android 8.0+: cubre la casi totalidad de teléfonos de comercios en Perú
         minSdk = 26
-        targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        targetSdk = 36
+        versionCode = 3
+        versionName = "0.2.0"
     }
 
     signingConfigs {

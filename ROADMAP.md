@@ -10,6 +10,46 @@
 > Actualizado 3 de agosto de 2026 con `ESCALA.md` (ruta al 100 %) y
 > `CRECIMIENTO.md` (motores, etapas, garantías).
 
+## Bitácora de sesiones
+
+### 2026-08-08 — Multi-billetera, Modo ciego y release 0.3.0
+
+**Hecho hoy (todo commiteado en `dev`):**
+- **Billeteras nuevas: Prexpe (`air.PrexPeru`) y Lemon Cash (`com.applemoncash`)** —
+  patrones de parseo probados contra notificaciones reales (monto en título +
+  nombre en cuerpo, con lookahead y respaldo por monto), iconos en la lista de
+  pagos, y **publicadas en Remote Config** (`billeteras_json`) → llegan a los
+  teléfonos ya instalados **sin release**.
+- **Modo ciego completo (app + backend), desplegado a producción**: latido de
+  presencia del capturador, banner rojo + alerta hablada en los escuchas, push a
+  apps cerradas (Function programada `vigilarCiego` cada 2 min), y registro de
+  periodos ciegos (base de la Garantía de Aviso). Umbrales en Remote Config
+  (`ciego_umbral_seg`=240, `ciego_cadencia_seg`=90, horario 7–22).
+- **Config "Billeteras que escucho"** (pantalla en *Más*): activar/desactivar por
+  billetera, **todas activas por defecto** (modelo opt-out; billetera nueva de
+  Remote Config queda activa sola).
+- **Infra**: reglas Firestore + índices desplegados. **Remote Config ahora se
+  versiona** en `backend/remoteconfig.template.json` (antes estaba vacío).
+- **Release**: `versionCode` 3→**4**, `versionName` **0.3.0**. AAB firmado con la
+  clave de subida real en `app-android/pagoya-0.3.0-v4.aab`, **listo para Play**.
+- **Redes**: portada de Facebook en `docs/redes/portada-facebook.png`.
+
+**En vivo en producción** (`pagoya-45018`): Remote Config, reglas, índices y
+`vigilarCiego`. Las funciones de pago (`fanoutPago`, `trialAlCrearComercio`) no se
+tocaron.
+
+**Dónde continuamos (mañana):**
+- [ ] **Subir el AAB 0.3.0 a Google Play** — recomendado ir primero a *Prueba
+      interna* y validar en un teléfono real: que suene Prexpe/Lemon y que aparezca
+      el banner rojo del Modo ciego.
+- [ ] Del gap analysis, aún sin hacer: **(A)** campos `fuente`+`confianza` en `Pago`
+      + semáforo ✅/🔵/🔴; **(B)** hora pico + comparativo hoy/ayer/semana + total
+      mensual en Caja; **watchdog "horas sin pagos en horario"**; **subir el modo
+      aprendizaje al backend**.
+- [ ] Menor: `firebase-functions` desactualizado; migrar functions nodejs20→22
+      antes del 2026-10-30; limpiar imágenes GCR del último deploy.
+- [ ] Courier SaaS: proyecto aparte (VPS), pendiente que Richar pase la ruta local.
+
 ## Mapa del sistema
 
 ```
@@ -116,11 +156,11 @@ Cada fase técnica corresponde a una etapa de crecimiento de `CRECIMIENTO.md` §
 - [ ] **Guardián de Yape** (crítico): onboarding por marca (autostart Xiaomi/Samsung/
       Huawei/Oppo + batería sin restricción para Yape), detector de Yape en estado
       detenido con alerta hablada, y watchdog de horas sin pagos en horario de negocio
-- [ ] **Modo ciego** ← la mejora con mejor relación esfuerzo/valor del proyecto:
-  - [ ] Sin latido → banner rojo en **todos** los dispositivos escuchando
-  - [ ] Alerta hablada + push al dueño: *"dejé de escuchar tu Yape hace 3 minutos"*
-  - [ ] Registro de periodos ciegos (después sustenta la Garantía de Aviso)
-- [ ] Indicador de confianza por pago: ✅ confirmado · 🔵 probable · 🔴 ciego
+- [x] **Modo ciego** ← la mejora con mejor relación esfuerzo/valor del proyecto: *(2026-08-08, en producción)*
+  - [x] Sin latido → banner rojo en **todos** los dispositivos escuchando
+  - [x] Alerta hablada + push al dueño: *"dejé de escuchar tu Yape hace 3 minutos"* (Function `vigilarCiego`)
+  - [x] Registro de periodos ciegos (después sustenta la Garantía de Aviso)
+- [ ] Indicador de confianza por pago: ✅ confirmado · 🔵 probable · 🔴 ciego ← **próximo (gap A)**
 
 ### Reportes en la app (semanas 4–6)
 - [ ] La pestaña Caja lee el historial del comercio desde Firestore, no solo el

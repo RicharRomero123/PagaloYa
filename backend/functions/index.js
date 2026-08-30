@@ -212,6 +212,88 @@ exports.fanoutPago = onDocumentCreated(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 2b) notificarCourier — reenvía cada pago capturado al Courier SaaS (webhook).
+//
+//    Igual que fanoutPago, solo LEE un pago ya nacido de una notificación real
+//    (nunca lo crea). Si el comercio tiene configurada la integración con un
+//    courier en comercios/{id}.integracionCourier = { activo, url, orgId, secret },
+//    hace un POST firmado con HMAC-SHA256 sobre "orgId:monto:ref:ts" para que el
+//    ERP concilie el pago con el pedido/motorizado. El ERP es idempotente por
+//    `ref` (== pagoId, que ya es único: origenUid-timestamp-centavos), así que un
+//    reintento no duplica. Se manda `origenUid` para que el courier sepa de qué
+//    dispositivo/motorizado vino (billeteras propias) o caiga a monto+ventana.
+// ─────────────────────────────────────────────────────────────────────────────
+exports.notificarCourier = onDocumentCreated(
+  { ...opciones, document: "comercios/{comercioId}/pagos/{pagoId}" },
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const pago = snap.data();
+    const { comercioId, pagoId } = event.params;
+
+    const comercioSnap = await db.collection("comercios").doc(comercioId).get();
+    const integ = comercioSnap.get("integracionCourier");
+    if (
+      !integ ||
+      integ.activo !== true ||
+      !integ.url ||
+      !integ.orgId ||
+      !integ.secret
+    ) {
+      return; // comercio sin integración courier configurada
+    }
+
+    const crypto = require("crypto");
+    const monto = Number(pago.monto ?? 0);
+    const ref = pagoId; // idempotente
+    const ts = String(pago.timestamp ?? "");
+
+    // Firma HMAC-SHA256 sobre "orgId:monto:ref:ts" (contrato del ERP).
+    const base = `${integ.orgId}:${monto}:${ref}:${ts}`;
+    const firma = crypto
+      .createHmac("sha256", integ.secret)
+      .update(base)
+      .digest("hex");
+
+    const body = {
+      orgId: integ.orgId,
+      monto,
+      billetera: String(pago.billeteraId ?? ""),
+      pagador: String(pago.pagador ?? ""),
+      ref,
+      ts,
+      origenUid: String(pago.origenUid ?? ""),
+    };
+
+    try {
+      const res = await fetch(integ.url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-pagoya-signature": firma,
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        logger.error("courier webhook: respuesta no 2xx", {
+          comercioId,
+          pagoId,
+          status: res.status,
+        });
+      } else {
+        logger.info("courier webhook: enviado", { comercioId, pagoId });
+      }
+    } catch (err) {
+      logger.error("courier webhook: POST falló", {
+        comercioId,
+        pagoId,
+        error: err.message,
+      });
+    }
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 3) canjearReferido — programa "Casero trae Casero" (+15 días a ambos).
 //
 //    Callable v2. Lo llama el DUEÑO del comercio REFERIDO, con el código de 6

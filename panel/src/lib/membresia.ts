@@ -1,9 +1,9 @@
 import {
   Timestamp,
   collection,
-  deleteDoc,
   doc,
   getDocs,
+  increment,
   limit,
   orderBy,
   query,
@@ -160,20 +160,29 @@ export async function ajustarSuscripcion(datos: {
 }
 
 /**
- * Saca a un miembro/teléfono del comercio (borra comercios/{id}/miembros/{uid}).
+ * Saca a un miembro/teléfono del comercio (borra comercios/{id}/miembros/{uid})
+ * y devuelve el cupo bajando `comercios/{id}.numDispositivos` en 1, **en el
+ * mismo lote**.
  *
- * ⚠️ OJO — reglas: hoy `backend/firestore.rules` permite el delete de un
- * miembro solo al propio miembro (`request.auth.uid == uid`) o al dueño del
- * comercio (`esDueno(comercioId)`), NO a un operador. Para que el operador
- * pueda desvincular teléfonos desde este panel hace falta agregar
- * `|| esOperador()` a la regla de delete de miembros. Mientras eso no se
- * despliegue, esta llamada devolverá permission-denied y la UI lo informa.
+ * El decremento NO es opcional: la regla de delete de miembros en
+ * `backend/firestore.rules` exige que el MISMO WriteBatch baje numDispositivos
+ * en exactamente 1 (piso 1, el dueño siempre queda). Un delete suelto —sin
+ * tocar el contador— es rechazado con permission-denied. Por eso esto es un
+ * batch y no un deleteDoc.
+ *
+ * Las reglas ya permiten al operador desvincular a un TRABAJADOR (nunca al
+ * dueño); el panel solo muestra el botón "Quitar" en trabajadores.
  */
 export async function quitarMiembro(
   comercioId: string,
   uid: string,
 ): Promise<void> {
-  await deleteDoc(doc(db, "comercios", comercioId, "miembros", uid));
+  const lote = writeBatch(db);
+  lote.delete(doc(db, "comercios", comercioId, "miembros", uid));
+  lote.update(doc(db, "comercios", comercioId), {
+    numDispositivos: increment(-1),
+  });
+  await lote.commit();
 }
 
 /** Corta el plan de inmediato. El historial de cobros queda intacto. */

@@ -55,6 +55,14 @@ desde la consola) que setee `numDispositivos = (nº real de docs en miembros)` e
 cada comercio existente. Hasta que se corra, el tope no es fiable para comercios
 previos a este despliegue. Los comercios nuevos ya nacen correctos.
 
+> ✅ **HECHO (2026-08-30).** Backfill corrido vía REST de Firestore con el token
+> admin del CLI (bypass de reglas por IAM). 3 comercios legacy no tenían el
+> campo: Bodega→1, comercial Roal→2, pancho tiendas→5. Los 7 comercios ahora
+> cuadran (`numDispositivos` == nº real de miembros). Efecto colateral resuelto:
+> antes, unir un trabajador a un comercio legacy tiraba `PERMISSION_DENIED`
+> aunque hubiera cupo (el `increment(1)` sobre campo inexistente daba 1, no
+> `base+1`). Scripts en el scratchpad de la sesión.
+
 ### 2. Borrado de miembros: batch obligatorio (delete + increment(-1))
 Quién puede borrar un doc de `miembros`: uno mismo, el dueño, o **un operador
 solo si el doc es un `trabajador`** (nunca el dueño — desmantelaría el comercio;
@@ -69,6 +77,9 @@ salvo que el comercio se borre entero en el mismo lote.
   `delete(miembro)` + `increment(-1)` en un mismo batch. Solo trabajadores.
   Tests en `test-reglas.mjs`: operador quita trabajador con -1 (permitido),
   operador quita dueño (denegado), operador borra sin -1 (denegado).
+  > ✅ **HECHO (2026-08-30).** `panel/src/lib/membresia.ts` → `quitarMiembro`
+  > ahora hace el `WriteBatch` (delete miembro + `increment(-1)`). Antes hacía
+  > un `deleteDoc` suelto y la regla lo rechazaba con `permission-denied`.
 
 ### 3. Re-entrada de un miembro que ya existe
 `unirseConCodigo` no vuelve a incrementar si el uid ya es miembro, pero re-escribir

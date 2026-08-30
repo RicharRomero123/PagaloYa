@@ -95,10 +95,11 @@ export function FichaComercio({
         );
       })
       .catch(() => {
-        // El caso más probable es permission-denied: las reglas hoy no dejan
-        // al operador borrar miembros (ver quitarMiembro en lib/membresia).
+        // quitarMiembro borra el miembro y baja numDispositivos en un lote
+        // atómico (las reglas ya permiten al operador quitar trabajadores). Si
+        // aún así falla, suele ser conexión o que las reglas no están al día.
         setErrorMiembro(
-          "No se pudo quitar. Las reglas de Firestore todavía no permiten al operador desvincular teléfonos (falta agregar || esOperador() al delete de miembros).",
+          "No se pudo quitar el teléfono. Revisa tu conexión e inténtalo de nuevo.",
         );
       })
       .finally(() => setQuitandoUid(null));

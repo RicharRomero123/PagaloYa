@@ -86,6 +86,12 @@ class ServicioPrimerPlano : Service() {
         alcance.launch {
             runCatching {
                 val comercio = ComercioRepo.cargar() ?: return@launch
+                // Oír EN VIVO mi preferencia de escucha: si el operador me apaga
+                // la voz desde el panel, este teléfono se calla al toque sin
+                // reabrir la app. Solo baja el parlante; el historial y el
+                // reenvío no se tocan (anti-fake intacto). Idempotente: se
+                // resuelta el listener anterior si ya había uno.
+                ComercioRepo.escucharPreferencias(applicationContext)
                 // Ya hay comercio en memoria: arrancar el Modo ciego (la llamada
                 // de onStartCommand pudo caer con comercio=null en arranque frío).
                 // Idempotente: si ya estaba corriendo, no hace nada.

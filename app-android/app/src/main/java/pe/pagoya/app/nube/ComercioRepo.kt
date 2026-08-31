@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.tasks.await
@@ -92,7 +93,17 @@ object ComercioRepo {
     private val _comercio = MutableStateFlow<Comercio?>(null)
     val comercio: StateFlow<Comercio?> = _comercio
 
+    /**
+     * Registro del listener que oye mi propio doc de miembro para OBEDECER en
+     * vivo lo que el operador cambie desde el panel (ej. me apaga la voz). Se
+     * guarda para poder soltarlo (evitar duplicados y fugas al cerrar sesión).
+     */
+    private var registroPrefs: ListenerRegistration? = null
+
     fun limpiar() {
+        // Al cerrar sesión soltamos el oído remoto: si no, quedaría vivo
+        // apuntando al comercio anterior.
+        dejarDeEscucharPreferencias()
         _comercio.value = null
     }
 
@@ -506,6 +517,68 @@ object ComercioRepo {
             .addOnFailureListener {
                 Log.w(TAG, "No se sincronizó preferencia de escucha: ${it.message}")
             }
+    }
+
+    /**
+     * OBEDECE EN VIVO: oye MI documento de miembro y baja a este teléfono lo que
+     * el operador (o yo mismo desde otro lado) cambie de la preferencia de
+     * escucha. Ejemplo: el operador me apaga la voz desde el panel y este equipo
+     * se calla al toque, sin reabrir la app.
+     *
+     * Anti-fake, ojo: mutear —sea local o remoto— SOLO calla la voz de este
+     * teléfono. NO toca el historial ni el reenvío: el pago igual se capturó de
+     * una notificación REAL del sistema, se guardó en la Caja y le llegó a los
+     * demás equipos por push. Silenciar no borra ni inventa nada, solo baja el
+     * parlante de este aparato.
+     *
+     * Es de UNA sola vía: LEE de Firestore y ESCRIBE a SharedPreferences (vía
+     * PreferenciasVoz). JAMÁS llama a sincronizarEscucha desde aquí: eso armaría
+     * un bucle de escritura (yo escribo → el eco me vuelve → vuelvo a escribir…).
+     * El trabajador igual puede revertir desde su app: su toggle escribe a
+     * Firestore y el eco regresa con el MISMO valor, así que converge, no rebota.
+     *
+     * Defensivo: si falla (sin red, doc borrado), retorna sin drama. El SDK de
+     * Firestore ya cachea offline y reintenta la reconexión solito.
+     */
+    fun escucharPreferencias(context: Context) {
+        val uid = Sesion.uid ?: return
+        val comercioId = _comercio.value?.id ?: return
+        val appContext = context.applicationContext
+
+        // Si ya había un oído abierto, lo soltamos antes de abrir otro: así no
+        // duplicamos callbacks (arranque frío + onResume podrían llamar dos veces).
+        registroPrefs?.remove()
+
+        registroPrefs = db.collection("comercios").document(comercioId)
+            .collection("miembros").document(uid)
+            .addSnapshotListener { snap, err ->
+                // Falla con gracia: sin red, con error o doc inexistente, no
+                // hacemos nada. El SDK reintenta solo cuando vuelva la conexión.
+                if (err != null || snap == null || !snap.exists()) return@addSnapshotListener
+
+                // Espejamos SOLO los campos PRESENTES en el snapshot. Si un doc
+                // viejo no trae el campo, NO lo pisamos con un default: así el
+                // panel no borra sin querer una preferencia que el equipo eligió
+                // localmente y que aún no ha subido.
+                snap.getBoolean("silenciado")?.let {
+                    PreferenciasVoz.definirSilenciado(appContext, it)
+                }
+                snap.getBoolean("horarioActivo")?.let {
+                    PreferenciasVoz.definirHorarioActivo(appContext, it)
+                }
+                snap.getLong("horarioInicio")?.let {
+                    PreferenciasVoz.definirHoraInicio(appContext, it.toInt())
+                }
+                snap.getLong("horarioFin")?.let {
+                    PreferenciasVoz.definirHoraFin(appContext, it.toInt())
+                }
+            }
+    }
+
+    /** Suelta el oído remoto de preferencias (logout o teardown del servicio). */
+    fun dejarDeEscucharPreferencias() {
+        registroPrefs?.remove()
+        registroPrefs = null
     }
 
     /** true si es la primera vez que vemos este pago. */

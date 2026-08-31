@@ -501,12 +501,34 @@ service cloud.firestore {
             || (request.resource.data.rol == 'dueno'
                 && getAfter(/databases/$(database)/documents/comercios/$(comercioId)).data.duenoUid == request.auth.uid)
           );
-        // Solo el dueño habilita/deshabilita la captura de un miembro
-        // (caso real: un segundo teléfono con otro Yape del negocio).
+        // Dos caminos de update sobre el doc de miembro:
+        //
+        //   1. Solo el dueño habilita/deshabilita la captura de un miembro
+        //      (caso real: un segundo teléfono con otro Yape del negocio).
+        //
+        //   2. El PROPIO trabajador guarda SUS preferencias de escucha
+        //      (silencio y horario de la voz de su teléfono), que se espejan
+        //      en Firestore para que el operador las vea. Está acotado a esos 4
+        //      campos con diff().hasOnly(): así el miembro NUNCA puede
+        //      auto-ascenderse de rol, habilitarse la captura (puedeCapturar)
+        //      ni renombrarse; solo toca su propia configuración de escucha.
+        //      Horario en minutos del día (0..1439).
         allow update: if autenticado()
-          && esDueno(comercioId)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puedeCapturar'])
-          && request.resource.data.puedeCapturar is bool;
+          && (
+            (esDueno(comercioId)
+              && cambiaSolo(['puedeCapturar'])
+              && request.resource.data.puedeCapturar is bool)
+            || (request.auth.uid == uid
+                && cambiaSolo(['silenciado', 'horarioActivo', 'horarioInicio', 'horarioFin'])
+                && (!cambia('silenciado')     || request.resource.data.silenciado is bool)
+                && (!cambia('horarioActivo')  || request.resource.data.horarioActivo is bool)
+                && (!cambia('horarioInicio')  || (request.resource.data.horarioInicio is int
+                     && request.resource.data.horarioInicio >= 0
+                     && request.resource.data.horarioInicio <= 1439))
+                && (!cambia('horarioFin')     || (request.resource.data.horarioFin is int
+                     && request.resource.data.horarioFin >= 0
+                     && request.resource.data.horarioFin <= 1439)))
+          );
         // Quién puede sacar a un miembro:
         //   · uno mismo (salir del comercio),
         //   · el dueño (saca a cualquiera de su gente),

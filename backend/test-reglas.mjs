@@ -475,6 +475,84 @@ await prueba("dueño SÍ habilita un 2do teléfono de captura", assertSucceeds(
     puedeCapturar: true,
   })
 ));
+
+console.log("\n— PANEL: el OPERADOR mutea/desmutea la voz de cualquier miembro —");
+// Nueva puerta (3er camino del allow update): un operador del panel apaga o
+// enciende el mute (`silenciado`) de la voz de CUALQUIER miembro de CUALQUIER
+// comercio. Solo ese campo, nada más. Misma puerta esOperador() que ya usa el
+// panel para quitar teléfonos. El operador NO es miembro de este comercio.
+await prueba("(a) operador MUTEA a un miembro ajeno (silenciado=true)", assertSucceeds(
+  updateDoc(doc(dbOperador, "comercios", comercioId, "miembros", TRABAJADOR), {
+    silenciado: true,
+  })
+));
+await prueba("(a) operador DESMUTEA a un miembro ajeno (silenciado=false)", assertSucceeds(
+  updateDoc(doc(dbOperador, "comercios", comercioId, "miembros", TRABAJADOR), {
+    silenciado: false,
+  })
+));
+// Un operador raso (nivel 'operador', no 'dueno') también puede: la puerta es
+// esOperador(), no esDuenoPagoYa().
+await prueba("(a) un operador raso también mutea (esOperador basta)", assertSucceeds(
+  updateDoc(doc(dbEmpleado, "comercios", comercioId, "miembros", TRABAJADOR), {
+    silenciado: true,
+  })
+));
+// (b) el operador NO puede colar OTROS campos junto a `silenciado`.
+await prueba("(b) operador NO cuela rol junto a silenciado", assertFails(
+  updateDoc(doc(dbOperador, "comercios", comercioId, "miembros", TRABAJADOR), {
+    silenciado: false, rol: "dueno",
+  })
+));
+await prueba("(b) operador NO cuela puedeCapturar junto a silenciado", assertFails(
+  updateDoc(doc(dbOperador, "comercios", comercioId, "miembros", TRABAJADOR), {
+    silenciado: false, puedeCapturar: false,
+  })
+));
+// Nota: se usan valores que DIFIEREN de los actuales en AMBOS campos, para que
+// el diff() contenga los dos y no colapse a un solo cambio real (silenciado
+// quedó en true por el raso; horarioActivo quedó en true por el bloque previo).
+await prueba("(b) operador NO cuela horarioActivo junto a silenciado", assertFails(
+  updateDoc(doc(dbOperador, "comercios", comercioId, "miembros", TRABAJADOR), {
+    silenciado: false, horarioActivo: false,
+  })
+));
+// Dejamos silenciado en un valor conocido (false) para que los intentos de
+// abajo sean CAMBIOS REALES: si escriben el mismo valor, el diff queda vacío y
+// un no-op no prueba nada (pasaría por cualquier rama con cambiaSolo).
+await prueba("(c-prep) operador fija silenciado=false (estado conocido)", assertSucceeds(
+  updateDoc(doc(dbOperador, "comercios", comercioId, "miembros", TRABAJADOR), {
+    silenciado: false,
+  })
+));
+// (c) un NO-operador no puede escribir `silenciado` en un doc que no es suyo.
+await prueba("(c) intruso NO mutea a un miembro ajeno", assertFails(
+  updateDoc(doc(dbIntruso, "comercios", comercioId, "miembros", TRABAJADOR), {
+    silenciado: true,
+  })
+));
+await prueba("(c) el dueño del comercio NO mutea a otro miembro (no es su preferencia)", assertFails(
+  updateDoc(doc(dbDueno, "comercios", comercioId, "miembros", TRABAJADOR), {
+    silenciado: true,
+  })
+));
+await prueba("(c) un miembro distinto NO mutea a otro (solo su propio doc)", assertFails(
+  updateDoc(doc(dbTrabajador, "comercios", comercioId, "miembros", DUENO), {
+    silenciado: true,
+  })
+));
+// (d) `silenciado` no-bool es rechazado incluso para el operador.
+await prueba("(d) operador con silenciado no-bool rechazado", assertFails(
+  updateDoc(doc(dbOperador, "comercios", comercioId, "miembros", TRABAJADOR), {
+    silenciado: "si",
+  })
+));
+// Dejar el miembro desmuteado para no arrastrar estado a bloques siguientes.
+await prueba("(limpieza) operador deja al miembro desmuteado", assertSucceeds(
+  updateDoc(doc(dbOperador, "comercios", comercioId, "miembros", TRABAJADOR), {
+    silenciado: false,
+  })
+));
 await prueba("ya habilitado, el trabajador SÍ sube pagos", assertSucceeds(
   subirPago(dbTrabajador, TRABAJADOR, comercioId)
 ));

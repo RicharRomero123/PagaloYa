@@ -513,6 +513,14 @@ service cloud.firestore {
         //      auto-ascenderse de rol, habilitarse la captura (puedeCapturar)
         //      ni renombrarse; solo toca su propia configuración de escucha.
         //      Horario en minutos del día (0..1439).
+        //
+        //   3. Un OPERADOR del panel apaga/enciende el mute de la voz de
+        //      CUALQUIER miembro de CUALQUIER comercio, pero SOLO el campo
+        //      `silenciado` (cambiaSolo(['silenciado']) + is bool). Nada más:
+        //      ni rol, ni puedeCapturar, ni nombre, ni horario. Nivel esOperador()
+        //      (cualquier operador activo), la MISMA puerta que ya usan otras
+        //      acciones del panel sobre miembros (p. ej. quitar un trabajador,
+        //      abajo en allow delete).
         allow update: if autenticado()
           && (
             (esDueno(comercioId)
@@ -528,6 +536,9 @@ service cloud.firestore {
                 && (!cambia('horarioFin')     || (request.resource.data.horarioFin is int
                      && request.resource.data.horarioFin >= 0
                      && request.resource.data.horarioFin <= 1439)))
+            || (esOperador()
+                && cambiaSolo(['silenciado'])
+                && request.resource.data.silenciado is bool)
           );
         // Quién puede sacar a un miembro:
         //   · uno mismo (salir del comercio),

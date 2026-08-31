@@ -66,6 +66,10 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateY(24px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        deslizar: {
+          "0%": { opacity: "0", transform: "translateX(26px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
         brillo: {
           "100%": { transform: "translateX(100%)" },
         },
@@ -74,6 +78,7 @@ const config: Config = {
         aparecer: "aparecer 0.25s ease-out both",
         subir: "subir 0.28s cubic-bezier(0.22,1,0.36,1) both",
         "subir-hoja": "subir-hoja 0.32s cubic-bezier(0.22,1,0.36,1) both",
+        deslizar: "deslizar 0.34s cubic-bezier(0.22,1,0.36,1) both",
       },
     },
   },

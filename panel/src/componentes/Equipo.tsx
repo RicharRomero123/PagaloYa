@@ -18,6 +18,7 @@ import {
   rechazarSolicitud,
   type Solicitud,
 } from "@/lib/solicitudes";
+import { Hoja } from "./Hoja";
 
 export function Equipo({
   miUid,
@@ -63,14 +64,6 @@ export function Equipo({
     if (soyDueno) void recargarSolicitudes();
   }, [soyDueno]);
 
-  useEffect(() => {
-    const alTeclear = (e: KeyboardEvent) => {
-      if (e.key === "Escape") alCerrar();
-    };
-    window.addEventListener("keydown", alTeclear);
-    return () => window.removeEventListener("keydown", alTeclear);
-  }, [alCerrar]);
-
   async function ejecutar(accion: () => Promise<void>, falla: string) {
     setGuardando(true);
     setError(null);
@@ -85,28 +78,9 @@ export function Equipo({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex">
-      <button
-        type="button"
-        aria-label="Cerrar"
-        onClick={alCerrar}
-        className="flex-1 bg-azul/30"
-      />
-      <aside className="h-full w-full overflow-y-auto bg-crema sm:max-w-md">
-        <header className="sticky top-0 flex items-center justify-between bg-crema px-4 py-4">
-          <h2 className="text-xl font-black">Equipo de PagoYa</h2>
-          <button
-            type="button"
-            onClick={alCerrar}
-            className="rounded-full bg-white px-3 py-1.5 text-sm font-bold text-texto-medio"
-          >
-            Cerrar
-          </button>
-        </header>
-
-        <div className="space-y-3 px-4 pb-16">
-          {soyDueno && (
-            <section className="rounded-2xl bg-white p-4">
+    <Hoja titulo="Equipo de PagoYa" alCerrar={alCerrar}>
+      {soyDueno && (
+        <section className="tarjeta p-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-black">Solicitudes de acceso</h3>
                 {solicitudes && solicitudes.length > 0 && (
@@ -160,7 +134,7 @@ export function Equipo({
           )}
 
           {soyDueno && (
-            <section className="rounded-2xl bg-white p-4">
+            <section className="tarjeta p-4">
               <h3 className="font-black">Dar de alta a alguien</h3>
               <p className="mt-1 text-sm text-texto-medio">
                 Pídele que entre al panel y te dicte el código que le sale en
@@ -176,7 +150,7 @@ export function Equipo({
                     value={uid}
                     onChange={(e) => setUid(e.target.value)}
                     placeholder="Ej. k3Jd8fH2mNq..."
-                    className="mt-1 h-11 w-full rounded-xl border border-borde px-3 font-mono text-sm outline-none focus:border-naranja"
+                    className="campo mt-1 font-mono text-sm"
                   />
                 </label>
                 <label className="block">
@@ -187,7 +161,7 @@ export function Equipo({
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
                     placeholder="María Quispe"
-                    className="mt-1 h-11 w-full rounded-xl border border-borde px-3 outline-none focus:border-naranja"
+                    className="campo mt-1"
                   />
                 </label>
 
@@ -197,10 +171,10 @@ export function Equipo({
                       key={n}
                       type="button"
                       onClick={() => setNivel(n)}
-                      className={`flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition ${
+                      className={`flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-all active:scale-95 ${
                         nivel === n
-                          ? "bg-naranja text-white"
-                          : "bg-humo text-texto-medio hover:bg-naranja-suave"
+                          ? "bg-naranja-relieve text-white shadow-naranja"
+                          : "border border-borde bg-white text-texto-medio hover:border-naranja/50 hover:text-azul"
                       }`}
                     >
                       {ETIQUETA_NIVEL[n]}
@@ -234,7 +208,7 @@ export function Equipo({
                       setNivel("operador");
                     }, "No se pudo dar de alta. Revisa que el código esté bien copiado.");
                   }}
-                  className="h-12 w-full rounded-xl bg-naranja font-bold text-white transition hover:bg-naranja-hondo disabled:opacity-50"
+                  className="btn-primario h-12 w-full"
                 >
                   {guardando ? "Guardando…" : "Dar acceso"}
                 </button>
@@ -242,7 +216,7 @@ export function Equipo({
             </section>
           )}
 
-          <section className="rounded-2xl bg-white p-4">
+          <section className="tarjeta p-4">
             <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-texto-tenue">
               Con acceso al panel
             </h3>
@@ -281,14 +255,12 @@ export function Equipo({
             </ul>
           </section>
 
-          <p className="px-1 text-xs text-texto-tenue">
-            Nadie puede editarse ni borrarse a sí mismo, ni siquiera un dueño. Es
-            para que el último dueño no se quede fuera por error. Si hace falta,
-            se arregla desde la consola de Firebase.
-          </p>
-        </div>
-      </aside>
-    </div>
+      <p className="px-1 text-xs text-texto-tenue">
+        Nadie puede editarse ni borrarse a sí mismo, ni siquiera un dueño. Es
+        para que el último dueño no se quede fuera por error. Si hace falta, se
+        arregla desde la consola de Firebase.
+      </p>
+    </Hoja>
   );
 }
 
@@ -306,8 +278,8 @@ function FilaSolicitud({
   const [nivel, setNivel] = useState<NivelOperador>("operador");
 
   return (
-    <li className="rounded-xl bg-humo p-3">
-      <p className="font-bold">{solicitud.nombre}</p>
+    <li className="rounded-xl border border-borde bg-white p-3 shadow-suave">
+      <p className="font-bold text-azul">{solicitud.nombre}</p>
       {solicitud.email && (
         <p className="truncate text-xs text-texto-tenue">{solicitud.email}</p>
       )}
@@ -324,10 +296,10 @@ function FilaSolicitud({
             key={n}
             type="button"
             onClick={() => setNivel(n)}
-            className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold transition ${
+            className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold transition-all active:scale-95 ${
               nivel === n
-                ? "bg-naranja text-white"
-                : "bg-white text-texto-medio hover:bg-naranja-suave"
+                ? "bg-naranja-relieve text-white shadow-naranja"
+                : "border border-borde bg-crema text-texto-medio hover:text-azul"
             }`}
           >
             {ETIQUETA_NIVEL[n]}
@@ -340,7 +312,7 @@ function FilaSolicitud({
           type="button"
           disabled={ocupado}
           onClick={() => alAceptar(nivel)}
-          className="flex-1 rounded-lg bg-naranja px-3 py-2 text-sm font-bold text-white transition hover:bg-naranja-hondo disabled:opacity-50"
+          className="btn-primario h-10 flex-1"
         >
           Aceptar
         </button>
@@ -352,7 +324,7 @@ function FilaSolicitud({
               return;
             alRechazar();
           }}
-          className="rounded-lg bg-white px-3 py-2 text-sm font-bold text-rojo-alerta transition hover:bg-humo disabled:opacity-50"
+          className="btn-borde h-10 text-rojo-alerta hover:border-rojo-alerta hover:bg-rojo-suave"
         >
           Rechazar
         </button>

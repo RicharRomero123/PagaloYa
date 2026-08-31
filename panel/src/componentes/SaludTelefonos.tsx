@@ -42,21 +42,22 @@ export function SaludTelefonos({
 
   if (conProblemas.length === 0) {
     return (
-      <p className="mt-4 rounded-2xl bg-verde-suave px-4 py-3 text-sm font-bold text-verde-ok">
-        ✅ Los {dispositivos.length} teléfonos están escuchando bien.
+      <p className="mt-4 flex items-center gap-2 rounded-card border border-verde-ok/20 bg-verde-suave px-4 py-3 text-sm font-bold text-verde-ok shadow-suave">
+        <span className="text-base">✅</span> Los {dispositivos.length} teléfonos
+        están escuchando bien.
       </p>
     );
   }
 
   return (
-    <section className="mt-4 overflow-hidden rounded-2xl border border-rojo-alerta/30 bg-white">
-      <h2 className="bg-rojo-suave px-4 py-3 text-sm font-black text-rojo-alerta">
+    <section className="mt-4 overflow-hidden rounded-card border border-rojo-alerta/30 bg-white shadow-suave">
+      <h2 className="flex items-center gap-2 bg-rojo-suave px-4 py-3 text-sm font-black text-rojo-alerta">
         📵 {conProblemas.length}{" "}
         {conProblemas.length === 1
           ? "teléfono necesita atención"
           : "teléfonos necesitan atención"}
       </h2>
-      <ul className="divide-y divide-borde">
+      <ul className="divide-y divide-borde/70">
         {conProblemas.map(({ dispositivo: d, salud, detalle }) => (
           <li
             key={`${d.comercioId}-${d.uid}`}
@@ -66,10 +67,10 @@ export function SaludTelefonos({
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") alAbrirComercio(d.comercioId);
             }}
-            className="flex cursor-pointer flex-wrap items-center gap-3 px-4 py-3 transition hover:bg-humo"
+            className="flex cursor-pointer flex-wrap items-center gap-3 px-4 py-3 transition hover:bg-crema"
           >
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold">
+              <p className="truncate text-sm font-bold text-azul">
                 {nombres.get(d.comercioId) ?? "Comercio"}
                 <span className="font-normal text-texto-medio"> · {d.nombre}</span>
               </p>
@@ -77,9 +78,7 @@ export function SaludTelefonos({
                 {detalle} · {d.marca} {d.modelo} · latido {haceRato(d.ultimoLatido)}
               </p>
             </div>
-            <span
-              className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${COLOR_SALUD[salud]}`}
-            >
+            <span className={`pastilla shrink-0 ${COLOR_SALUD[salud]}`}>
               {ETIQUETA_SALUD[salud]}
             </span>
           </li>

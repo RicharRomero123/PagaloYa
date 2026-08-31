@@ -185,6 +185,24 @@ export async function quitarMiembro(
   await lote.commit();
 }
 
+/**
+ * Enciende o apaga la voz de un teléfono desde el panel: escribe SOLO el campo
+ * `silenciado` en `comercios/{id}/miembros/{uid}`. Es una cortesía del operador
+ * (p. ej. silenciar un teléfono que quedó sonando en un local vacío); el propio
+ * trabajador puede volver a activarla desde su app cuando quiera.
+ *
+ * Las reglas permiten al operador tocar únicamente `silenciado` de un miembro.
+ */
+export async function establecerSilenciado(
+  comercioId: string,
+  uid: string,
+  silenciado: boolean,
+): Promise<void> {
+  await updateDoc(doc(db, "comercios", comercioId, "miembros", uid), {
+    silenciado,
+  });
+}
+
 /** Corta el plan de inmediato. El historial de cobros queda intacto. */
 export async function cortarPlan(comercioId: string): Promise<Suscripcion> {
   const suscripcion: Suscripcion = {

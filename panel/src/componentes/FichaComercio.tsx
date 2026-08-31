@@ -20,6 +20,7 @@ import { fechaCorta, haceOEn, haceRato, soles } from "@/lib/formato";
 import {
   ETIQUETA_METODO,
   cortarPlan,
+  establecerSilenciado,
   listarCobros,
   listarMiembros,
   minutosAHora,
@@ -54,6 +55,7 @@ export function FichaComercio({
   const [telefonos, setTelefonos] = useState<Dispositivo[] | null>(null);
   const [cortando, setCortando] = useState(false);
   const [quitandoUid, setQuitandoUid] = useState<string | null>(null);
+  const [silenciandoUid, setSilenciandoUid] = useState<string | null>(null);
   const [errorMiembro, setErrorMiembro] = useState<string | null>(null);
 
   useEffect(() => {
@@ -95,6 +97,32 @@ export function FichaComercio({
         );
       })
       .finally(() => setQuitandoUid(null));
+  }
+
+  function alternarSilenciado(m: Miembro) {
+    const nuevo = !m.silenciado;
+    // Optimista: pinto el cambio de una vez y lo revierto solo si la escritura
+    // falla. Así el toggle se siente instantáneo aunque la red esté lenta.
+    setSilenciandoUid(m.uid);
+    setErrorMiembro(null);
+    setMiembros((previos) =>
+      (previos ?? []).map((x) =>
+        x.uid === m.uid ? { ...x, silenciado: nuevo } : x,
+      ),
+    );
+    void establecerSilenciado(comercio.id, m.uid, nuevo)
+      .catch(() => {
+        // Revierto al estado que tenía antes de pulsar.
+        setMiembros((previos) =>
+          (previos ?? []).map((x) =>
+            x.uid === m.uid ? { ...x, silenciado: m.silenciado } : x,
+          ),
+        );
+        setErrorMiembro(
+          "No se pudo cambiar la voz de ese teléfono. Revisa tu conexión e inténtalo de nuevo.",
+        );
+      })
+      .finally(() => setSilenciandoUid(null));
   }
 
   return (
@@ -277,18 +305,32 @@ export function FichaComercio({
                   </button>
                 )}
               </div>
-              {/* Cómo anuncia este teléfono: lo controla el propio dueño desde
-                  la app; aquí solo lo mostramos. */}
+              {/* Cómo anuncia este teléfono. El silenciado es accionable desde
+                  el panel (cortesía del operador); el trabajador puede volver a
+                  activar la voz desde su app. El horario es solo lectura. */}
               <div className="flex w-full flex-wrap items-center gap-1.5">
-                <span
-                  className={`pastilla ${
+                <button
+                  type="button"
+                  disabled={silenciandoUid !== null}
+                  onClick={() => alternarSilenciado(m)}
+                  aria-pressed={m.silenciado}
+                  title={
                     m.silenciado
-                      ? "bg-rojo-suave text-rojo-alerta"
-                      : "bg-humo text-texto-medio"
+                      ? "Encender la voz de este teléfono. El trabajador también puede activarla desde su app."
+                      : "Apagar la voz de este teléfono. El trabajador puede volver a activarla desde su app."
+                  }
+                  className={`pastilla transition disabled:opacity-50 ${
+                    m.silenciado
+                      ? "bg-rojo-suave text-rojo-alerta hover:bg-rojo-alerta hover:text-white"
+                      : "bg-humo text-texto-medio hover:bg-borde"
                   }`}
                 >
-                  {m.silenciado ? "🔇 Silenciado" : "🔊 Suena"}
-                </span>
+                  {silenciandoUid === m.uid
+                    ? "Guardando…"
+                    : m.silenciado
+                      ? "🔇 Silenciado"
+                      : "🔊 Suena"}
+                </button>
                 <span
                   className={`pastilla ${
                     m.horarioActivo

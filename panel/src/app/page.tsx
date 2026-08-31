@@ -14,8 +14,9 @@ export default function Pagina() {
   switch (estado) {
     case "cargando":
       return (
-        <main className="flex min-h-screen items-center justify-center">
-          <p className="text-sm text-texto-medio">Cargando…</p>
+        <main className="flex min-h-[100dvh] flex-col items-center justify-center gap-4">
+          <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-borde border-t-naranja" />
+          <p className="text-sm font-semibold text-texto-medio">Cargando…</p>
         </main>
       );
     case "fuera":
@@ -35,8 +36,8 @@ export default function Pagina() {
 
 function FaltaConfiguracion() {
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="max-w-md rounded-2xl bg-white p-6">
+    <main className="flex min-h-[100dvh] items-center justify-center px-4">
+      <div className="tarjeta max-w-md p-6 shadow-media">
         <h1 className="text-xl font-black text-azul">Falta configurar Firebase</h1>
         <p className="mt-2 text-sm text-texto-medio">
           Copia <code className="font-mono">.env.local.ejemplo</code> como{" "}

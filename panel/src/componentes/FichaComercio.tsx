@@ -22,6 +22,7 @@ import {
   cortarPlan,
   listarCobros,
   listarMiembros,
+  minutosAHora,
   quitarMiembro,
   type Cobro,
   type Miembro,
@@ -244,7 +245,10 @@ export function FichaComercio({
         )}
         <ul className="space-y-2.5">
           {(miembros ?? []).map((m) => (
-            <li key={m.uid} className="flex items-center justify-between gap-3">
+            <li
+              key={m.uid}
+              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5"
+            >
               <span className="min-w-0 truncate text-sm text-azul">
                 {m.nombre}
                 <span className="text-texto-tenue">
@@ -272,6 +276,30 @@ export function FichaComercio({
                     {quitandoUid === m.uid ? "Quitando…" : "Quitar"}
                   </button>
                 )}
+              </div>
+              {/* Cómo anuncia este teléfono: lo controla el propio dueño desde
+                  la app; aquí solo lo mostramos. */}
+              <div className="flex w-full flex-wrap items-center gap-1.5">
+                <span
+                  className={`pastilla ${
+                    m.silenciado
+                      ? "bg-rojo-suave text-rojo-alerta"
+                      : "bg-humo text-texto-medio"
+                  }`}
+                >
+                  {m.silenciado ? "🔇 Silenciado" : "🔊 Suena"}
+                </span>
+                <span
+                  className={`pastilla ${
+                    m.horarioActivo
+                      ? "bg-ambar-suave text-ambar-aviso"
+                      : "bg-humo text-texto-medio"
+                  }`}
+                >
+                  {m.horarioActivo
+                    ? `🕐 ${minutosAHora(m.horarioInicio)}–${minutosAHora(m.horarioFin)}`
+                    : "🕐 A toda hora"}
+                </span>
               </div>
             </li>
           ))}

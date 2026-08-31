@@ -226,7 +226,25 @@ export type Miembro = {
   nombre: string;
   rol: string;
   puedeCapturar: boolean;
+  /** Silenciado por el propio teléfono desde la app. Ausente = no silenciado. */
+  silenciado: boolean;
+  /** ¿Anuncia solo dentro de un horario? Ausente = anuncia a toda hora. */
+  horarioActivo: boolean;
+  /** Inicio del horario en minutos del día (0..1439). Default 08:00. */
+  horarioInicio: number;
+  /** Fin del horario en minutos del día (0..1439). Default 22:00. */
+  horarioFin: number;
 };
+
+/** Minutos del día (0..1439) → "HH:mm". Defensivo con basura fuera de rango. */
+export function minutosAHora(m: number): string {
+  const min = Number.isFinite(m) ? Math.max(0, Math.min(1439, Math.trunc(m))) : 0;
+  return (
+    String(Math.floor(min / 60)).padStart(2, "0") +
+    ":" +
+    String(min % 60).padStart(2, "0")
+  );
+}
 
 export async function listarMiembros(comercioId: string): Promise<Miembro[]> {
   const docs = await getDocs(
@@ -240,6 +258,13 @@ export async function listarMiembros(comercioId: string): Promise<Miembro[]> {
       nombre: (datos.nombre as string) ?? "Sin nombre",
       rol,
       puedeCapturar: (datos.puedeCapturar as boolean) ?? rol === "dueno",
+      // Campos nuevos que la app Android escribe; miembros viejos no los tienen.
+      silenciado: (datos.silenciado as boolean) ?? false,
+      horarioActivo: (datos.horarioActivo as boolean) ?? false,
+      horarioInicio:
+        typeof datos.horarioInicio === "number" ? datos.horarioInicio : 480,
+      horarioFin:
+        typeof datos.horarioFin === "number" ? datos.horarioFin : 1320,
     };
   });
 }

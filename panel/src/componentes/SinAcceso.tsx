@@ -47,9 +47,9 @@ export function SinAcceso({ usuario }: { usuario: User | null }) {
   }, [usuario]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm text-center">
-        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-humo text-4xl">
+    <main className="flex min-h-[100dvh] items-center justify-center px-4 py-10">
+      <div className="w-full max-w-sm animate-subir text-center">
+        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-[1.4rem] bg-humo text-4xl shadow-suave">
           🔒
         </div>
         <h1 className="text-2xl font-black text-azul">Esta cuenta no tiene acceso</h1>
@@ -71,7 +71,7 @@ export function SinAcceso({ usuario }: { usuario: User | null }) {
             <summary className="cursor-pointer text-xs font-bold text-texto-tenue">
               ¿Prefieren darte el acceso a mano? Muestra tu código
             </summary>
-            <div className="mt-2 rounded-xl bg-white p-4 text-sm">
+            <div className="tarjeta mt-2 p-4 text-sm">
               <p className="text-texto-tenue">Entraste como</p>
               <p className="font-bold">{usuario.email ?? usuario.uid}</p>
 
@@ -100,7 +100,7 @@ export function SinAcceso({ usuario }: { usuario: User | null }) {
         <button
           type="button"
           onClick={() => void salir()}
-          className="mt-6 h-12 w-full rounded-xl bg-naranja font-bold text-white transition hover:bg-naranja-hondo"
+          className="btn-primario mt-6 h-12 w-full"
         >
           Salir
         </button>
@@ -129,7 +129,7 @@ function BloqueEquipo({
   }
 
   return (
-    <div className="mt-6 rounded-2xl bg-white p-4 text-left">
+    <div className="tarjeta mt-6 p-4 text-left">
       <h2 className="font-black text-azul">¿Eres del equipo? Postula acá</h2>
       <p className="mt-1 text-sm text-texto-medio">
         Deja tus datos y un dueño te da el visto bueno. Nadie se mete solito.
@@ -144,7 +144,7 @@ function BloqueEquipo({
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             placeholder="María Quispe"
-            className="mt-1 h-11 w-full rounded-xl border border-borde px-3 outline-none focus:border-naranja"
+            className="campo mt-1"
           />
         </label>
         <label className="block">
@@ -155,7 +155,7 @@ function BloqueEquipo({
             value={notaRol}
             onChange={(e) => setNotaRol(e.target.value)}
             placeholder="Cobranzas de la zona sur"
-            className="mt-1 h-11 w-full rounded-xl border border-borde px-3 outline-none focus:border-naranja"
+            className="campo mt-1"
           />
         </label>
 
@@ -192,7 +192,7 @@ function BloqueEquipo({
               })
               .finally(() => setEnviando(false));
           }}
-          className="h-12 w-full rounded-xl bg-naranja font-bold text-white transition hover:bg-naranja-hondo disabled:opacity-50"
+          className="btn-primario h-12 w-full"
         >
           {enviando ? "Enviando…" : "Postular al equipo"}
         </button>

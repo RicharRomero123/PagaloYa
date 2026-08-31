@@ -1,14 +1,17 @@
 // Cloud Functions de PagoYa (firebase-functions v2, CommonJS).
 //
 // Filosofía de costos (plan Blaze, pero apuntando a NO salir del free tier):
-//   - Solo TRES funciones, todas de baja frecuencia (una por comercio creado,
-//     una por pago capturado, una por referido canjeado).
+//   - Funciones de baja frecuencia disparadas por evento (una por comercio
+//     creado, una por pago capturado, callables de referido/campaña) MÁS una
+//     programada de Modo ciego cada 2 min.
 //   - Lo que YA vive gratis en las reglas de Firestore se queda ahí y NO se
 //     migra a Functions: la degradación de plan por fecha (planEfectivo) y el
 //     tope de dispositivos son puro Security Rules, sin invocaciones.
 //   - Estimación de invocaciones/mes (ver README de functions más abajo):
-//     con 20 comercios beta y ~150 pagos/comercio/mes ≈ 3 000 invocaciones/mes,
-//     contra 2 000 000 gratis. Sobra muchísimo margen.
+//     con 20 comercios beta y ~150 pagos/comercio/mes ≈ 3 000 invocaciones por
+//     eventos + la programada (cada 2 min = ~21 900/mes), contra 2 000 000
+//     gratis. Sobra muchísimo margen. La programada hace un collection-group
+//     query que en operación normal trae 0 docs (≈0 reads).
 //
 // Regla de oro anti-fake (CLAUDE.md): estas funciones NUNCA crean pagos. El
 // fan-out solo LEE un pago que ya nació de una notificación real capturada por
@@ -17,8 +20,9 @@
 
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 const logger = require("firebase-functions/logger");
 
@@ -33,6 +37,19 @@ const opciones = { region: REGION };
 const DIA_MS = 24 * 60 * 60 * 1000;
 const TRIAL_DIAS = 30;
 const PREMIO_REFERIDO_DIAS = 15;
+
+// ── Modo ciego (umbrales) ─────────────────────────────────────────────────────
+// Defaults idénticos a los de Remote Config (ciego_*). El proyecto NO gestiona
+// Remote Config desde backend/ (la app lo lee del lado cliente), así que la
+// Function usa estos defaults locales como fuente de verdad del servidor. Si
+// algún día se centraliza RC en el servidor, leerlos aquí con el Admin SDK.
+const CIEGO_UMBRAL_SEG = 240; // sin presencia > 4 min ⇒ el capturador se calló.
+const CIEGO_HORARIO_INICIO = 7; // hora local (America/Lima) en que empieza a vigilar.
+const CIEGO_HORARIO_FIN = 22; // hora local en que deja de vigilar.
+
+// Perú no usa horario de verano: America/Lima es UTC-5 fijo. Basta un offset
+// constante para sacar la "hora local" sin arrastrar una lib de zonas horarias.
+const LIMA_OFFSET_HORAS = -5;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1) trialAlCrearComercio — regala 30 días de Caserito al nacer un comercio.
@@ -189,6 +206,88 @@ exports.fanoutPago = onDocumentCreated(
       logger.info("fanout: tokens muertos limpiados", {
         comercioId,
         limpiados: limpiezas.length,
+      });
+    }
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2b) notificarCourier — reenvía cada pago capturado al Courier SaaS (webhook).
+//
+//    Igual que fanoutPago, solo LEE un pago ya nacido de una notificación real
+//    (nunca lo crea). Si el comercio tiene configurada la integración con un
+//    courier en comercios/{id}.integracionCourier = { activo, url, orgId, secret },
+//    hace un POST firmado con HMAC-SHA256 sobre "orgId:monto:ref:ts" para que el
+//    ERP concilie el pago con el pedido/motorizado. El ERP es idempotente por
+//    `ref` (== pagoId, que ya es único: origenUid-timestamp-centavos), así que un
+//    reintento no duplica. Se manda `origenUid` para que el courier sepa de qué
+//    dispositivo/motorizado vino (billeteras propias) o caiga a monto+ventana.
+// ─────────────────────────────────────────────────────────────────────────────
+exports.notificarCourier = onDocumentCreated(
+  { ...opciones, document: "comercios/{comercioId}/pagos/{pagoId}" },
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const pago = snap.data();
+    const { comercioId, pagoId } = event.params;
+
+    const comercioSnap = await db.collection("comercios").doc(comercioId).get();
+    const integ = comercioSnap.get("integracionCourier");
+    if (
+      !integ ||
+      integ.activo !== true ||
+      !integ.url ||
+      !integ.orgId ||
+      !integ.secret
+    ) {
+      return; // comercio sin integración courier configurada
+    }
+
+    const crypto = require("crypto");
+    const monto = Number(pago.monto ?? 0);
+    const ref = pagoId; // idempotente
+    const ts = String(pago.timestamp ?? "");
+
+    // Firma HMAC-SHA256 sobre "orgId:monto:ref:ts" (contrato del ERP).
+    const base = `${integ.orgId}:${monto}:${ref}:${ts}`;
+    const firma = crypto
+      .createHmac("sha256", integ.secret)
+      .update(base)
+      .digest("hex");
+
+    const body = {
+      orgId: integ.orgId,
+      monto,
+      billetera: String(pago.billeteraId ?? ""),
+      pagador: String(pago.pagador ?? ""),
+      ref,
+      ts,
+      origenUid: String(pago.origenUid ?? ""),
+    };
+
+    try {
+      const res = await fetch(integ.url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-pagoya-signature": firma,
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        logger.error("courier webhook: respuesta no 2xx", {
+          comercioId,
+          pagoId,
+          status: res.status,
+        });
+      } else {
+        logger.info("courier webhook: enviado", { comercioId, pagoId });
+      }
+    } catch (err) {
+      logger.error("courier webhook: POST falló", {
+        comercioId,
+        pagoId,
+        error: err.message,
       });
     }
   }
@@ -434,3 +533,242 @@ exports.enviarCampana = onCall(opciones, async (request) => {
 
   return { ok: true };
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5) vigilarCiego — MODO CIEGO. Despierta apps CERRADAS cuando el teléfono
+//    capturador deja de latir presencia (el dueño está lejos y el local se
+//    quedó "sordo"), y lleva el registro de periodos ciegos para la futura
+//    Garantía de Aviso.
+//
+//    Corre cada 2 min (onSchedule). Filosofía de costos: el trabajo pesado es un
+//    collection-group query que SOLO trae capturadores VENCIDOS
+//    (capturando==true AND ultimaPresencia < cutoff). En operación normal el
+//    capturador late cada ~90 s, así que ese query devuelve 0 docs y la corrida
+//    cuesta ~0 reads. NO escaneamos todos los comercios ni todos los
+//    dispositivos: el índice hace el trabajo.
+//
+//    Idempotencia del periodo ciego: el doc vive en
+//    comercios/{id}/periodosCiegos/{deviceUid} — el id ES el uid del capturador.
+//    Así hay a lo sumo UN periodo por capturador. Se abre con create() (falla si
+//    ya existe → no se duplica en cada corrida) y se marca `fin` al recuperar.
+//    Si el doc anterior ya tiene `fin` (periodo pasado ya cerrado), se sobrescribe
+//    con set() para arrancar el nuevo episodio limpio.
+//
+//    Anti-fake: esta Function NUNCA crea pagos. Solo lee telemetría de presencia
+//    y manda avisos de "modo ciego"; jamás suena ni registra como un cobro.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Códigos de FCM que indican token muerto → se limpia del doc del dispositivo.
+const CODIGOS_TOKEN_MUERTO = new Set([
+  "messaging/registration-token-not-registered",
+  "messaging/invalid-registration-token",
+  "messaging/invalid-argument",
+]);
+
+// ¿El comercio tiene una MEMBRESÍA ACTIVA ahora? (misma lógica que planEfectivo
+// de las reglas): la suscripción cuenta solo si su estado es prueba|activa Y su
+// vigenteHasta (millis) todavía no pasó. El plan gratis o vencido NO entra al
+// Modo ciego: es una garantía de tier pagado.
+function membresiaActiva(comercioData, ahoraMs) {
+  const s = (comercioData && comercioData.suscripcion) || {};
+  const estado = s.estado || "vencida";
+  const vigenteHasta = typeof s.vigenteHasta === "number" ? s.vigenteHasta : 0;
+  const plan = s.plan || "gratis";
+  return (
+    (estado === "prueba" || estado === "activa") &&
+    vigenteHasta >= ahoraMs &&
+    plan !== "gratis"
+  );
+}
+
+// Hora local (America/Lima, UTC-5 fijo) del instante dado.
+function horaLima(fecha) {
+  const utcHoras = fecha.getUTCHours() + fecha.getUTCMinutes() / 60;
+  const local = (utcHoras + LIMA_OFFSET_HORAS + 24) % 24;
+  return local;
+}
+
+function enHorarioNegocio(fecha) {
+  const h = horaLima(fecha);
+  return h >= CIEGO_HORARIO_INICIO && h < CIEGO_HORARIO_FIN;
+}
+
+// Reparte un data-message del Modo ciego a TODOS los dispositivos del comercio
+// con token (incluido el dueño). Reutiliza el patrón de fanoutPago: multicast +
+// limpieza de tokens muertos. Devuelve cuántos se enviaron.
+async function avisarModoCiego(comercioId, data) {
+  const dispositivosSnap = await db
+    .collection("comercios")
+    .doc(comercioId)
+    .collection("dispositivos")
+    .get();
+
+  const destinos = [];
+  dispositivosSnap.forEach((docSnap) => {
+    const fcmToken = docSnap.get("fcmToken");
+    if (typeof fcmToken === "string" && fcmToken.length > 0) {
+      destinos.push({ token: fcmToken, ref: docSnap.ref });
+    }
+  });
+
+  if (destinos.length === 0) return 0;
+
+  const respuesta = await getMessaging().sendEachForMulticast({
+    tokens: destinos.map((d) => d.token),
+    data,
+    android: { priority: "high" },
+  });
+
+  const limpiezas = [];
+  respuesta.responses.forEach((r, i) => {
+    if (r.success) return;
+    const codigo = r.error && r.error.code;
+    if (CODIGOS_TOKEN_MUERTO.has(codigo)) {
+      limpiezas.push(destinos[i].ref.update({ fcmToken: FieldValue.delete() }));
+    }
+  });
+  if (limpiezas.length > 0) await Promise.all(limpiezas);
+
+  return respuesta.successCount;
+}
+
+exports.vigilarCiego = onSchedule(
+  {
+    ...opciones,
+    schedule: "every 2 minutes",
+    timeZone: "America/Lima",
+    // Poca memoria: solo I/O ligero de Firestore + FCM.
+    memory: "256MiB",
+  },
+  async () => {
+    const ahora = new Date();
+    const ahoraMs = ahora.getTime();
+    const cutoff = Timestamp.fromMillis(ahoraMs - CIEGO_UMBRAL_SEG * 1000);
+
+    // Caché de comercios ya resueltos en esta corrida (evita re-leer el doc del
+    // comercio si tuviera varios capturadores/periodos).
+    const cacheComercio = new Map();
+    async function comercio(comercioId) {
+      if (cacheComercio.has(comercioId)) return cacheComercio.get(comercioId);
+      const snap = await db.collection("comercios").doc(comercioId).get();
+      const datos = snap.exists ? snap.data() : null;
+      cacheComercio.set(comercioId, datos);
+      return datos;
+    }
+
+    let aperturas = 0;
+    let cierres = 0;
+
+    // ── A) Capturadores VENCIDOS → abrir periodo ciego + avisar ───────────────
+    // Query barato: en operación normal devuelve 0 docs (presencia fresca).
+    const vencidosSnap = await db
+      .collectionGroup("dispositivos")
+      .where("capturando", "==", true)
+      .where("ultimaPresencia", "<", cutoff)
+      .get();
+
+    for (const dispDoc of vencidosSnap.docs) {
+      // Ruta: comercios/{comercioId}/dispositivos/{uid}
+      const comercioRef = dispDoc.ref.parent.parent;
+      if (!comercioRef) continue;
+      const comercioId = comercioRef.id;
+      const deviceUid = dispDoc.id;
+
+      // Gate 1: solo comercios con membresía activa (garantía de tier pagado).
+      const datosComercio = await comercio(comercioId);
+      if (!datosComercio || !membresiaActiva(datosComercio, ahoraMs)) continue;
+
+      // Gate 2: solo en horario de negocio (abrir episodios nuevos). Fuera de
+      // horario no avisamos ni abrimos: el local está cerrado a propósito.
+      if (!enHorarioNegocio(ahora)) continue;
+
+      // Minutos sin presencia (para el aviso y el registro).
+      const ultimaPresencia = dispDoc.get("ultimaPresencia");
+      const ultimaMs =
+        ultimaPresencia && typeof ultimaPresencia.toMillis === "function"
+          ? ultimaPresencia.toMillis()
+          : ahoraMs;
+      const minutos = Math.max(1, Math.floor((ahoraMs - ultimaMs) / 60000));
+
+      const periodoRef = comercioRef
+        .collection("periodosCiegos")
+        .doc(deviceUid);
+      const periodoSnap = await periodoRef.get();
+      const yaAbierto =
+        periodoSnap.exists && periodoSnap.get("fin") == null;
+
+      if (!yaAbierto) {
+        // Abrir un episodio nuevo. set() sobrescribe un periodo anterior YA
+        // cerrado (con fin), o crea el primero. El id == deviceUid garantiza un
+        // solo periodo abierto por capturador (idempotente entre corridas).
+        await periodoRef.set({
+          deviceUid,
+          inicio: FieldValue.serverTimestamp(),
+          fin: null,
+          ultimaPresenciaAlAbrir: ultimaPresencia || null,
+          minutosAlAbrir: minutos,
+        });
+        aperturas++;
+      }
+
+      // Avisar SIEMPRE (aunque el periodo ya estuviera abierto): así, si el
+      // primer push se perdió, el dueño sigue enterándose en la próxima corrida.
+      // La app deduplica su banner por comercioId.
+      await avisarModoCiego(comercioId, {
+        tipo: "ciego",
+        comercioId,
+        minutos: String(minutos),
+      });
+    }
+
+    // ── B) Periodos ciegos ABIERTOS → ¿se recuperó la presencia? cerrar + avisar
+    // Query barato: normalmente 0 periodos abiertos.
+    const abiertosSnap = await db
+      .collectionGroup("periodosCiegos")
+      .where("fin", "==", null)
+      .get();
+
+    for (const perDoc of abiertosSnap.docs) {
+      const comercioRef = perDoc.ref.parent.parent;
+      if (!comercioRef) continue;
+      const comercioId = comercioRef.id;
+      const deviceUid = perDoc.id;
+
+      // Releer el dispositivo del capturador para ver su presencia actual.
+      const dispSnap = await comercioRef
+        .collection("dispositivos")
+        .doc(deviceUid)
+        .get();
+
+      const capturando = dispSnap.exists ? dispSnap.get("capturando") : false;
+      const ultimaPresencia = dispSnap.exists
+        ? dispSnap.get("ultimaPresencia")
+        : null;
+      const presenciaFresca =
+        ultimaPresencia &&
+        typeof ultimaPresencia.toMillis === "function" &&
+        ultimaPresencia.toMillis() >= cutoff.toMillis();
+
+      // Recuperado si: volvió a latir presencia fresca, o dejó de capturar (el
+      // negocio cerró la jornada). En ambos casos el "modo ciego" terminó.
+      const recuperado = presenciaFresca || capturando === false;
+      if (!recuperado) continue;
+
+      await perDoc.ref.update({ fin: FieldValue.serverTimestamp() });
+      cierres++;
+
+      // Avisar fin de modo ciego a todos los dispositivos del comercio.
+      await avisarModoCiego(comercioId, {
+        tipo: "ciego_fin",
+        comercioId,
+      });
+    }
+
+    logger.info("vigilarCiego: corrida", {
+      vencidos: vencidosSnap.size,
+      aperturas,
+      abiertos: abiertosSnap.size,
+      cierres,
+    });
+  }
+);

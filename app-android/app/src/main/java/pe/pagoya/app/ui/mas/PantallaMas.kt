@@ -38,8 +38,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Bell
+import compose.icons.tablericons.BellOff
 import compose.icons.tablericons.ChevronRight
 import compose.icons.tablericons.CircleCheck
+import compose.icons.tablericons.Clock
 import compose.icons.tablericons.Help
 import compose.icons.tablericons.Logout
 import compose.icons.tablericons.Shield
@@ -50,6 +52,7 @@ import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.Enlaces
 import pe.pagoya.app.core.PreferenciasApariencia
 import pe.pagoya.app.core.ProteccionMarca
+import pe.pagoya.app.core.voz.PreferenciasVoz
 import pe.pagoya.app.nube.ComercioRepo
 import pe.pagoya.app.ui.onboarding.Permiso
 import pe.pagoya.app.ui.onboarding.Permisos
@@ -91,13 +94,37 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alBlindar: () -> Unit = {}, alSal
     var vozFuerte by remember { mutableStateOf(Anunciador.vozFuerte(contexto)) }
     val mostrarIconoBilletera by PreferenciasApariencia.mostrarIconoBilletera.collectAsState()
     var enPantallaVoz by remember { mutableStateOf(false) }
+    var enPantallaBilleteras by remember { mutableStateOf(false) }
+    var enPantallaHorario by remember { mutableStateOf(false) }
     var confirmarSalida by remember { mutableStateOf(false) }
+
+    // Estado del silencio / horario, leído de local. Se relee al volver de la
+    // sub-pantalla de horario (allí puede cambiar el toggle o las horas).
+    var silenciado by remember { mutableStateOf(PreferenciasVoz.silenciado(contexto)) }
+    var horarioActivo by remember { mutableStateOf(PreferenciasVoz.horarioActivo(contexto)) }
+    var horaInicio by remember { mutableStateOf(PreferenciasVoz.horaInicio(contexto)) }
+    var horaFin by remember { mutableStateOf(PreferenciasVoz.horaFin(contexto)) }
 
     if (enPantallaVoz) {
         PantallaVoz(alVolver = {
             enPantallaVoz = false
             vozFuerte = Anunciador.vozFuerte(contexto)
         })
+        return
+    }
+
+    if (enPantallaHorario) {
+        PantallaHorario(alVolver = {
+            enPantallaHorario = false
+            horarioActivo = PreferenciasVoz.horarioActivo(contexto)
+            horaInicio = PreferenciasVoz.horaInicio(contexto)
+            horaFin = PreferenciasVoz.horaFin(contexto)
+        })
+        return
+    }
+
+    if (enPantallaBilleteras) {
+        PantallaBilleteras(alVolver = { enPantallaBilleteras = false })
         return
     }
 
@@ -176,6 +203,85 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alBlindar: () -> Unit = {}, alSal
             }
         }
 
+        // ══════════ SILENCIO ══════════
+        item { EncabezadoSeccion(TablerIcons.BellOff, "Silencio") }
+        item {
+            TarjetaPagoYa {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Silenciar este teléfono",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = AzulNoche,
+                        )
+                        Text(
+                            "No hablará nada, pero sigue guardando cada pago en el " +
+                                "historial y no pierde ningún permiso. Ideal para el " +
+                                "trabajador que hoy no está.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextoMedio,
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Switch(
+                        checked = silenciado,
+                        onCheckedChange = {
+                            silenciado = it
+                            PreferenciasVoz.definirSilenciado(contexto, it)
+                            ComercioRepo.sincronizarEscucha(contexto)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Blanco,
+                            checkedTrackColor = NaranjaPagoYa,
+                        ),
+                    )
+                }
+            }
+        }
+
+        // ══════════ NEGOCIO (horario de anuncios) ══════════
+        item { EncabezadoSeccion(TablerIcons.Clock, "Negocio") }
+        item {
+            TarjetaPagoYa {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Anunciar solo en mi horario",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = AzulNoche,
+                        )
+                        Text(
+                            if (horarioActivo)
+                                "Anuncia de ${minutosAHora(horaInicio)} a ${minutosAHora(horaFin)}."
+                            else
+                                "Ahora mismo anuncia a toda hora.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextoMedio,
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Switch(
+                        checked = horarioActivo,
+                        onCheckedChange = {
+                            horarioActivo = it
+                            PreferenciasVoz.definirHorarioActivo(contexto, it)
+                            ComercioRepo.sincronizarEscucha(contexto)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Blanco,
+                            checkedTrackColor = NaranjaPagoYa,
+                        ),
+                    )
+                }
+                Spacer(Modifier.height(14.dp))
+                BotonSecundario(
+                    "Definir horario",
+                    icono = TablerIcons.Clock,
+                    alPulsar = { enPantallaHorario = true },
+                )
+            }
+        }
+
         // ══════════ BILLETERA ══════════
         item { EncabezadoSeccion(TablerIcons.Wallet, "Billetera") }
         item {
@@ -218,6 +324,18 @@ fun PantallaMas(alRevisarPermisos: () -> Unit, alBlindar: () -> Unit = {}, alSal
                     Spacer(Modifier.width(8.dp))
                     BilleteraBadge("plin", "Plin")
                 }
+                Spacer(Modifier.height(14.dp))
+                BotonSecundario(
+                    "Billeteras que escucho",
+                    icono = TablerIcons.Wallet,
+                    alPulsar = { enPantallaBilleteras = true },
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Apaga las que no uses; por defecto escuchamos todas.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextoTenue,
+                )
             }
         }
 

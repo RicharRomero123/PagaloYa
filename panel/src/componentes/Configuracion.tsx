@@ -8,6 +8,7 @@ import {
   leerEnlaces,
   type Enlaces,
 } from "@/lib/enlaces";
+import { Hoja } from "./Hoja";
 
 /**
  * Configuración global del producto. Hoy solo edita los enlaces
@@ -38,14 +39,6 @@ export function Configuracion({ alCerrar }: { alCerrar: () => void }) {
       vigente = false;
     };
   }, []);
-
-  useEffect(() => {
-    const alTeclear = (e: KeyboardEvent) => {
-      if (e.key === "Escape") alCerrar();
-    };
-    window.addEventListener("keydown", alTeclear);
-    return () => window.removeEventListener("keydown", alTeclear);
-  }, [alCerrar]);
 
   // Errores de validación por campo, recalculados en vivo.
   const erroresCampo = useMemo(() => {
@@ -89,27 +82,8 @@ export function Configuracion({ alCerrar }: { alCerrar: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex">
-      <button
-        type="button"
-        aria-label="Cerrar"
-        onClick={alCerrar}
-        className="flex-1 bg-azul/30"
-      />
-      <aside className="h-full w-full overflow-y-auto bg-crema sm:max-w-md">
-        <header className="sticky top-0 flex items-center justify-between bg-crema px-4 py-4">
-          <h2 className="text-xl font-black">Configuración</h2>
-          <button
-            type="button"
-            onClick={alCerrar}
-            className="rounded-full bg-white px-3 py-1.5 text-sm font-bold text-texto-medio"
-          >
-            Cerrar
-          </button>
-        </header>
-
-        <div className="space-y-3 px-4 pb-16">
-          <section className="rounded-2xl bg-white p-4">
+    <Hoja titulo="Configuración" alCerrar={alCerrar}>
+      <section className="tarjeta p-4">
             <h3 className="font-black">Enlaces del producto</h3>
             <p className="mt-1 text-sm text-texto-medio">
               WhatsApp de ventas y redes que la app muestra a los comercios. Se
@@ -135,8 +109,8 @@ export function Configuracion({ alCerrar }: { alCerrar: () => void }) {
                         inputMode={
                           campo.clave === "whatsappVentas" ? "numeric" : "text"
                         }
-                        className={`mt-1 h-11 w-full rounded-xl border px-3 outline-none focus:border-naranja ${
-                          errCampo ? "border-rojo-alerta" : "border-borde"
+                        className={`campo mt-1 ${
+                          errCampo ? "!border-rojo-alerta focus:!ring-rojo-alerta/15" : ""
                         }`}
                       />
                       <span
@@ -165,20 +139,18 @@ export function Configuracion({ alCerrar }: { alCerrar: () => void }) {
                   type="button"
                   disabled={guardando || hayErrores}
                   onClick={() => void guardar()}
-                  className="h-12 w-full rounded-xl bg-naranja font-bold text-white transition hover:bg-naranja-hondo disabled:opacity-50"
+                  className="btn-primario h-12 w-full"
                 >
                   {guardando ? "Guardando…" : "Guardar enlaces"}
                 </button>
               </div>
             )}
-          </section>
+      </section>
 
-          <p className="px-1 text-xs text-texto-tenue">
-            Estos enlaces son globales: valen para toda la app. Si el guardado
-            falla por permisos, tu cuenta no está dada de alta como operador.
-          </p>
-        </div>
-      </aside>
-    </div>
+      <p className="px-1 text-xs text-texto-tenue">
+        Estos enlaces son globales: valen para toda la app. Si el guardado falla
+        por permisos, tu cuenta no está dada de alta como operador.
+      </p>
+    </Hoja>
   );
 }

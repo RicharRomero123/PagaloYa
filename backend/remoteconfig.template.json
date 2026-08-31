@@ -1,0 +1,39 @@
+{
+  "parameters": {
+    "billeteras_json": {
+      "defaultValue": {
+        "value": "{\"version\":3,\"_nota\":\"Mismo esquema que usa Firebase Remote Config (parámetro billeteras_json). Grupo 1 = nombre del pagador, grupo 2 = monto. Los textos reales de cada billetera se afinan con el modo aprendizaje.\",\"_nota_voz\":\"vozPlantillaSinNombre es la que se usa POR DEFECTO: no dice el nombre del pagador (dato personal gritado en público, Ley 29733). vozPlantilla solo se usa si el comercio activa 'Decir el nombre' en Más > La voz de tu caja.\",\"billeteras\":[{\"id\":\"yape\",\"nombre\":\"Yape\",\"paquetes\":[\"com.bcp.innovacxion.yapeapp\"],\"patrones\":[\"(?i)(.+?)\\\\s+te\\\\s+yape[oó]\\\\s+S\\\\/\\\\.?\\\\s*([0-9]+(?:[.,][0-9]{1,2})?)\",\"(?i)recibiste\\\\s+un\\\\s+pago\\\\s+de\\\\s+(.+?)\\\\s+por\\\\s+S\\\\/\\\\.?\\\\s*([0-9]+(?:[.,][0-9]{1,2})?)\",\"(?i)(.+?)\\\\s+te\\\\s+envi[oó]\\\\s+un\\\\s+pago\\\\s+por\\\\s+S\\\\/\\\\.?\\\\s*([0-9]+(?:[.,][0-9]{1,2})?)\",\"(?i)¡?te\\\\s+yapearon!?\\\\s*(.+?)\\\\s+te\\\\s+envi[oó]\\\\s+S\\\\/\\\\.?\\\\s*([0-9]+(?:[.,][0-9]{1,2})?)\"],\"vozPlantillaSinNombre\":\"¡Pago Ya! Te yapearon {monto}\",\"vozPlantilla\":\"¡Pago Ya! {nombre} te yapeó {monto}\"},{\"id\":\"plin-interbank\",\"nombre\":\"Plin\",\"paquetes\":[\"pe.com.interbank.mobilebanking\"],\"patrones\":[\"(?i)(.+?)\\\\s+te\\\\s+(?:ha\\\\s+)?pline(?:[oó]|ado)\\\\s+S\\\\/\\\\.?\\\\s*([0-9]+(?:[.,][0-9]{1,2})?)\",\"(?i)recibiste\\\\s+un\\\\s+plin\\\\s+de\\\\s+(.+?)\\\\s+por\\\\s+S\\\\/\\\\.?\\\\s*([0-9]+(?:[.,][0-9]{1,2})?)\"],\"vozPlantillaSinNombre\":\"¡Pago Ya! Pago Plin de {monto}\",\"vozPlantilla\":\"¡Pago Ya! Pago Plin de {monto} de {nombre}\"},{\"id\":\"prexpe\",\"nombre\":\"Prexpe\",\"paquetes\":[\"air.PrexPeru\"],\"_nota_patron\":\"Prexpe pone el monto en el título (✔ Recibiste S/ 1) y el nombre en el cuerpo (NOMBRE te envió dinero a tu Prexpe). El monto va ANTES del nombre, por eso el patrón principal usa un lookahead para capturar el nombre como grupo 1 y el monto como grupo 2. El segundo patrón es respaldo: anuncia el monto aunque el nombre no calce.\",\"patrones\":[\"(?i)(?=.*?([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑa-záéíóúñ\\\\s]{1,40}?)\\\\s+te\\\\s+envi[oó]\\\\s+dinero\\\\s+a\\\\s+tu\\\\s+prexpe)recibiste\\\\s+s\\\\/\\\\.?\\\\s*([0-9]+(?:[.,][0-9]{1,2})?)\",\"(?i)()recibiste\\\\s+s\\\\/\\\\.?\\\\s*([0-9]+(?:[.,][0-9]{1,2})?)[\\\\s\\\\S]*?prexpe\"],\"vozPlantillaSinNombre\":\"¡Pago Ya! Pago Prexpe de {monto}\",\"vozPlantilla\":\"¡Pago Ya! Pago Prexpe de {monto} de {nombre}\"},{\"id\":\"lemon\",\"nombre\":\"Lemon Cash\",\"paquetes\":[\"com.applemoncash\"],\"_nota_patron\":\"Lemon pone el monto en el título (Recibiste S/ 1 🙌) y el nombre en el cuerpo (NOMBRE te envió dinero. Ya lo puedes encontrar en tu cuenta). Monto antes que el nombre: lookahead captura nombre=grupo 1, monto=grupo 2. El segundo patrón es respaldo por monto.\",\"patrones\":[\"(?i)(?=.*?([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑa-záéíóúñ\\\\s]{1,40}?)\\\\s+te\\\\s+envi[oó]\\\\s+dinero)recibiste\\\\s+s\\\\/\\\\.?\\\\s*([0-9]+(?:[.,][0-9]{1,2})?)\",\"(?i)()recibiste\\\\s+s\\\\/\\\\.?\\\\s*([0-9]+(?:[.,][0-9]{1,2})?)[\\\\s\\\\S]*?te\\\\s+envi[oó]\\\\s+dinero\"],\"vozPlantillaSinNombre\":\"¡Pago Ya! Pago Lemon de {monto}\",\"vozPlantilla\":\"¡Pago Ya! Pago Lemon de {monto} de {nombre}\"}]}"
+      },
+      "valueType": "JSON",
+      "description": "Catalogo de billeteras (patrones de parseo). Espejo de app/src/main/assets/billeteras.json."
+    },
+    "ciego_umbral_seg": {
+      "defaultValue": {
+        "value": "240"
+      },
+      "valueType": "NUMBER",
+      "description": "Modo ciego: segundos sin presencia del capturador para declarar ceguera."
+    },
+    "ciego_cadencia_seg": {
+      "defaultValue": {
+        "value": "90"
+      },
+      "valueType": "NUMBER",
+      "description": "Modo ciego: cada cuantos segundos el capturador escribe ultimaPresencia."
+    },
+    "ciego_horario_inicio": {
+      "defaultValue": {
+        "value": "7"
+      },
+      "valueType": "NUMBER",
+      "description": "Modo ciego: hora local de inicio del horario de negocio."
+    },
+    "ciego_horario_fin": {
+      "defaultValue": {
+        "value": "22"
+      },
+      "valueType": "NUMBER",
+      "description": "Modo ciego: hora local de fin del horario de negocio."
+    }
+  }
+}

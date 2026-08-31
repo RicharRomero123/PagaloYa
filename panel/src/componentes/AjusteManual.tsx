@@ -39,7 +39,7 @@ export function AjusteManual({
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        className="w-full py-2 text-center text-sm font-bold text-azul underline underline-offset-4"
+        className="btn-borde w-full border-dashed text-texto-medio"
       >
         Ajuste manual de plan
       </button>
@@ -87,8 +87,8 @@ function Panel({
   }
 
   return (
-    <div className="rounded-2xl border-2 border-dashed border-borde bg-white p-4">
-      <h3 className="font-black">Ajuste manual</h3>
+    <div className="rounded-card border border-dashed border-borde bg-white p-4 shadow-suave">
+      <h3 className="text-base font-black text-azul">Ajuste manual</h3>
       <p className="mt-1 text-xs text-texto-tenue">
         Fija plan, estado y vencimiento directo.{" "}
         <strong>No genera cobro</strong> ni deja recibo. Para cobrar usa el
@@ -120,17 +120,21 @@ function Panel({
           type="date"
           value={fecha}
           onChange={(e) => setFecha(e.target.value)}
-          className="mt-1 h-11 w-full rounded-xl border border-borde px-3 outline-none focus:border-naranja"
+          className="campo mt-1"
         />
       </label>
 
-      {error && <p className="mt-3 text-sm text-rojo-alerta">{error}</p>}
+      {error && (
+        <p className="mt-3 rounded-xl bg-rojo-suave px-3 py-2 text-sm font-semibold text-rojo-alerta">
+          {error}
+        </p>
+      )}
 
       <button
         type="button"
         disabled={guardando}
         onClick={guardar}
-        className="mt-4 h-12 w-full rounded-xl bg-azul font-bold text-white transition hover:bg-azul/90 disabled:opacity-50"
+        className="btn-azul mt-4 h-12 w-full"
       >
         {guardando ? "Guardando…" : "Guardar ajuste"}
       </button>
@@ -189,10 +193,10 @@ function Chip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-3 py-2 text-sm font-bold transition ${
+      className={`rounded-full px-3.5 py-2 text-sm font-bold transition-all active:scale-95 ${
         activo
-          ? "bg-naranja text-white"
-          : "bg-humo text-texto-medio hover:bg-naranja-suave"
+          ? "bg-naranja-relieve text-white shadow-naranja"
+          : "border border-borde bg-white text-texto-medio hover:border-naranja/50 hover:text-azul"
       }`}
     >
       {children}

@@ -4,13 +4,16 @@ import android.content.Context
 import android.util.Log
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.tasks.await
 import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.Pago
 import pe.pagoya.app.core.Plan
+import pe.pagoya.app.core.PreferenciasBilleteras
 import pe.pagoya.app.core.RegistroPagos
+import pe.pagoya.app.core.voz.PreferenciasVoz
 import kotlin.random.Random
 
 /** El comercio ya llegó a su tope de teléfonos para el plan actual. */
@@ -90,7 +93,17 @@ object ComercioRepo {
     private val _comercio = MutableStateFlow<Comercio?>(null)
     val comercio: StateFlow<Comercio?> = _comercio
 
+    /**
+     * Registro del listener que oye mi propio doc de miembro para OBEDECER en
+     * vivo lo que el operador cambie desde el panel (ej. me apaga la voz). Se
+     * guarda para poder soltarlo (evitar duplicados y fugas al cerrar sesión).
+     */
+    private var registroPrefs: ListenerRegistration? = null
+
     fun limpiar() {
+        // Al cerrar sesión soltamos el oído remoto: si no, quedaría vivo
+        // apuntando al comercio anterior.
+        dejarDeEscucharPreferencias()
         _comercio.value = null
     }
 
@@ -409,6 +422,13 @@ object ComercioRepo {
         if (comercioId != actual) return false
         // Lo capturó este mismo teléfono: ya sonó local, no repetir.
         if (origenUid == uid) return false
+        // Gate de billeteras: este teléfono (modo escucha) apagó esta billetera.
+        // La ignoramos por completo — no suena ni entra al historial. La decisión
+        // es LOCAL: cada equipo del comercio elige qué billeteras escuchar.
+        if (!PreferenciasBilleteras.estaActiva(pago.billeteraId)) {
+            Log.d(TAG, "Pago remoto descartado: billetera ${pago.billeteraId} apagada en este equipo")
+            return false
+        }
         // Anti-duplicado: mismo pagoId no suena dos veces.
         if (!recordar(pagoId)) return false
 
@@ -467,6 +487,98 @@ object ComercioRepo {
             // Sin red o sin permiso: la Caja se queda con lo local, no se cae.
             Log.w(TAG, "Rehidratación de caja falló: ${it.message}")
         }
+    }
+
+    /**
+     * Espejo (best-effort) de la preferencia de escucha de ESTE teléfono en su
+     * documento de miembro, para que el operador vea desde el panel qué equipos
+     * están silenciados o con horario. NO es la fuente de verdad: el
+     * comportamiento manda desde local (SharedPreferences vía PreferenciasVoz);
+     * esto es solo visibilidad. Fire-and-forget: no bloquea la UI y, si no hay
+     * red, no crashea (Firestore encola y reintenta; si falla, solo se loguea).
+     *
+     * Contrato de campos EXACTO (las firestore.rules dependen de estos nombres):
+     *   silenciado (bool), horarioActivo (bool),
+     *   horarioInicio (int, minutos 0-1439), horarioFin (int, minutos 0-1439).
+     */
+    fun sincronizarEscucha(context: Context) {
+        val uid = Sesion.uid ?: return
+        val comercioId = _comercio.value?.id ?: return
+        db.collection("comercios").document(comercioId)
+            .collection("miembros").document(uid)
+            .update(
+                mapOf(
+                    "silenciado" to PreferenciasVoz.silenciado(context),
+                    "horarioActivo" to PreferenciasVoz.horarioActivo(context),
+                    "horarioInicio" to PreferenciasVoz.horaInicio(context),
+                    "horarioFin" to PreferenciasVoz.horaFin(context),
+                )
+            )
+            .addOnFailureListener {
+                Log.w(TAG, "No se sincronizó preferencia de escucha: ${it.message}")
+            }
+    }
+
+    /**
+     * OBEDECE EN VIVO: oye MI documento de miembro y baja a este teléfono lo que
+     * el operador (o yo mismo desde otro lado) cambie de la preferencia de
+     * escucha. Ejemplo: el operador me apaga la voz desde el panel y este equipo
+     * se calla al toque, sin reabrir la app.
+     *
+     * Anti-fake, ojo: mutear —sea local o remoto— SOLO calla la voz de este
+     * teléfono. NO toca el historial ni el reenvío: el pago igual se capturó de
+     * una notificación REAL del sistema, se guardó en la Caja y le llegó a los
+     * demás equipos por push. Silenciar no borra ni inventa nada, solo baja el
+     * parlante de este aparato.
+     *
+     * Es de UNA sola vía: LEE de Firestore y ESCRIBE a SharedPreferences (vía
+     * PreferenciasVoz). JAMÁS llama a sincronizarEscucha desde aquí: eso armaría
+     * un bucle de escritura (yo escribo → el eco me vuelve → vuelvo a escribir…).
+     * El trabajador igual puede revertir desde su app: su toggle escribe a
+     * Firestore y el eco regresa con el MISMO valor, así que converge, no rebota.
+     *
+     * Defensivo: si falla (sin red, doc borrado), retorna sin drama. El SDK de
+     * Firestore ya cachea offline y reintenta la reconexión solito.
+     */
+    fun escucharPreferencias(context: Context) {
+        val uid = Sesion.uid ?: return
+        val comercioId = _comercio.value?.id ?: return
+        val appContext = context.applicationContext
+
+        // Si ya había un oído abierto, lo soltamos antes de abrir otro: así no
+        // duplicamos callbacks (arranque frío + onResume podrían llamar dos veces).
+        registroPrefs?.remove()
+
+        registroPrefs = db.collection("comercios").document(comercioId)
+            .collection("miembros").document(uid)
+            .addSnapshotListener { snap, err ->
+                // Falla con gracia: sin red, con error o doc inexistente, no
+                // hacemos nada. El SDK reintenta solo cuando vuelva la conexión.
+                if (err != null || snap == null || !snap.exists()) return@addSnapshotListener
+
+                // Espejamos SOLO los campos PRESENTES en el snapshot. Si un doc
+                // viejo no trae el campo, NO lo pisamos con un default: así el
+                // panel no borra sin querer una preferencia que el equipo eligió
+                // localmente y que aún no ha subido.
+                snap.getBoolean("silenciado")?.let {
+                    PreferenciasVoz.definirSilenciado(appContext, it)
+                }
+                snap.getBoolean("horarioActivo")?.let {
+                    PreferenciasVoz.definirHorarioActivo(appContext, it)
+                }
+                snap.getLong("horarioInicio")?.let {
+                    PreferenciasVoz.definirHoraInicio(appContext, it.toInt())
+                }
+                snap.getLong("horarioFin")?.let {
+                    PreferenciasVoz.definirHoraFin(appContext, it.toInt())
+                }
+            }
+    }
+
+    /** Suelta el oído remoto de preferencias (logout o teardown del servicio). */
+    fun dejarDeEscucharPreferencias() {
+        registroPrefs?.remove()
+        registroPrefs = null
     }
 
     /** true si es la primera vez que vemos este pago. */

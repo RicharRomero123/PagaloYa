@@ -5,9 +5,11 @@ import android.content.ComponentName
 import android.content.Context
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.util.Log
 import pe.pagoya.app.core.Anunciador
 import pe.pagoya.app.core.Aprendizaje
 import pe.pagoya.app.core.BilleteraParser
+import pe.pagoya.app.core.PreferenciasBilleteras
 import pe.pagoya.app.core.RegistroPagos
 import pe.pagoya.app.core.Salud
 import pe.pagoya.app.nube.ComercioRepo
@@ -51,6 +53,14 @@ class EscuchaNotificaciones : NotificationListenerService() {
     private fun procesar(paquete: String, textoCompleto: String, timestamp: Long) {
         val pago = BilleteraParser.parsear(paquete, textoCompleto, timestamp)
         if (pago != null) {
+            // Gate de billeteras: si el comerciante apagó esta billetera en ESTE
+            // teléfono, la ignoramos por completo — no suena, no se guarda en el
+            // historial y no se sube a la nube (nada de fan-out a trabajadores).
+            // Va lo más temprano posible, apenas hay Pago.
+            if (!PreferenciasBilleteras.estaActiva(pago.billeteraId)) {
+                Log.d(TAG, "Pago descartado: billetera ${pago.billeteraId} apagada en este equipo")
+                return
+            }
             RegistroPagos.agregar(applicationContext, pago)
             Anunciador.anunciarPago(applicationContext, pago)
             // Y a la nube: para que suene en los teléfonos de los trabajadores
@@ -79,6 +89,8 @@ class EscuchaNotificaciones : NotificationListenerService() {
     }
 
     companion object {
+        private const val TAG = "PagoYa"
+
         /** Pide al sistema volver a vincular el listener. Inofensivo si ya está vivo. */
         fun reconectar(context: Context) {
             runCatching {

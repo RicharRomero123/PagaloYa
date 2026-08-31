@@ -5,6 +5,7 @@ import android.os.Build
 import android.util.Log
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.messaging.FirebaseMessaging
 import pe.pagoya.app.core.Guardian
 import pe.pagoya.app.core.Salud
@@ -65,6 +66,29 @@ object TelemetriaRepo {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit().putLong(CLAVE_ULTIMO_ENVIO, System.currentTimeMillis()).apply()
         escribir(context, uid, comercio.id, token)
+    }
+
+    /**
+     * Latido de presencia RÁPIDO del Modo ciego (independiente del latido de
+     * salud de 10 min). Escribe SOLO el campo `ultimaPresencia` con merge, para
+     * no chocar con la regla `hasOnly` del latido completo: es una escritura de
+     * un solo campo, mucho más liviana. La cadencia (cada `ciego_cadencia_seg`),
+     * el horario de negocio y el "solo si capturo" los decide quien llama
+     * (VigiaCiego); aquí solo se hace la escritura fire-and-forget.
+     *
+     * Con este latido, TODOS los teléfonos del comercio pueden ver hace cuánto
+     * el capturador dio señales de vida y gritar CIEGO si se pasa del umbral.
+     */
+    fun escribirPresencia(context: Context) {
+        val uid = Sesion.uid ?: return
+        val comercio = ComercioRepo.comercio.value ?: return
+        FirebaseFirestore.getInstance()
+            .collection("comercios").document(comercio.id)
+            .collection("dispositivos").document(uid)
+            .set(mapOf("ultimaPresencia" to FieldValue.serverTimestamp()), SetOptions.merge())
+            .addOnFailureListener {
+                Log.w(TAG, "Presencia no subida: ${it.message}")
+            }
     }
 
     private fun escribir(context: Context, uid: String, comercioId: String, token: String?) {

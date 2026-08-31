@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { entrarConCorreo, entrarConGoogle } from "@/lib/sesion";
 
@@ -22,17 +23,34 @@ export function Login() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-naranja-suave text-4xl">
-            🔊
+    <main className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden px-4 py-10">
+      {/* Halo cálido detrás de la tarjeta */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-[18%] h-72 w-72 -translate-x-1/2 rounded-full bg-naranja/25 blur-[90px]"
+      />
+
+      <div className="w-full max-w-sm animate-subir">
+        <div className="mb-7 flex flex-col items-center text-center">
+          <div className="mb-4 rounded-[1.4rem] bg-azul-relieve p-2 shadow-alta ring-1 ring-white/10">
+            <Image
+              src="/icon-192.png"
+              alt="PagoYa"
+              width={64}
+              height={64}
+              className="h-16 w-16 rounded-2xl"
+              priority
+            />
           </div>
-          <h1 className="text-3xl font-black text-naranja">PagoYa</h1>
-          <p className="text-sm text-texto-medio">Panel de operador</p>
+          <h1 className="text-3xl font-black tracking-tight text-azul">
+            Pago<span className="text-naranja">Ya</span>
+          </h1>
+          <p className="mt-0.5 text-sm font-semibold text-texto-medio">
+            Panel de operador
+          </p>
         </div>
 
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
+        <div className="tarjeta p-6 shadow-alta">
           <button
             type="button"
             disabled={cargando}
@@ -42,7 +60,7 @@ export function Login() {
                 "No se pudo entrar con Google. Intenta de nuevo.",
               )
             }
-            className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-borde bg-white font-bold text-azul transition hover:bg-humo disabled:opacity-50"
+            className="btn-borde h-12 w-full"
           >
             <svg className="h-5 w-5" viewBox="0 0 48 48" aria-hidden="true">
               <path
@@ -65,9 +83,13 @@ export function Login() {
             Entrar con Google
           </button>
 
-          <p className="my-4 text-center text-sm text-texto-tenue">
-            — o con tu correo —
-          </p>
+          <div className="my-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-borde" />
+            <span className="text-xs font-bold uppercase tracking-wide text-texto-tenue">
+              o con tu correo
+            </span>
+            <span className="h-px flex-1 bg-borde" />
+          </div>
 
           <form
             onSubmit={(e) => {
@@ -89,7 +111,7 @@ export function Login() {
               onChange={(e) => setCorreo(e.target.value)}
               placeholder="Correo"
               autoComplete="username"
-              className="h-12 w-full rounded-xl border border-borde px-4 outline-none focus:border-naranja"
+              className="campo h-12"
             />
             <input
               type="password"
@@ -97,23 +119,21 @@ export function Login() {
               onChange={(e) => setClave(e.target.value)}
               placeholder="Contraseña"
               autoComplete="current-password"
-              className="h-12 w-full rounded-xl border border-borde px-4 outline-none focus:border-naranja"
+              className="campo h-12"
             />
-            <button
-              type="submit"
-              disabled={cargando}
-              className="h-12 w-full rounded-xl border-2 border-borde font-bold text-azul transition hover:border-naranja disabled:opacity-50"
-            >
+            <button type="submit" disabled={cargando} className="btn-azul h-12 w-full">
               {cargando ? "Entrando…" : "Entrar"}
             </button>
           </form>
 
           {error && (
-            <p className="mt-4 text-center text-sm text-rojo-alerta">{error}</p>
+            <p className="mt-4 rounded-xl bg-rojo-suave px-3 py-2 text-center text-sm font-semibold text-rojo-alerta">
+              {error}
+            </p>
           )}
         </div>
 
-        <p className="mt-6 text-center text-xs text-texto-tenue">
+        <p className="mt-6 text-center text-xs font-semibold text-texto-tenue">
           Acceso solo para el equipo de PagoYa.
         </p>
       </div>

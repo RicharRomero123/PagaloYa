@@ -5,9 +5,103 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
   }
   body {
-    font-family: ui-rounded, "Nunito", "Segoe UI", system-ui, -apple-system,
-      sans-serif;
+    /* Lienzo cálido con dos brillos de marca muy sutiles, fijo al hacer scroll. */
+    background-color: #fff6ef;
+    background-image: theme("backgroundImage.malla-crema");
+    background-attachment: fixed;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::selection {
+    background: rgba(255, 107, 26, 0.22);
+    color: #12203c;
+  }
+  /* Barra de scroll discreta y a tono. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #e6dacd transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: #e6dacd;
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: #d8c7b4;
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  /* ── Superficies ─────────────────────────────────────────────────────── */
+  .tarjeta {
+    @apply rounded-card border border-borde/70 bg-white shadow-suave;
+  }
+  .tarjeta-plana {
+    @apply rounded-card border border-borde/70 bg-white;
+  }
+
+  /* ── Botones ─────────────────────────────────────────────────────────── */
+  .btn {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-extrabold
+      transition-all duration-150 active:scale-[0.98]
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-naranja/60 focus-visible:ring-offset-2
+      focus-visible:ring-offset-crema disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-primario {
+    @apply btn bg-naranja-relieve text-white shadow-naranja hover:brightness-[1.05];
+  }
+  .btn-azul {
+    @apply btn bg-azul-relieve text-white shadow-media hover:brightness-110;
+  }
+  .btn-borde {
+    @apply btn border border-borde bg-white text-azul hover:border-naranja hover:bg-crema;
+  }
+  .btn-fantasma {
+    @apply btn px-3 text-texto-medio hover:bg-humo hover:text-azul;
+  }
+
+  /* ── Campos ──────────────────────────────────────────────────────────── */
+  .campo {
+    @apply h-11 w-full rounded-xl border border-borde bg-white px-4 text-azul
+      placeholder:text-texto-tenue outline-none transition
+      focus:border-naranja focus:ring-4 focus:ring-naranja/15;
+  }
+
+  /* ── Píldoras / chips ────────────────────────────────────────────────── */
+  .pastilla {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold;
+  }
+
+  /* ── Esqueleto de carga (shimmer) ────────────────────────────────────── */
+  .esqueleto {
+    @apply relative overflow-hidden rounded-lg bg-humo;
+  }
+  .esqueleto::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full;
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.65),
+      transparent
+    );
+    animation: brillo 1.4s ease-in-out infinite;
+  }
+}
+
+/* Declarado a mano: el shimmer se invoca desde CSS, no desde una utilidad. */
+@keyframes brillo {
+  100% {
+    transform: translateX(100%);
   }
 }

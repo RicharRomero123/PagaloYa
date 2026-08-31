@@ -7,6 +7,9 @@
     "source": "functions",
     "runtime": "nodejs20"
   },
+  "remoteconfig": {
+    "template": "remoteconfig.template.json"
+  },
   "emulators": {
     "firestore": {
       "port": 8080

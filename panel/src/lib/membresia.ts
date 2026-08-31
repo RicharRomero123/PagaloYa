@@ -1,9 +1,9 @@
 import {
   Timestamp,
   collection,
-  deleteDoc,
   doc,
   getDocs,
+  increment,
   limit,
   orderBy,
   query,
@@ -160,20 +160,47 @@ export async function ajustarSuscripcion(datos: {
 }
 
 /**
- * Saca a un miembro/teléfono del comercio (borra comercios/{id}/miembros/{uid}).
+ * Saca a un miembro/teléfono del comercio (borra comercios/{id}/miembros/{uid})
+ * y devuelve el cupo bajando `comercios/{id}.numDispositivos` en 1, **en el
+ * mismo lote**.
  *
- * ⚠️ OJO — reglas: hoy `backend/firestore.rules` permite el delete de un
- * miembro solo al propio miembro (`request.auth.uid == uid`) o al dueño del
- * comercio (`esDueno(comercioId)`), NO a un operador. Para que el operador
- * pueda desvincular teléfonos desde este panel hace falta agregar
- * `|| esOperador()` a la regla de delete de miembros. Mientras eso no se
- * despliegue, esta llamada devolverá permission-denied y la UI lo informa.
+ * El decremento NO es opcional: la regla de delete de miembros en
+ * `backend/firestore.rules` exige que el MISMO WriteBatch baje numDispositivos
+ * en exactamente 1 (piso 1, el dueño siempre queda). Un delete suelto —sin
+ * tocar el contador— es rechazado con permission-denied. Por eso esto es un
+ * batch y no un deleteDoc.
+ *
+ * Las reglas ya permiten al operador desvincular a un TRABAJADOR (nunca al
+ * dueño); el panel solo muestra el botón "Quitar" en trabajadores.
  */
 export async function quitarMiembro(
   comercioId: string,
   uid: string,
 ): Promise<void> {
-  await deleteDoc(doc(db, "comercios", comercioId, "miembros", uid));
+  const lote = writeBatch(db);
+  lote.delete(doc(db, "comercios", comercioId, "miembros", uid));
+  lote.update(doc(db, "comercios", comercioId), {
+    numDispositivos: increment(-1),
+  });
+  await lote.commit();
+}
+
+/**
+ * Enciende o apaga la voz de un teléfono desde el panel: escribe SOLO el campo
+ * `silenciado` en `comercios/{id}/miembros/{uid}`. Es una cortesía del operador
+ * (p. ej. silenciar un teléfono que quedó sonando en un local vacío); el propio
+ * trabajador puede volver a activarla desde su app cuando quiera.
+ *
+ * Las reglas permiten al operador tocar únicamente `silenciado` de un miembro.
+ */
+export async function establecerSilenciado(
+  comercioId: string,
+  uid: string,
+  silenciado: boolean,
+): Promise<void> {
+  await updateDoc(doc(db, "comercios", comercioId, "miembros", uid), {
+    silenciado,
+  });
 }
 
 /** Corta el plan de inmediato. El historial de cobros queda intacto. */
@@ -217,7 +244,25 @@ export type Miembro = {
   nombre: string;
   rol: string;
   puedeCapturar: boolean;
+  /** Silenciado por el propio teléfono desde la app. Ausente = no silenciado. */
+  silenciado: boolean;
+  /** ¿Anuncia solo dentro de un horario? Ausente = anuncia a toda hora. */
+  horarioActivo: boolean;
+  /** Inicio del horario en minutos del día (0..1439). Default 08:00. */
+  horarioInicio: number;
+  /** Fin del horario en minutos del día (0..1439). Default 22:00. */
+  horarioFin: number;
 };
+
+/** Minutos del día (0..1439) → "HH:mm". Defensivo con basura fuera de rango. */
+export function minutosAHora(m: number): string {
+  const min = Number.isFinite(m) ? Math.max(0, Math.min(1439, Math.trunc(m))) : 0;
+  return (
+    String(Math.floor(min / 60)).padStart(2, "0") +
+    ":" +
+    String(min % 60).padStart(2, "0")
+  );
+}
 
 export async function listarMiembros(comercioId: string): Promise<Miembro[]> {
   const docs = await getDocs(
@@ -231,6 +276,13 @@ export async function listarMiembros(comercioId: string): Promise<Miembro[]> {
       nombre: (datos.nombre as string) ?? "Sin nombre",
       rol,
       puedeCapturar: (datos.puedeCapturar as boolean) ?? rol === "dueno",
+      // Campos nuevos que la app Android escribe; miembros viejos no los tienen.
+      silenciado: (datos.silenciado as boolean) ?? false,
+      horarioActivo: (datos.horarioActivo as boolean) ?? false,
+      horarioInicio:
+        typeof datos.horarioInicio === "number" ? datos.horarioInicio : 480,
+      horarioFin:
+        typeof datos.horarioFin === "number" ? datos.horarioFin : 1320,
     };
   });
 }

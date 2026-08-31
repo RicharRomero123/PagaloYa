@@ -215,6 +215,53 @@ fun Aviso(
     }
 }
 
+/**
+ * Banner del MODO CIEGO: el más urgente de la app. Se pinta cuando el comercio
+ * dejó de escuchar su Yape (el capturador quedó sordo o sin señal). Rojo pleno
+ * —no el rojo suave del Aviso—: tiene que saltar a la vista por encima de todo,
+ * porque mientras esté ahí las ventas pueden NO estar sonando.
+ *
+ * "Si no suena, no te pagaron": este banner es la prueba viva de esa promesa.
+ */
+@Composable
+fun BannerCiego(minutos: Int, modifier: Modifier = Modifier) {
+    val tiempo = if (minutos <= 1) "hace un momento" else "hace $minutos min"
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.large)
+            .background(
+                androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(RojoAlerta, Color(0xFF8E1616))
+                )
+            )
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.Top) {
+            Icon(
+                TablerIcons.AlertOctagon,
+                contentDescription = null,
+                tint = Blanco,
+                modifier = Modifier.size(26.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "⚠️ Dejé de escuchar tu Yape $tiempo",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Blanco,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "Revisa el teléfono de la caja: mientras esté así, tus ventas pueden NO estar sonando.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Blanco.copy(alpha = 0.92f),
+                )
+            }
+        }
+    }
+}
+
 /** Ilustración barata y cálida: un ícono grande dentro de un círculo de color. */
 @Composable
 fun CirculoIcono(
@@ -256,9 +303,11 @@ fun BilleteraBadge(billeteraId: String, nombre: String, modifier: Modifier = Mod
     val mostrarIcono by PreferenciasApariencia.mostrarIconoBilletera.collectAsState()
     // Logo real de la billetera (SOLO dentro de la app, en la lista de pagos;
     // ver CLAUDE.md regla 3). Si el ajuste está apagado, cae al círculo de color.
-    val logo = if (!mostrarIcono) null else when (id) {
-        "yape" -> R.drawable.ic_yape
-        "plin" -> R.drawable.ic_plin
+    val logo = if (!mostrarIcono) null else when {
+        id.startsWith("yape") -> R.drawable.ic_yape
+        id.startsWith("plin") -> R.drawable.ic_plin
+        id.startsWith("prexpe") -> R.drawable.ic_prexpe
+        id.startsWith("lemon") -> R.drawable.ic_lemon
         else -> null
     }
     if (logo != null) {
@@ -282,9 +331,11 @@ fun BilleteraBadge(billeteraId: String, nombre: String, modifier: Modifier = Mod
     }
     // Sin logo (ajuste apagado o billetera desconocida): círculo con la inicial.
     // Conserva los colores de marca para seguir distinguiendo la billetera.
-    val fondo = when (id) {
-        "yape" -> Color(0xFF742284)
-        "plin" -> Color(0xFF00B9AD)
+    val fondo = when {
+        id.startsWith("yape") -> Color(0xFF742284)
+        id.startsWith("plin") -> Color(0xFF00B9AD)
+        id.startsWith("prexpe") -> Color(0xFF6D28D9)
+        id.startsWith("lemon") -> Color(0xFF19C25B)
         else -> AzulNoche
     }
     Box(

@@ -3,6 +3,9 @@ node_modules/
 out/
 next-env.d.ts
 
+# Caché local de despliegue de Firebase Hosting (no versionar).
+.firebase/
+
 # Configuración de Firebase para la web. No es secreta (viaja en el bundle),
 # pero cada quien apunta a su propio proyecto.
 .env

@@ -56,8 +56,8 @@ export function FormularioMembresia({
   }
 
   return (
-    <div className="rounded-2xl bg-white p-4">
-      <h3 className="font-black">
+    <div className="tarjeta p-4">
+      <h3 className="text-base font-black text-azul">
         {renueva ? "Renovar membresía" : "Cobrar y activar"}
       </h3>
 
@@ -95,7 +95,7 @@ export function FormularioMembresia({
             value={montoTexto}
             onChange={(e) => setMontoTexto(e.target.value)}
             placeholder={sugerido.toFixed(2)}
-            className="mt-1 h-11 w-full rounded-xl border border-borde px-3 outline-none focus:border-naranja"
+            className="campo mt-1"
           />
         </label>
         <label className="block">
@@ -106,13 +106,13 @@ export function FormularioMembresia({
             value={nota}
             onChange={(e) => setNota(e.target.value)}
             placeholder="Nº de operación…"
-            className="mt-1 h-11 w-full rounded-xl border border-borde px-3 outline-none focus:border-naranja"
+            className="campo mt-1"
           />
         </label>
       </div>
 
       {/* El resumen antes de confirmar: que vea qué va a pasar, no que lo adivine */}
-      <p className="mt-4 rounded-xl bg-humo px-3 py-2 text-sm text-texto-medio">
+      <p className="mt-4 rounded-xl border border-borde/70 bg-humo/70 px-3 py-2.5 text-sm text-texto-medio">
         {ETIQUETA_PLAN[plan]} · {soles(monto || 0)} ·{" "}
         {renueva ? "sigue desde" : "desde"} {fechaCorta(desde)} y vence el{" "}
         <strong className="text-azul">{fechaCorta(hasta)}</strong>
@@ -123,7 +123,11 @@ export function FormularioMembresia({
         )}
       </p>
 
-      {error && <p className="mt-3 text-sm text-rojo-alerta">{error}</p>}
+      {error && (
+        <p className="mt-3 rounded-xl bg-rojo-suave px-3 py-2 text-sm font-semibold text-rojo-alerta">
+          {error}
+        </p>
+      )}
 
       <button
         type="button"
@@ -148,7 +152,7 @@ export function FormularioMembresia({
             "No se pudo registrar el cobro. Revisa tu conexión e intenta otra vez.",
           );
         }}
-        className="mt-4 h-12 w-full rounded-xl bg-naranja font-bold text-white transition hover:bg-naranja-hondo disabled:opacity-50"
+        className="btn-primario mt-4 h-12 w-full"
       >
         {guardando ? "Registrando…" : `Cobrar ${soles(monto || 0)} y activar`}
       </button>
@@ -163,7 +167,7 @@ export function FormularioMembresia({
               "No se pudo dar la prueba.",
             )
           }
-          className="h-11 flex-1 rounded-xl border-2 border-borde text-sm font-bold text-azul transition hover:border-naranja disabled:opacity-50"
+          className="btn-borde h-11 flex-1"
         >
           Dar 30 días de prueba
         </button>
@@ -203,10 +207,10 @@ function Chip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-3 py-2 text-sm font-bold transition ${
+      className={`rounded-full px-3.5 py-2 text-sm font-bold transition-all active:scale-95 ${
         activo
-          ? "bg-naranja text-white"
-          : "bg-humo text-texto-medio hover:bg-naranja-suave"
+          ? "bg-naranja-relieve text-white shadow-naranja"
+          : "border border-borde bg-white text-texto-medio hover:border-naranja/50 hover:text-azul"
       }`}
     >
       {children}

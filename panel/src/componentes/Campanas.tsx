@@ -11,6 +11,7 @@ import {
   type Topic,
 } from "@/lib/campanas";
 import { fechaCorta, haceRato } from "@/lib/formato";
+import { Hoja } from "./Hoja";
 
 const MAX_TITULO = 60;
 const MAX_CUERPO = 180;
@@ -47,14 +48,6 @@ export function Campanas({ alCerrar }: { alCerrar: () => void }) {
   useEffect(() => {
     void recargarHistorial();
   }, []);
-
-  useEffect(() => {
-    const alTeclear = (e: KeyboardEvent) => {
-      if (e.key === "Escape") alCerrar();
-    };
-    window.addEventListener("keydown", alTeclear);
-    return () => window.removeEventListener("keydown", alTeclear);
-  }, [alCerrar]);
 
   const tituloLimpio = titulo.trim();
   const cuerpoLimpio = cuerpo.trim();
@@ -134,28 +127,9 @@ export function Campanas({ alCerrar }: { alCerrar: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex">
-      <button
-        type="button"
-        aria-label="Cerrar"
-        onClick={alCerrar}
-        className="flex-1 bg-azul/30"
-      />
-      <aside className="h-full w-full overflow-y-auto bg-crema sm:max-w-md">
-        <header className="sticky top-0 flex items-center justify-between bg-crema px-4 py-4">
-          <h2 className="text-xl font-black">Campañas</h2>
-          <button
-            type="button"
-            onClick={alCerrar}
-            className="rounded-full bg-white px-3 py-1.5 text-sm font-bold text-texto-medio"
-          >
-            Cerrar
-          </button>
-        </header>
-
-        <div className="space-y-3 px-4 pb-16">
-          <section className="rounded-2xl bg-white p-4">
-            <h3 className="font-black">Nueva campaña</h3>
+    <Hoja titulo="Campañas" alCerrar={alCerrar}>
+      <section className="tarjeta p-4">
+        <h3 className="text-base font-black text-azul">Nueva campaña</h3>
             <p className="mt-1 text-sm text-texto-medio">
               Un aviso push a los teléfonos con PagoYa. No es un pago: es un
               mensaje del equipo. Título corto, una sola idea, tono criollo.
@@ -168,7 +142,7 @@ export function Campanas({ alCerrar }: { alCerrar: () => void }) {
                   key={p.etiqueta}
                   type="button"
                   onClick={() => usarPlantilla(p)}
-                  className="rounded-full bg-humo px-3 py-1.5 text-xs font-bold text-texto-medio transition hover:bg-naranja-suave"
+                  className="rounded-full border border-borde bg-white px-3 py-1.5 text-xs font-bold text-texto-medio transition-all hover:border-naranja/50 hover:text-azul active:scale-95"
                 >
                   {p.etiqueta}
                 </button>
@@ -197,7 +171,7 @@ export function Campanas({ alCerrar }: { alCerrar: () => void }) {
                     setTitulo(e.target.value);
                   }}
                   placeholder="¡PagoYa está fino!"
-                  className="mt-1 h-11 w-full rounded-xl border border-borde px-3 outline-none focus:border-naranja"
+                  className="campo mt-1"
                 />
               </label>
 
@@ -223,7 +197,7 @@ export function Campanas({ alCerrar }: { alCerrar: () => void }) {
                     setCuerpo(e.target.value);
                   }}
                   placeholder="Actualizamos la app pa' que tus pagos suenen más rápido, casero."
-                  className="mt-1 w-full resize-none rounded-xl border border-borde px-3 py-2 outline-none focus:border-naranja"
+                  className="mt-1 w-full resize-none rounded-xl border border-borde bg-white px-3 py-2.5 text-azul outline-none transition placeholder:text-texto-tenue focus:border-naranja focus:ring-4 focus:ring-naranja/15"
                 />
               </label>
 
@@ -240,13 +214,15 @@ export function Campanas({ alCerrar }: { alCerrar: () => void }) {
                         key={t.id}
                         type="button"
                         onClick={() => cambiarTopic(t.id)}
-                        className={`block w-full rounded-xl border px-3 py-2.5 text-left transition ${
+                        className={`block w-full rounded-xl border px-3 py-2.5 text-left transition-all active:scale-[0.99] ${
                           activo
-                            ? "border-naranja bg-naranja-suave"
-                            : "border-borde bg-white hover:bg-humo"
+                            ? "border-naranja bg-naranja-suave shadow-suave ring-1 ring-naranja/30"
+                            : "border-borde bg-white hover:border-naranja/40 hover:bg-crema"
                         }`}
                       >
-                        <span className="text-sm font-bold">{t.etiqueta}</span>
+                        <span className="text-sm font-bold text-azul">
+                          {t.etiqueta}
+                        </span>
                         <span className="block text-xs text-texto-medio">
                           {t.descripcion}
                         </span>
@@ -279,7 +255,7 @@ export function Campanas({ alCerrar }: { alCerrar: () => void }) {
                       type="button"
                       disabled={enviando}
                       onClick={() => void despachar()}
-                      className="flex-1 rounded-xl bg-naranja px-3 py-2.5 text-sm font-bold text-white transition hover:bg-naranja-hondo disabled:opacity-50"
+                      className="btn-primario h-11 flex-1"
                     >
                       {enviando ? "Enviando…" : "Sí, enviar a todos"}
                     </button>
@@ -287,7 +263,7 @@ export function Campanas({ alCerrar }: { alCerrar: () => void }) {
                       type="button"
                       disabled={enviando}
                       onClick={() => setConfirmandoTodos(false)}
-                      className="rounded-xl bg-white px-3 py-2.5 text-sm font-bold text-texto-medio transition hover:bg-humo disabled:opacity-50"
+                      className="btn-borde h-11"
                     >
                       Mejor no
                     </button>
@@ -300,7 +276,7 @@ export function Campanas({ alCerrar }: { alCerrar: () => void }) {
                   type="button"
                   disabled={!listoParaEnviar || enviando}
                   onClick={alPresionarEnviar}
-                  className="h-12 w-full rounded-xl bg-naranja font-bold text-white transition hover:bg-naranja-hondo disabled:opacity-50"
+                  className="btn-primario h-12 w-full"
                 >
                   {enviando ? "Enviando…" : "Enviar campaña"}
                 </button>
@@ -308,9 +284,9 @@ export function Campanas({ alCerrar }: { alCerrar: () => void }) {
             </div>
           </section>
 
-          {/* Historial */}
-          <section className="rounded-2xl bg-white p-4">
-            <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-texto-tenue">
+      {/* Historial */}
+      <section className="tarjeta p-4">
+        <h3 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-texto-tenue">
               Últimas campañas
             </h3>
             {historial === null && (
@@ -344,14 +320,12 @@ export function Campanas({ alCerrar }: { alCerrar: () => void }) {
                 </li>
               ))}
             </ul>
-          </section>
+      </section>
 
-          <p className="px-1 text-xs text-texto-tenue">
-            El envío corre en el servidor (Cloud Function). Si falla por
-            permisos, tu cuenta no está dada de alta como operador.
-          </p>
-        </div>
-      </aside>
-    </div>
+      <p className="px-1 text-xs text-texto-tenue">
+        El envío corre en el servidor (Cloud Function). Si falla por permisos,
+        tu cuenta no está dada de alta como operador.
+      </p>
+    </Hoja>
   );
 }

@@ -99,6 +99,12 @@ object Anunciador {
      */
     fun anunciarPago(context: Context, pago: Pago) {
         val appContext = context.applicationContext
+        // Único gate del silencio individual / horario de anuncios. Si este
+        // teléfono está silenciado o fuera de su franja, la VOZ se calla y ya.
+        // El historial YA lo guardó quien nos llamó (captura o FCM), y el
+        // reenvío al backend (subirPago) es independiente de esto: no anunciar
+        // nunca deja de capturar ni de repartir. Anti-fake intacto.
+        if (!PreferenciasVoz.deboHablarAhora(appContext)) return
         val conNombre = PreferenciasVoz.decirNombre(appContext)
         anunciar(appContext, BilleteraParser.fraseDeVoz(pago, conNombre))
     }

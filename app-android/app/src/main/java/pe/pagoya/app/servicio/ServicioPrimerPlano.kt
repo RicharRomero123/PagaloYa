@@ -47,6 +47,10 @@ class ServicioPrimerPlano : Service() {
         vigilarYape()
         // Offline Guard: vigila la conexión y avisa cuando se cae la red.
         RedGuardia.iniciar(this)
+        // Modo ciego: emite presencia (si captura) y vigila que el comercio no
+        // se quede sordo. Idempotente. Necesita el comercio en memoria, por eso
+        // se relanza tras cargarlo en prepararModoEscucha (ver abajo).
+        VigiaCiego.iniciar(this)
         crearCanal()
         val abrirApp = PendingIntent.getActivity(
             this, 0,
@@ -82,6 +86,16 @@ class ServicioPrimerPlano : Service() {
         alcance.launch {
             runCatching {
                 val comercio = ComercioRepo.cargar() ?: return@launch
+                // Oír EN VIVO mi preferencia de escucha: si el operador me apaga
+                // la voz desde el panel, este teléfono se calla al toque sin
+                // reabrir la app. Solo baja el parlante; el historial y el
+                // reenvío no se tocan (anti-fake intacto). Idempotente: se
+                // resuelta el listener anterior si ya había uno.
+                ComercioRepo.escucharPreferencias(applicationContext)
+                // Ya hay comercio en memoria: arrancar el Modo ciego (la llamada
+                // de onStartCommand pudo caer con comercio=null en arranque frío).
+                // Idempotente: si ya estaba corriendo, no hace nada.
+                VigiaCiego.iniciar(applicationContext)
                 // Campañas del operador: suscribir a los topics de este teléfono
                 // según su plan (todos + plan_x). Idempotente.
                 MensajesPagoYa.suscribirTopics(applicationContext, comercio.plan)
@@ -123,6 +137,7 @@ class ServicioPrimerPlano : Service() {
 
     override fun onDestroy() {
         RedGuardia.detener(this)
+        VigiaCiego.detener()
         alcance.cancel()
         super.onDestroy()
     }

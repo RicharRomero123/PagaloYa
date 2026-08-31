@@ -12,6 +12,7 @@ import pe.pagoya.app.core.Pago
 import pe.pagoya.app.core.Plan
 import pe.pagoya.app.core.PreferenciasBilleteras
 import pe.pagoya.app.core.RegistroPagos
+import pe.pagoya.app.core.voz.PreferenciasVoz
 import kotlin.random.Random
 
 /** El comercio ya llegó a su tope de teléfonos para el plan actual. */
@@ -475,6 +476,36 @@ object ComercioRepo {
             // Sin red o sin permiso: la Caja se queda con lo local, no se cae.
             Log.w(TAG, "Rehidratación de caja falló: ${it.message}")
         }
+    }
+
+    /**
+     * Espejo (best-effort) de la preferencia de escucha de ESTE teléfono en su
+     * documento de miembro, para que el operador vea desde el panel qué equipos
+     * están silenciados o con horario. NO es la fuente de verdad: el
+     * comportamiento manda desde local (SharedPreferences vía PreferenciasVoz);
+     * esto es solo visibilidad. Fire-and-forget: no bloquea la UI y, si no hay
+     * red, no crashea (Firestore encola y reintenta; si falla, solo se loguea).
+     *
+     * Contrato de campos EXACTO (las firestore.rules dependen de estos nombres):
+     *   silenciado (bool), horarioActivo (bool),
+     *   horarioInicio (int, minutos 0-1439), horarioFin (int, minutos 0-1439).
+     */
+    fun sincronizarEscucha(context: Context) {
+        val uid = Sesion.uid ?: return
+        val comercioId = _comercio.value?.id ?: return
+        db.collection("comercios").document(comercioId)
+            .collection("miembros").document(uid)
+            .update(
+                mapOf(
+                    "silenciado" to PreferenciasVoz.silenciado(context),
+                    "horarioActivo" to PreferenciasVoz.horarioActivo(context),
+                    "horarioInicio" to PreferenciasVoz.horaInicio(context),
+                    "horarioFin" to PreferenciasVoz.horaFin(context),
+                )
+            )
+            .addOnFailureListener {
+                Log.w(TAG, "No se sincronizó preferencia de escucha: ${it.message}")
+            }
     }
 
     /** true si es la primera vez que vemos este pago. */
